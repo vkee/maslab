@@ -20,15 +20,28 @@ public class PID {
 		this.previousTime = System.currentTimeMillis();
 	}
 	
-	public double update(double actual) {
-		double time = System.currentTimeMillis();
-		double error = desired-actual;
-		double proportional = proportionalC*(error);
-		integralError += integralC*error*(time-previousTime);
-		double derivative = derivativeC*(error-previousError)/(time-previousTime);
-		previousTime = time;
-		previousError = error;
+	public double update(double actual, boolean start) {
 		
+		double proportional;
+		double derivative;
+		
+		if (start) {
+			double time = System.currentTimeMillis();
+			double error = desired-actual;
+			proportional = proportionalC*(error);
+			derivative = 0;
+			previousTime = time;
+			previousError = error;
+		} else {
+
+			double time = System.currentTimeMillis();
+			double error = desired-actual;
+			proportional = proportionalC*(error);
+			integralError += integralC*error*(time-previousTime);
+			derivative = derivativeC*(error-previousError)/(time-previousTime);
+			previousTime = time;
+			previousError = error;
+		}
 		return proportional + integralError + derivative;
 	}
 	
