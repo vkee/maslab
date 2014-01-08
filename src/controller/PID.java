@@ -10,11 +10,6 @@ public class PID {
 	private double previousError;
 	private double previousTime;
 	
-	/*
-	 * integralC = 0
-	 * dervativeC = 0
-	 * proportionalC = underestimate
-	 */
 	public PID (double desired, double proportionalC, double derivativeC, double integralC) {
 		this.proportionalC = proportionalC;
 		this.derivativeC = derivativeC;
@@ -37,5 +32,4 @@ public class PID {
 		return proportional + integralError + derivative;
 	}
 	
-	public double update
 }
