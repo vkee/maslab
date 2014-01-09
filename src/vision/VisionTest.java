@@ -42,10 +42,10 @@ public class VisionTest {
             // Process the image however you like
             //Mat processedImage = ImageProcessor.process(rawImage);
             Mat binary = Detection.detectHueRange(rawImage);
-            Pair center = Detection.nextCenter(binary);
+            org.opencv.core.Point center = Detection.nextCenter(binary, 320, 240, 25);
             Mat processedImage = Detection.convertC(binary);
-            System.out.println(center.getX());
-            System.out.println(center.getY());
+            System.out.println(center.x);
+            System.out.println(center.y);
             
             // Update the GUI windows
             updateWindow(cameraPane, rawImage);
