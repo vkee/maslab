@@ -9,7 +9,7 @@ public class KitBotModel {
     
 	public KitBotModel() {
 		try {
-			serialPort = new SerialPort("COM4");
+			serialPort = new SerialPort("COM7");
             serialPort.openPort();
             serialPort.setParams(115200, 8, 1, 0);
         }
