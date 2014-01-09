@@ -31,13 +31,13 @@ public class TrackBall {
 	    this.height = height;
 	    this.width = width;
 		pidX = new PID(width/2, proportionalC, derivativeC, integralC);
-		pidY = new PID((int) 0.95*height, proportionalC, derivativeC, integralC);
+		pidY = new PID(0.95*height, proportionalC, derivativeC, integralC);
 		double pidOutX = pidX.update(point.x, true);
 		double pidOutY = pidY.update(point.y, true);
 		double turn1 = Math.min(0.1, pidOutX/width);
 		double turn = Math.max(-0.1, turn1);
 		
-		double forward1 = Math.min(0.1, 0.5*pidOutY/height);
+		double forward1 = Math.min(0.1, pidOutY/height);
 		double forward = Math.max(-0.1, forward1);
 		
 		if (point.x < 30) {
@@ -52,15 +52,21 @@ public class TrackBall {
 		double pidOutX = pidX.update(point.x, false);
 		double pidOutY = pidY.update(point.x, false);
 		
-		double turn1 = Math.min(0.1, pidOutX/width);
-		double turn = Math.max(-0.1, turn1);
+		double turn1 = Math.min(0.2, 2*pidOutX/width);
+		double turn = Math.max(-0.2, turn1);
 		
-		double forward1 = Math.min(0.1, 0.65*pidOutY/height);
+		double forward1 = Math.min(0.1, pidOutY/height);
 		double forward = Math.max(-0.1, forward1);
 		
 		if (point.x < 30) {
 			forward = 0;
 		}
+		
+		if (point.y == 0.0) {
+			turn = 0;
+		}
+		//System.out.println(forward);
+		//System.out.println(turn);
 		
 		model.setMotors(forward+turn, forward-turn);
 		
@@ -76,8 +82,8 @@ public class TrackBall {
         // Setup the camera
         VideoCapture camera = new VideoCapture();
         camera.open(1);
-        int width = 160;
-        int height = 120;
+        int width = 320;
+        int height = 240;
         
         camera.set(Highgui.CV_CAP_PROP_FRAME_WIDTH, width);
         camera.set(Highgui.CV_CAP_PROP_FRAME_HEIGHT, height);
@@ -97,7 +103,7 @@ public class TrackBall {
         }
 		
         Mat binary = Detection.detectHueRange(rawImage);
-        org.opencv.core.Point center = Detection.nextCenter(binary, 320, 240, 25);
+        org.opencv.core.Point center = Detection.nextCenter(binary, width/2, height/2, 5);
         TrackBall track = new TrackBall(model, 0.3, 0.5, 0, center, width, height);
         
         while (true) {
@@ -113,14 +119,14 @@ public class TrackBall {
             // Process the image however you like
             //Mat processedImage = ImageProcessor.process(rawImage);
             Mat binary1 = Detection.detectHueRange(rawImage);
-            org.opencv.core.Point center1 = Detection.nextCenter(binary1, 320, 240, 25);
+            org.opencv.core.Point center1 = Detection.nextCenter(binary1, width/2, height/2, 5);
             track.update(center1);
             
             // Update the GUI windows
             Mat processedImage = Detection.convertC(binary1);
             updateWindow(cameraPane, rawImage);
             updateWindow(opencvPane, processedImage);
-            //System.out.println(Double.toString(System.currentTimeMillis()-time));
+            System.out.println(Double.toString(System.currentTimeMillis()-time));
         }
 	}
 	
