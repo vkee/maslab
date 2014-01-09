@@ -11,7 +11,8 @@ public class Detection {
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
-    
+
+    // findContours, threshold, split, find centers using contours
     public static Pair nextCenter(Mat processedImage){
         Moments result = Imgproc.moments(processedImage);
         double momX10 = result.get_m10();
@@ -23,32 +24,51 @@ public class Detection {
     }
     
     public static Mat detectHueRange(Mat srcImage){
-        
-        // REPLACE WITH OPENCV METHOD OF THRESHOLDING WITH INRANGE
-        //Scalar hsv_min = new Scalar(lowerHue, 100, 100, 0);
-        //Scalar hsv_max = new Scalar(upperHue, 255, 255, 0);
-        //Core.inRange(HSV, hsv_min, hsv_max, ThresIm);
-        
+        Mat HSV = new Mat();
+        Imgproc.cvtColor(srcImage, HSV, Imgproc.COLOR_BGR2HSV);
+        Mat ThresIm_1 = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
+        Mat ThresIm_2 = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
+        Mat ThresIm = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
+        Scalar hsv_min_1 = new Scalar(0, 180, 10, 0);
+        Scalar hsv_max_1 = new Scalar(4, 255, 255, 0);
+        Scalar hsv_min_2 = new Scalar(356, 180, 10, 0);
+        Scalar hsv_max_2 = new Scalar(360, 255, 255, 0);
+        Core.inRange(HSV, hsv_min_1, hsv_max_1, ThresIm_1);
+        Core.inRange(HSV, hsv_min_2, hsv_max_2, ThresIm_2);
+        Core.bitwise_or(ThresIm_1, ThresIm_2, ThresIm);
+        Imgproc.medianBlur(ThresIm, ThresIm, 13);
+        return ThresIm;
+    }
+    
+    public static Mat detectHueRange2(Mat srcImage){
         Mat HSV = new Mat();
         Imgproc.cvtColor(srcImage, HSV, Imgproc.COLOR_BGR2HSV);
         Mat ThresIm = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
-        //Scalar hsv_min = new Scalar(lowerHue, 100, 100, 0);
-        //Scalar hsv_max = new Scalar(upperHue, 255, 255, 0);
-        //Core.inRange(HSV, hsv_min, hsv_max, ThresIm);
         for (int x = 0; x < HSV.height(); x++){
             for (int y = 0; y < HSV.width(); y++){
                 if (((HSV.get(x, y)[0] >= 356 || HSV.get(x, y)[0] <= 4) &&
                         HSV.get(x,y)[1] <= 255 && HSV.get(x,y)[1] >= 180 &&
                         HSV.get(x,y)[2] <= 255 && HSV.get(x, y)[2] >= 10)){
-                    //|| ((HSV.get(x, y)[0] >= 80 && HSV.get(x, y)[0] <= 160) &&
-                    //HSV.get(x, y)[1] <= 255 && HSV.get(x, y)[1] >= 10 &&
-                    //HSV.get(x, y)[2] <= 255 && HSV.get(x, y)[2] >= 150)){
                     ThresIm.put(x, y, new byte[]{ (byte) 255 });
                 }
             }
         }
         Imgproc.medianBlur(ThresIm, ThresIm, 13);
         return ThresIm;
+    }
+    
+    public static Mat convertC(Mat srcImage){
+        Mat dstImage = new Mat(srcImage.height(), srcImage.width(), CvType.CV_8UC3);
+        for (int x = 0; x < srcImage.height(); x++){
+            for (int y = 0; y < srcImage.width(); y++){
+                if (srcImage.get(x, y)[0] > 0){
+                    dstImage.put(x, y, new byte[]{(byte) 255, (byte) 255, (byte) 255});
+                } else{
+                    dstImage.put(x, y, new byte[]{(byte) 0, (byte) 0, (byte) 0});
+                }
+            }
+        }
+        return dstImage;
     }
 }
 
