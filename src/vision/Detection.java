@@ -23,20 +23,27 @@ public class Detection {
         return new Pair(posX, posY);
     }
     
+    // May want to incorporate a second edge-based detection for more reliability
     public static Mat detectHueRange(Mat srcImage){
         Mat HSV = new Mat();
         Imgproc.cvtColor(srcImage, HSV, Imgproc.COLOR_BGR2HSV);
         Mat ThresIm_1 = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
         Mat ThresIm_2 = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
+        Mat ThresIm_3 = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
         Mat ThresIm = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
         Scalar hsv_min_1 = new Scalar(0, 180, 10, 0);
-        Scalar hsv_max_1 = new Scalar(4, 255, 255, 0);
-        Scalar hsv_min_2 = new Scalar(356, 180, 10, 0);
+        Scalar hsv_max_1 = new Scalar(10, 255, 255, 0);
+        Scalar hsv_min_2 = new Scalar(350, 170, 10, 0);
         Scalar hsv_max_2 = new Scalar(360, 255, 255, 0);
+        Scalar hsv_min_3 = new Scalar(50, 100, 30, 0);
+        Scalar hsv_max_3 = new Scalar(80, 255, 255, 0);
         Core.inRange(HSV, hsv_min_1, hsv_max_1, ThresIm_1);
         Core.inRange(HSV, hsv_min_2, hsv_max_2, ThresIm_2);
+        Core.inRange(HSV, hsv_min_3, hsv_max_3, ThresIm_3);
         Core.bitwise_or(ThresIm_1, ThresIm_2, ThresIm);
         Imgproc.medianBlur(ThresIm, ThresIm, 13);
+        Imgproc.medianBlur(ThresIm_3, ThresIm_3, 13);
+        Core.bitwise_or(ThresIm, ThresIm_3, ThresIm);      
         return ThresIm;
     }
     
