@@ -1,8 +1,13 @@
 package vision;
 
+import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.imgproc.Moments;
@@ -13,14 +18,38 @@ public class Detection {
     }
 
     // findContours, threshold, split, find centers using contours
-    public static Pair nextCenter(Mat processedImage){
-        Moments result = Imgproc.moments(processedImage);
-        double momX10 = result.get_m10();
-        double momY01 = result.get_m01();
-        double area = result.get_mu20();
-        int posX = (int) (momX10/area);
-        int posY = (int) (momY01/area);
-        return new Pair(posX, posY);
+    public static org.opencv.core.Point nextCenter(Mat processedImage, int centerX, int centerY, int threshold){
+        double nextCenterX = 0;
+        double nextCenterY = 0;
+        double centerCost = centerX*centerX + centerY*centerY;
+        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+        Mat hierarchy = new Mat();
+        Imgproc.findContours(processedImage, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
+        for (MatOfPoint boundary : contours){
+            List<org.opencv.core.Point> boundaryPoints = boundary.toList();
+            if (boundaryPoints.size() >= threshold){
+                org.opencv.core.Point center = findCenter(boundaryPoints);
+                double cost = (centerX - center.x)*(centerX - center.x) + (centerY - center.y)*(centerY - center.y);
+                if (cost < centerCost){
+                    centerCost = cost;
+                    nextCenterX = center.x;
+                    nextCenterY = center.y;
+                }
+            }
+        }
+        return new org.opencv.core.Point(nextCenterX, nextCenterY);
+    }
+    
+    public static org.opencv.core.Point findCenter(List<org.opencv.core.Point> boundaryPoints){
+        double sumX = 0;
+        double sumY = 0;
+        for (org.opencv.core.Point point : boundaryPoints){
+            sumX += point.x;
+            sumY += point.y;
+        }
+        double avgX = sumX/boundaryPoints.size();
+        double avgY = sumY/boundaryPoints.size();
+        return new org.opencv.core.Point(avgX, avgY);
     }
     
     // May want to incorporate a second edge-based detection for more reliability
@@ -31,7 +60,7 @@ public class Detection {
         Mat ThresIm_2 = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
         Mat ThresIm_3 = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
         Mat ThresIm = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
-        Scalar hsv_min_1 = new Scalar(0, 180, 10, 0);
+        Scalar hsv_min_1 = new Scalar(0, 170, 10, 0);
         Scalar hsv_max_1 = new Scalar(10, 255, 255, 0);
         Scalar hsv_min_2 = new Scalar(350, 170, 10, 0);
         Scalar hsv_max_2 = new Scalar(360, 255, 255, 0);
