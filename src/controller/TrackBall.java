@@ -22,17 +22,22 @@ public class TrackBall {
 
 	PID pidX;
 	PID pidY;
+	int height;
+	int width;
 	KitBotModel model;
 	
-	public TrackBall(KitBotModel model, double proportionalC, double derivativeC, double integralC, org.opencv.core.Point point) {
-		pidX = new PID(640/2, proportionalC, derivativeC, integralC);
-		pidY = new PID(460, proportionalC, derivativeC, integralC);
+	public TrackBall(KitBotModel model, double proportionalC, double derivativeC,
+	        double integralC, org.opencv.core.Point point, int width, int height) {
+	    this.height = height;
+	    this.width = width;
+		pidX = new PID(width/2, proportionalC, derivativeC, integralC);
+		pidY = new PID((int) 0.95*height, proportionalC, derivativeC, integralC);
 		double pidOutX = pidX.update(point.x, true);
 		double pidOutY = pidY.update(point.y, true);
-		double turn1 = Math.min(0.1, pidOutX/640);
+		double turn1 = Math.min(0.1, pidOutX/width);
 		double turn = Math.max(-0.1, turn1);
 		
-		double forward1 = Math.min(0.1, pidOutY/480/2);
+		double forward1 = Math.min(0.1, 0.5*pidOutY/height);
 		double forward = Math.max(-0.1, forward1);
 		
 		if (point.x < 30) {
@@ -47,10 +52,10 @@ public class TrackBall {
 		double pidOutX = pidX.update(point.x, false);
 		double pidOutY = pidY.update(point.x, false);
 		
-		double turn1 = Math.min(0.1, pidOutX/640);
+		double turn1 = Math.min(0.1, pidOutX/width);
 		double turn = Math.max(-0.1, turn1);
 		
-		double forward1 = Math.min(0.1, pidOutY/480/1.5);
+		double forward1 = Math.min(0.1, 0.65*pidOutY/height);
 		double forward = Math.max(-0.1, forward1);
 		
 		if (point.x < 30) {
@@ -71,9 +76,12 @@ public class TrackBall {
         // Setup the camera
         VideoCapture camera = new VideoCapture();
         camera.open(1);
+        int width = 160;
+        int height = 120;
         
-        int width = (int) (camera.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
-        int height = (int) (camera.get(Highgui.CV_CAP_PROP_FRAME_HEIGHT));
+        camera.set(Highgui.CV_CAP_PROP_FRAME_WIDTH, width);
+        camera.set(Highgui.CV_CAP_PROP_FRAME_HEIGHT, height);
+        
         JLabel cameraPane = createWindow("Camera output", width, height);
         JLabel opencvPane = createWindow("OpenCV output", width, height);
         
@@ -90,7 +98,7 @@ public class TrackBall {
 		
         Mat binary = Detection.detectHueRange(rawImage);
         org.opencv.core.Point center = Detection.nextCenter(binary, 320, 240, 25);
-        TrackBall track = new TrackBall(model,0.3,0.5,0,center);
+        TrackBall track = new TrackBall(model, 0.3, 0.5, 0, center, width, height);
         
         while (true) {
         	
