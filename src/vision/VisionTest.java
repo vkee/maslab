@@ -51,12 +51,12 @@ public class VisionTest {
             List<org.opencv.core.Point> edges = Detection.findWallEdges(lines, rawImage, 25);
             Detection.drawLines(binary, edges);
             Mat processedImage = Detection.convertC(binary);
-            //Mat linesC = Detection.convertC(lines);
+            Mat edgesC = Detection.convertC(Detection.contourImage(rawImage, 80, 3));
             
             // Update the GUI windows
             updateWindow(cameraPane, rawImage);
-            updateWindow(opencvPane, processedImage);
-            //updateWindow(opencvPane, linesC);
+            //updateWindow(opencvPane, processedImage);
+            updateWindow(opencvPane, edgesC);
         }
     }
     

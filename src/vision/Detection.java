@@ -26,7 +26,9 @@ public class Detection {
             double b = rho/Math.sin(theta);
             for (int col = 0; col < binary.width(); col++){
                 int row = (int) (m*col + b);
-                binary.put(row, col, new byte[]{(byte) 255});
+                if (row >= 0 && row < binary.height()){
+                    binary.put(row, col, new byte[]{(byte) 255});
+                }
             }
         }
     }
@@ -82,6 +84,16 @@ public class Detection {
         Imgproc.Canny(src_gray, edges, lowThres, ratio*lowThres);
         Imgproc.HoughLinesP(edges, lines, 1, Math.PI/180.0, 50, 50, 10);
         return lines;
+    }
+    
+ // find wall representation
+    public static Mat contourImage(Mat srcImage, double lowThres, double ratio){
+        Mat src_gray = new Mat();
+        Mat edges = new Mat();
+        Imgproc.cvtColor(srcImage, src_gray, Imgproc.COLOR_BGR2GRAY);
+        //Imgproc.blur(src_gray, src_gray, new Size(3, 3));
+        Imgproc.Canny(src_gray, edges, lowThres, ratio*lowThres);
+        return edges;
     }
     
     // make sure it is a ball first
