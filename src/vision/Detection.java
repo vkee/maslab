@@ -9,6 +9,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.imgproc.Moments;
 
@@ -16,8 +17,20 @@ public class Detection {
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
-
-    // findContours, threshold, split, find centers using contours
+    
+    // find wall representation
+    public static Mat detectWallEdges(Mat srcImage, double lowThres, double ratio){
+        Mat src_gray = new Mat();
+        Mat edges = new Mat();
+        Mat lines = new Mat();
+        Imgproc.cvtColor(srcImage, src_gray, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.blur(src_gray, src_gray, new Size(3, 3));
+        Imgproc.Canny(src_gray, edges, lowThres, ratio*lowThres);
+        Imgproc.HoughLinesP(edges, lines, 1, Math.PI/180.0, 50, 50, 10);
+        return lines;
+    }
+    
+    // make sure it is a ball first
     public static org.opencv.core.Point nextCenter(Mat processedImage, int centerX, int centerY, int threshold){
         double nextCenterX = 0;
         double nextCenterY = 0;
@@ -30,7 +43,8 @@ public class Detection {
             if (boundaryPoints.size() >= threshold){
                 org.opencv.core.Point center = findCenter(boundaryPoints);
                 double cost = (centerX - center.x)*(centerX - center.x) + (centerY - center.y)*(centerY - center.y);
-                if (cost < centerCost){
+                // check if second condition works or is even necessary
+                if (cost < centerCost && validBall(center, boundaryPoints, 10000)){
                     centerCost = cost;
                     nextCenterX = center.x;
                     nextCenterY = center.y;
@@ -52,6 +66,19 @@ public class Detection {
         return new org.opencv.core.Point(avgX, avgY);
     }
     
+    public static boolean validBall(org.opencv.core.Point center, List<org.opencv.core.Point> boundaryPoints, double threshold){
+        double linSum = 0;
+        double sqrSum = 0;
+        int n = boundaryPoints.size();
+        for (org.opencv.core.Point point : boundaryPoints){
+            linSum += (center.x - point.x)*(center.x - point.x) + (center.y - point.y)*(center.y - point.y);
+            sqrSum += ((center.x - point.x)*(center.x - point.x) + (center.y - point.y)*(center.y - point.y))
+                    *((center.x - point.x)*(center.x - point.x) + (center.y - point.y)*(center.y - point.y));
+        }
+        double var = (sqrSum/n) - (linSum/n)*(linSum/n);
+        return (1000000*var/(n*n*n*n) <= threshold);
+    }
+    
     // May want to incorporate a second edge-based detection for more reliability
     public static Mat detectHueRange(Mat srcImage){
         Mat HSV = new Mat();
@@ -60,6 +87,8 @@ public class Detection {
         Mat ThresIm_2 = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
         Mat ThresIm_3 = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
         Mat ThresIm = new Mat(HSV.height(), HSV.width(), CvType.CV_8UC1);
+        
+        // try to switch to three channel images
         Scalar hsv_min_1 = new Scalar(0, 170, 10, 0);
         Scalar hsv_max_1 = new Scalar(10, 255, 255, 0);
         Scalar hsv_min_2 = new Scalar(350, 170, 10, 0);

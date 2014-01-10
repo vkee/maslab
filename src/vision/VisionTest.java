@@ -40,7 +40,6 @@ public class VisionTest {
             }
             
             // Process the image however you like
-            //Mat processedImage = ImageProcessor.process(rawImage);
             Mat binary = Detection.detectHueRange(rawImage);
             org.opencv.core.Point center = Detection.nextCenter(binary, 320, 240, 25);
             Mat processedImage = Detection.convertC(binary);
