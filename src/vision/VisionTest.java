@@ -2,6 +2,7 @@ package vision;
 
 import java.awt.BorderLayout;
 import java.awt.image.BufferedImage;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -42,13 +43,20 @@ public class VisionTest {
             // Process the image however you like
             Mat binary = Detection.detectHueRange(rawImage);
             org.opencv.core.Point center = Detection.nextCenter(binary, 320, 240, 25);
-            Mat processedImage = Detection.convertC(binary);
+            //Mat processedImage = Detection.convertC(binary);
             System.out.println(center.x);
             System.out.println(center.y);
+            
+            Mat lines = Detection.detectEdges(rawImage, 80, 3);
+            List<org.opencv.core.Point> edges = Detection.findWallEdges(lines, rawImage, 25);
+            Detection.drawLines(binary, edges);
+            Mat processedImage = Detection.convertC(binary);
+            //Mat linesC = Detection.convertC(lines);
             
             // Update the GUI windows
             updateWindow(cameraPane, rawImage);
             updateWindow(opencvPane, processedImage);
+            //updateWindow(opencvPane, linesC);
         }
     }
     

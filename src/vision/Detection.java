@@ -18,8 +18,62 @@ public class Detection {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
     
+    public static void drawLines(Mat binary, List<org.opencv.core.Point> lines){
+        for (org.opencv.core.Point line : lines){
+            double rho = line.x;
+            double theta = line.y;
+            double m = -Math.cos(theta)/Math.sin(theta);
+            double b = rho/Math.sin(theta);
+            for (int col = 0; col < binary.width(); col++){
+                int row = (int) (m*col + b);
+                binary.put(row, col, new byte[]{(byte) 255});
+            }
+        }
+    }
+    
+    public static List<org.opencv.core.Point> findWallEdges(Mat lines, Mat srcImage, int threshold){
+        Mat HSV = new Mat();
+        Mat blueImage = new Mat();
+        Imgproc.cvtColor(srcImage, HSV, Imgproc.COLOR_BGR2HSV);
+        Scalar hsv_min = new Scalar(0, 0, 10, 0);
+        Scalar hsv_max = new Scalar(360, 255, 255, 0);
+        Core.inRange(HSV, hsv_min, hsv_max, blueImage);
+        Imgproc.medianBlur(blueImage, blueImage, 13);
+        List<org.opencv.core.Point> wallEdges = new ArrayList<org.opencv.core.Point>();
+        for (int y = 0; y < lines.width(); y++){
+            double rho = lines.get(0, y)[0];
+            double theta = lines.get(0, y)[1];
+            double m = -Math.cos(theta)/Math.sin(theta);
+            double b = rho/Math.sin(theta);
+            int count = 0;
+            for (int col = 0; col < blueImage.width(); col++){
+                int row = (int) (m*col + b);
+                if (blueNeighbors(row, col, blueImage)){
+                    count += 1;
+                }
+            }
+            if (count >= threshold){
+                wallEdges.add(new org.opencv.core.Point(rho, theta));
+            }
+        }
+        return wallEdges;
+    }
+    
+    public static boolean blueNeighbors(int row, int col, Mat blueImage){
+        for (int x = -1; x < 2; x++){
+            for (int y = -1; y < 2; y++){
+                int test_row = Math.min(Math.max(row + x, 0), blueImage.height() - 1);
+                int test_col = Math.min(Math.max(col + y, 0), blueImage.width() - 1);
+                if (blueImage.get(test_row, test_col)[0] > 0){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
     // find wall representation
-    public static Mat detectWallEdges(Mat srcImage, double lowThres, double ratio){
+    public static Mat detectEdges(Mat srcImage, double lowThres, double ratio){
         Mat src_gray = new Mat();
         Mat edges = new Mat();
         Mat lines = new Mat();
@@ -80,6 +134,7 @@ public class Detection {
     }
     
     // May want to incorporate a second edge-based detection for more reliability
+    // may want to ensure use three channel image
     public static Mat detectHueRange(Mat srcImage){
         Mat HSV = new Mat();
         Imgproc.cvtColor(srcImage, HSV, Imgproc.COLOR_BGR2HSV);
