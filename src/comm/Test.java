@@ -16,8 +16,8 @@ public class Test {
 		
 		Infrared infra1 = new Infrared(1);
 		Infrared infra2 = new Infrared(2);
-		Cytron motor1 = new Cytron(4, 5);
-		Cytron motor2 = new Cytron(6, 7);
+		Cytron motor1 = new Cytron(2, 1);
+		Cytron motor2 = new Cytron(7, 6);
 		
 		comm.registerDevice(infra1);
 		comm.registerDevice(infra2);
@@ -32,7 +32,7 @@ public class Test {
 			System.out.println(infra1.getDistance() + " " + infra2.getDistance());
 			
 			motor1.setSpeed(0.5);
-			motor2.setSpeed(-0.5);
+			motor2.setSpeed(0.5);
 			
 			comm.transmit();
 			
