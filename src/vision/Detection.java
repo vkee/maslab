@@ -26,6 +26,8 @@ public class Detection {
             double b = rho/Math.sin(theta);
             for (int col = 0; col < binary.width(); col++){
                 int row = (int) (m*col + b);
+                System.out.println("row: " + row);
+                System.out.println("col: " + col);                
                 binary.put(row, col, new byte[]{(byte) 255});
             }
         }
