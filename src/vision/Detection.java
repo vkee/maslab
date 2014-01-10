@@ -1,6 +1,5 @@
 package vision;
 
-import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +28,6 @@ public class Detection {
                 if (row >= 0 && row < binary.height()){
                     binary.put(row, col, new byte[]{(byte) 255});
                 }
-                binary.put(row, col, new byte[]{(byte) 255});
             }
         }
     }
