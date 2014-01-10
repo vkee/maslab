@@ -20,11 +20,13 @@ public class VisionTest {
 
         // Setup the camera
         VideoCapture camera = new VideoCapture();
-        camera.open(0);
+        camera.open(1);
         
         // Create GUI windows to display camera output and OpenCV output
-        int width = (int) (camera.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
-        int height = (int) (camera.get(Highgui.CV_CAP_PROP_FRAME_HEIGHT));
+        int width = 320;
+        int height = 240;
+        camera.set(Highgui.CV_CAP_PROP_FRAME_WIDTH, width);
+        camera.set(Highgui.CV_CAP_PROP_FRAME_HEIGHT, height);
         JLabel cameraPane = createWindow("Camera output", width, height);
         JLabel opencvPane = createWindow("OpenCV output", width, height);
         
@@ -42,21 +44,22 @@ public class VisionTest {
             
             // Process the image however you like
             Mat binary = Detection.detectHueRange(rawImage);
-            org.opencv.core.Point center = Detection.nextCenter(binary, 320, 240, 25);
-            //Mat processedImage = Detection.convertC(binary);
+            org.opencv.core.Point center = Detection.nextCenter(binary, width/2, height/2, 5);
+            Mat processedImage = Detection.convertC(binary);
             System.out.println(center.x);
             System.out.println(center.y);
             
-            Mat lines = Detection.detectEdges(rawImage, 80, 3);
-            List<org.opencv.core.Point> edges = Detection.findWallEdges(lines, rawImage, 25);
-            Detection.drawLines(binary, edges);
-            Mat processedImage = Detection.convertC(binary);
-            Mat edgesC = Detection.convertC(Detection.contourImage(rawImage, 80, 3));
+//            Mat lines = Detection.detectEdges(rawImage, 80, 3);
+//            List<org.opencv.core.Point> edges = Detection.findWallEdges(lines, rawImage, 25);
+//            Detection.drawLines(binary, edges);
+//            Mat processedImage = Detection.convertC(binary);
+//            Mat edgesC = Detection.convertC(Detection.contourImage(rawImage, 80, 3));
             
             // Update the GUI windows
             updateWindow(cameraPane, rawImage);
             //updateWindow(opencvPane, processedImage);
-            updateWindow(opencvPane, edgesC);
+//            updateWindow(opencvPane, edgesC);
+            updateWindow(opencvPane, processedImage);
         }
     }
     
