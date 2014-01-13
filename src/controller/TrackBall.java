@@ -111,9 +111,12 @@ public class TrackBall {
             }
         }
 		
-        Mat binary = Detection.detectHueRange(rawImage);
-        org.opencv.core.Point center = Detection.nextCenter(binary, width/2, height/2, 5);
-        TrackBall track = new TrackBall(model, 0.4, 0.3, 0, center, width, height);
+        BufferedImage bufferedImage = Mat2Image.getImage(rawImage);
+        BufferedImage filtered = blur.apply(bufferedImage);
+        filtered = colorize.apply(filtered);
+        Point newCenter = DetectionGL.nextCenter(filtered, width, height);
+        org.opencv.core.Point center1 = new org.opencv.core.Point(newCenter.x, newCenter.y);
+        TrackBall track = new TrackBall(model, 0.4, 0.3, 0, center1, width, height);
         
         while (true) {
         	
@@ -128,11 +131,11 @@ public class TrackBall {
             // Process the image however you like
             //Mat processedImage = ImageProcessor.process(rawImage);
             
-            BufferedImage bufferedImage = Mat2Image.getImage(rawImage);
-            BufferedImage filtered = blur.apply(bufferedImage);
+            bufferedImage = Mat2Image.getImage(rawImage);
+            filtered = blur.apply(bufferedImage);
             filtered = colorize.apply(filtered);
-            Point newCenter = DetectionGL.nextCenter(filtered, width, height);
-            org.opencv.core.Point center1 = new org.opencv.core.Point(newCenter.x, newCenter.y);
+            newCenter = DetectionGL.nextCenter(filtered, width, height);
+            center1 = new org.opencv.core.Point(newCenter.x, newCenter.y);
             track.update(center1);
             
             // Update the GUI windows
