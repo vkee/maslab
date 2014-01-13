@@ -1,6 +1,7 @@
 package vision;
 
 import java.awt.BorderLayout;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 
 import javax.swing.ImageIcon;
@@ -51,6 +52,9 @@ public class VisionTestGL {
             BufferedImage bufferedImage = Mat2Image.getImage(rawImage);
             BufferedImage filtered = blur.apply(bufferedImage);
             filtered = colorize.apply(filtered);
+            Point center = DetectionGL.nextCenter(filtered, width, height);
+            System.out.println(center.x);
+            System.out.println(center.y);
             
             // Update the GUI windows
             updateWindow(cameraPane, rawImage);
