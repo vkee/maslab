@@ -20,7 +20,7 @@ public class VisionTest {
 
         // Setup the camera
         VideoCapture camera = new VideoCapture();
-        camera.open(1);
+        camera.open(0);
         
         // Create GUI windows to display camera output and OpenCV output
         int width = 320;
@@ -53,13 +53,17 @@ public class VisionTest {
 //            List<org.opencv.core.Point> edges = Detection.findWallEdges(lines, rawImage, 25);
 //            Detection.drawLines(binary, edges);
 //            Mat processedImage = Detection.convertC(binary);
-//            Mat edgesC = Detection.convertC(Detection.contourImage(rawImage, 80, 3));
+            Mat edges = Detection.contourImage(rawImage, 150, 3);
+            Detection.hueEdges(rawImage, edges);
+            Mat edgesC = Detection.convertC(edges);
+//            List<org.opencv.core.Point> lines = Detection.hueLines(edges);
+//            Detection.drawLines(binary, lines);
+//            Mat processedImage = Detection.convertC(binary);
             
             // Update the GUI windows
             updateWindow(cameraPane, rawImage);
-            //updateWindow(opencvPane, processedImage);
-//            updateWindow(opencvPane, edgesC);
-            updateWindow(opencvPane, processedImage);
+//            updateWindow(opencvPane, processedImage);
+            updateWindow(opencvPane, edgesC);
         }
     }
     

@@ -34,12 +34,12 @@ public class Detection {
     
     public static List<org.opencv.core.Point> findWallEdges(Mat lines, Mat srcImage, int threshold){
         Mat HSV = new Mat();
-        Mat blueImage = new Mat();
+        Mat hueImage = new Mat();
         Imgproc.cvtColor(srcImage, HSV, Imgproc.COLOR_BGR2HSV);
         Scalar hsv_min = new Scalar(0, 0, 10, 0);
         Scalar hsv_max = new Scalar(360, 255, 255, 0);
-        Core.inRange(HSV, hsv_min, hsv_max, blueImage);
-        Imgproc.medianBlur(blueImage, blueImage, 13);
+        Core.inRange(HSV, hsv_min, hsv_max, hueImage);
+        Imgproc.medianBlur(hueImage, hueImage, 13);
         List<org.opencv.core.Point> wallEdges = new ArrayList<org.opencv.core.Point>();
         for (int y = 0; y < lines.width(); y++){
             double rho = lines.get(0, y)[0];
@@ -47,9 +47,9 @@ public class Detection {
             double m = -Math.cos(theta)/Math.sin(theta);
             double b = rho/Math.sin(theta);
             int count = 0;
-            for (int col = 0; col < blueImage.width(); col++){
+            for (int col = 0; col < hueImage.width(); col++){
                 int row = (int) (m*col + b);
-                if (blueNeighbors(row, col, blueImage)){
+                if (hueNeighbors(row, col, hueImage)){
                     count += 1;
                 }
             }
@@ -60,12 +60,40 @@ public class Detection {
         return wallEdges;
     }
     
-    public static boolean blueNeighbors(int row, int col, Mat blueImage){
-        for (int x = -1; x < 2; x++){
-            for (int y = -1; y < 2; y++){
-                int test_row = Math.min(Math.max(row + x, 0), blueImage.height() - 1);
-                int test_col = Math.min(Math.max(col + y, 0), blueImage.width() - 1);
-                if (blueImage.get(test_row, test_col)[0] > 0){
+    public static List<org.opencv.core.Point> hueLines(Mat edges){
+        Mat lines = new Mat();
+        List<org.opencv.core.Point> wallEdges = new ArrayList<org.opencv.core.Point>();
+        Imgproc.HoughLinesP(edges, lines, 1, Math.PI/180.0, 50, 50, 10);
+        for (int x = 0; x < lines.width(); x++){
+            wallEdges.add(new org.opencv.core.Point(edges.get(1, x)[0], edges.get(1, x)[1]));
+        }
+        return wallEdges;
+    }
+    
+    
+    public static void hueEdges(Mat srcImage, Mat edges){
+        Mat HSV = new Mat();
+        Mat hueImage = new Mat();
+        Imgproc.cvtColor(srcImage, HSV, Imgproc.COLOR_BGR2HSV);
+        Scalar hsv_min = new Scalar(50, 100, 30, 0);
+        Scalar hsv_max = new Scalar(80, 255, 255, 0);
+        Core.inRange(HSV, hsv_min, hsv_max, hueImage);
+        Imgproc.medianBlur(hueImage, hueImage, 13);
+        for (int x = 0; x < edges.height(); x++){
+            for (int y = 0; y < edges.width(); y++){
+                if (edges.get(x, y)[0] > 0 && !hueNeighbors(x, y, hueImage)){
+                    edges.put(x, y, new byte[]{(byte) 0});
+                }
+            }
+        }
+    }
+    
+    public static boolean hueNeighbors(int row, int col, Mat hueImage){
+        for (int x = -2; x < 3; x++){
+            for (int y = -2; y < 3; y++){
+                int test_row = Math.min(Math.max(row + x, 0), hueImage.height() - 1);
+                int test_col = Math.min(Math.max(col + y, 0), hueImage.width() - 1);
+                if (hueImage.get(test_row, test_col)[0] > 0){
                     return true;
                 }
             }
@@ -74,24 +102,24 @@ public class Detection {
     }
     
     // find wall representation
-    public static Mat detectEdges(Mat srcImage, double lowThres, double ratio){
+    public static Mat detectEdges(Mat srcImage, double lowThres, double highThres){
         Mat src_gray = new Mat();
         Mat edges = new Mat();
         Mat lines = new Mat();
         Imgproc.cvtColor(srcImage, src_gray, Imgproc.COLOR_BGR2GRAY);
         Imgproc.blur(src_gray, src_gray, new Size(3, 3));
-        Imgproc.Canny(src_gray, edges, lowThres, ratio*lowThres);
+        Imgproc.Canny(src_gray, edges, lowThres, highThres);
         Imgproc.HoughLinesP(edges, lines, 1, Math.PI/180.0, 50, 50, 10);
         return lines;
     }
     
  // find wall representation
-    public static Mat contourImage(Mat srcImage, double lowThres, double ratio){
+    public static Mat contourImage(Mat srcImage, double lowThres, double highThres){
         Mat src_gray = new Mat();
         Mat edges = new Mat();
         Imgproc.cvtColor(srcImage, src_gray, Imgproc.COLOR_BGR2GRAY);
-        //Imgproc.blur(src_gray, src_gray, new Size(3, 3));
-        Imgproc.Canny(src_gray, edges, lowThres, ratio*lowThres);
+        Imgproc.blur(src_gray, src_gray, new Size(3, 3));
+        Imgproc.Canny(src_gray, edges, lowThres, highThres);
         return edges;
     }
     
@@ -197,6 +225,17 @@ public class Detection {
                 } else{
                     dstImage.put(x, y, new byte[]{(byte) 0, (byte) 0, (byte) 0});
                 }
+            }
+        }
+        return dstImage;
+    }
+    
+    public static Mat convertGray(Mat srcImage){
+        Mat dstImage = new Mat(srcImage.height(), srcImage.width(), CvType.CV_8UC3);
+        for (int x = 0; x < srcImage.height(); x++){
+            for (int y = 0; y < srcImage.width(); y++){
+                dstImage.put(x, y, new byte[]{(byte) srcImage.get(x, y)[0],
+                        (byte) srcImage.get(x, y)[0], (byte) srcImage.get(x, y)[0]});
             }
         }
         return dstImage;
