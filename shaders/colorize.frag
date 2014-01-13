@@ -15,7 +15,7 @@ void main() {
 		floorSum = floorSum + texture(txtr,vec2(i,1),0.0);
 		i = i + dx;
 	}
-	vec4 floorMean = normalize(floorSum);
+	vec4 floorMean = normalize(vec4(floorSum.x,floorSum.y,floorSum.z,0));
 	
 	vec4 horiSum = vec4(0,0,0,0);
 	float j = 0;
@@ -23,8 +23,8 @@ void main() {
 		horiSum = horiSum + texture(txtr,vec2(i,0.5),0.0);
 		j = j + dx;
 	}
-	vec4 horiMean = normalize(horiSum);
-	if ( distance(col,horiMean)+0.016 < distance(col,floorMean) ) {
+	vec4 horiMean = normalize(vec4(horiSum.x,horiSum.y,horiSum.z,0));
+	if ( distance(col,horiMean)+0.007 < distance(col,floorMean) ) {
 		gl_FragColor = vec4(1,1,1,1);
 	}
 	
@@ -57,8 +57,10 @@ void main() {
 	}
 	
 	//BLUE
-	if ( col.x>col.y*1.2 && col.x>col.z*1.2 && y < 0.5)
+	if ( col.x>col.y*1.2 && col.x>col.z*1.2 && y < 0.5) {
 		gl_FragColor = vec4(0,0,1,1);
+	}
+	
 	
 	/*
 	//WHITE
