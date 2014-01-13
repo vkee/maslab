@@ -27,7 +27,7 @@ public class VirtualMappingExample {
 			filtered = colorize.apply(filtered);
 			//tester.setImage(filtered);
 			
-			//filtered = objRec.apply(filtered);
+			filtered = objRec.apply(filtered);
 			tester.setImage(filtered);
 			
 			frames++;
