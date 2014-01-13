@@ -99,7 +99,8 @@ public class TrackBall {
         
         FilterOp blur = new FilterOp("blur");
         FilterOp colorize = new FilterOp("colorize");
-        
+        FilterOp objRec = new FilterOp("objectRecognition");
+       
 		Mat rawImage = new Mat();
 		
 		// Wait until the camera has a new frame
@@ -112,8 +113,10 @@ public class TrackBall {
         }
 		
         BufferedImage bufferedImage = Mat2Image.getImage(rawImage);
-        BufferedImage filtered = blur.apply(bufferedImage);
-        filtered = colorize.apply(filtered);
+        blur.apply(bufferedImage);
+        colorize.apply();
+        objRec.apply();
+        BufferedImage filtered = FilterOp.getImage();
         Point newCenter = DetectionGL.nextCenter(filtered, width, height);
         org.opencv.core.Point center1 = new org.opencv.core.Point(newCenter.x, newCenter.y);
         TrackBall track = new TrackBall(model, 0.4, 0.3, 0, center1, width, height);
@@ -132,8 +135,11 @@ public class TrackBall {
             //Mat processedImage = ImageProcessor.process(rawImage);
             
             bufferedImage = Mat2Image.getImage(rawImage);
-            filtered = blur.apply(bufferedImage);
-            filtered = colorize.apply(filtered);
+            blur.apply(bufferedImage);
+            colorize.apply();
+            objRec.apply();
+            filtered = FilterOp.getImage();
+            
             newCenter = DetectionGL.nextCenter(filtered, width, height);
             center1 = new org.opencv.core.Point(newCenter.x, newCenter.y);
             track.update(center1);

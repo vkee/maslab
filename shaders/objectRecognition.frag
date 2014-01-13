@@ -62,12 +62,12 @@ void main() {
 			colUpper = texture(txtr,vec2(x,yUpper),0.0);
 		}
 		
-		while ( colLower.z==0 && colLower.y==0 && colLower.x==1 && yUpper < 0) {
+		while ( colLower.z==0 && colLower.y==0 && colLower.x==1 && yLower < 1) {
 			yLower = yLower + dy;
 			colLower = texture(txtr,vec2(x,yLower),0.0);
 		}
 		
-		gl_FragColor = vec4((yLower - yUpper),0,0,1);
+		gl_FragColor = vec4((yLower - yUpper)*5,0,0,1);
 	}
 	
 	/*
