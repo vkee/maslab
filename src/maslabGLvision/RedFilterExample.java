@@ -20,7 +20,8 @@ public class RedFilterExample {
 		
 		try{ Thread.sleep(1000); } catch ( Exception e ) {}
 		
-		BufferedImage filtered = op.apply(original);
+		op.apply(original);
+		BufferedImage filtered = FilterOp.getImage(); 
 		tester.setImage(filtered);
 	}
 }

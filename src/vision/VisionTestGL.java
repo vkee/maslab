@@ -51,10 +51,11 @@ public class VisionTestGL {
             }
             
             BufferedImage bufferedImage = Mat2Image.getImage(rawImage);
-            BufferedImage filtered = blur.apply(bufferedImage);
-            filtered = colorize.apply(filtered);
+            blur.apply(bufferedImage);
+            colorize.apply();
+            //objRec.apply();
+    		BufferedImage filtered = FilterOp.getImage();
             Point center = DetectionGL.nextCenter(filtered, width, height);
-            filtered = objRec.apply(filtered);
             System.out.println(center.x);
             System.out.println(center.y);
             

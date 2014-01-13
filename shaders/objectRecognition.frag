@@ -24,7 +24,7 @@ void main() {
 		r++;
 	}
 	if ( miss>=8 && r>=4 ) {
-		gl_FragColor = vec4(1,0,0,1);
+		gl_FragColor = vec4(0,0,1,1);
 	}
 		
 	// BALL DETECTION GREEN
@@ -67,7 +67,7 @@ void main() {
 			colLower = texture(txtr,vec2(x,yLower),0.0);
 		}
 		
-		gl_FragColor = vec4(0,0,(yLower - yUpper),1);
+		gl_FragColor = vec4((yLower - yUpper),0,0,1);
 	}
 	
 	/*

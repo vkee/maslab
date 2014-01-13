@@ -17,14 +17,12 @@ import org.opencv.imgproc.Moments;
 import Core.FilterOp;
 
 public class DetectionGL {
-    public static Point nextCenter(BufferedImage filteredImage, int width, int height){
+    public static Point nextCenter(BufferedImage centerImage, int width, int height){
         double centerX = width/2.0;
         double centerY = height/2.0;
         int nextCenterX = 0;
         int nextCenterY = 0;
         double centerCost = centerX*centerX + centerY*centerY;
-        FilterOp objRec = new FilterOp("objectRecognition");
-        BufferedImage centerImage = objRec.apply(filteredImage);
         for (int x = 0; x < centerImage.getWidth(); x++){
             for (int y = 0; y < centerImage.getHeight(); y++){
                 int pixel = centerImage.getRGB(x, y);
@@ -40,10 +38,8 @@ public class DetectionGL {
         return new Point(nextCenterX, nextCenterY);
     }
     
-    public static List<Point> centers(BufferedImage filteredImage){
+    public static List<Point> centers(BufferedImage centerImage){
         List<Point> centers = new ArrayList<Point>();
-        FilterOp objRec = new FilterOp("objectRecognition");
-        BufferedImage centerImage = objRec.apply(filteredImage);
         for (int x = 0; x < centerImage.getWidth(); x++){
             for (int y = 0; y < centerImage.getHeight(); y++){
                 int pixel = centerImage.getRGB(x, y);

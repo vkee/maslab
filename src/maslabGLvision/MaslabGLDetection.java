@@ -18,13 +18,11 @@ public class MaslabGLDetection {
 
 		original = TestBed.loadImage( new File("images\\maslab.png") );
 		tester.setImage(original);
-
-		BufferedImage filtered;
 		
-		filtered = blur.apply(original);
-		filtered = colorize.apply(filtered);
-		filtered = objRec.apply(filtered);
-		
+		blur.apply(original);
+		colorize.apply();
+		objRec.apply();
+		BufferedImage filtered = FilterOp.getImage(); 
 		tester.setImage(filtered);
 		
 		return filtered;

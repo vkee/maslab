@@ -19,12 +19,8 @@ public class EdgeDetectionExample {
 		
 		try{ Thread.sleep(1000); } catch ( Exception e ) {}
 		
-		BufferedImage filtered = blur.apply(original);
-		tester.setImage(filtered);
-		
-		try{ Thread.sleep(1000); } catch ( Exception e ) {}
-		
-		filtered = edge.apply(filtered);
-		tester.setImage(filtered);
-	}
+		blur.apply(original);
+		edge.apply();
+		BufferedImage filtered = FilterOp.getImage(); 
+		tester.setImage(filtered);	}
 }
