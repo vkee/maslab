@@ -22,7 +22,7 @@ public class VisionTestGL {
 
         // Setup the camera
         VideoCapture camera = new VideoCapture();
-        camera.open(0);
+        camera.open(1);
         
         // Create GUI windows to display camera output and OpenCV output
         Engine.initGL(320,240);

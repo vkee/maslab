@@ -30,15 +30,50 @@ void main() {
 		r++;
 	}
 	if ( miss>=8 && r>=4 )
-		gl_FragColor = vec4(1,0,0,1);//r/50.0,0,0,1);//r/64.0,0,0,1);
+		gl_FragColor = vec4(1,0,0,1);
 
-	/*	
-	// WALL DETECTION
-	// 
-	//
 	
-	if ( y > 0.5 )
+	// WALL DETECTION
+	
+	float yUpper = y - dy;
+	float yLower = y + dy;
+	vec4 col = texture(txtr,vec2(x,y),0.0);
+	vec4 colUpper = texture(txtr,vec2(x,yUpper),0.0);
+	vec4 colLower = texture(txtr,vec2(x,yLower),0.0);
+	
+	if ( col.z==0 && col.y==0 && col.x==1 ) {
+		while ( colUpper.z==0 && colUpper.y==0 && colUpper.x==1 ) {
+			yUpper = yUpper - dy;
+			colUpper = texture(txtr,vec2(x,yUpper),0.0);
+		}
+		
+		while ( colLower.z==0 && colLower.y==0 && colLower.x==1 ) {
+			yLower = yLower + dy;
+			colLower = texture(txtr,vec2(x,yLower),0.0);
+		}
+		
+		gl_FragColor = vec4(0,0,4*(yLower - yUpper),1);
+	}
+	
+	/*
+	float my = dy;
+	vec4 col = texture(txtr,vec2(x,y),0.0);
+	vec4 col2 = texture(txtr,vec2(x,y+my),0.0);
+	while (my < 0.05) {
+		if (col.z==0 && col.y==0 && col.x==1 && col2.z==1 && col2.y==1 && col2.x==1) {
+			gl_FragColor = vec4(0,0,1,1);
+			break;
+		} else {
+			my = my + dy;
+			col2 = texture(txtr,vec2(x,y+my),0.0);
+		}
+	}
+	*/
+	
+	/*
+	if ( y > 0.5 ) {
 		return;
+	}
 	
 	float my = y;
 	vec4 col = texture(txtr,vec2(x,my),0.0);

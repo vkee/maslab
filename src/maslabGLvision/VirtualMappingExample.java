@@ -22,10 +22,8 @@ public class VirtualMappingExample {
 		long prev = System.currentTimeMillis();
 		while ( true ) {
 			BufferedImage filtered = blur.apply(original);
-			//tester.setImage(filtered);
 			
 			filtered = colorize.apply(filtered);
-			//tester.setImage(filtered);
 			
 			filtered = objRec.apply(filtered);
 			tester.setImage(filtered);
