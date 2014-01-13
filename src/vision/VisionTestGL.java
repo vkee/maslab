@@ -23,7 +23,7 @@ public class VisionTestGL {
 
         // Setup the camera
         VideoCapture camera = new VideoCapture();
-        camera.open(1);
+        camera.open(0);
         
         // Create GUI windows to display camera output and OpenCV output
         Engine.initGL(320,240);
@@ -36,6 +36,7 @@ public class VisionTestGL {
         
         FilterOp blur = new FilterOp("blur");
         FilterOp colorize = new FilterOp("colorize");
+        FilterOp objRec = new FilterOp("objectRecognition");
         
         // Main loop
         Mat rawImage = new Mat();
@@ -53,6 +54,7 @@ public class VisionTestGL {
             BufferedImage filtered = blur.apply(bufferedImage);
             filtered = colorize.apply(filtered);
             Point center = DetectionGL.nextCenter(filtered, width, height);
+            filtered = objRec.apply(filtered);
             System.out.println(center.x);
             System.out.println(center.y);
             

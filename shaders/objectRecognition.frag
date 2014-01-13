@@ -6,13 +6,7 @@ void main() {
 	float dx = 1.0/320.0;
 	float dy = 1.0/240.0;
 	
-	// BALL DETECTION
-	// Stochastically sample from pixel center.
-	// If many samples begin missing at a particular radius, return.
-	// That radius is the ball radius, and this pixel is the center.
-	// Color returned as RED.
-	// Radius = RED*64.0/256.0;
-	//
+	// BALL DETECTION RED
 	int r = 1;
 	int miss = 0;	
 	while ( r < 50 ) {
@@ -29,8 +23,29 @@ void main() {
 		}
 		r++;
 	}
-	if ( miss>=8 && r>=4 )
+	if ( miss>=8 && r>=4 ) {
 		gl_FragColor = vec4(1,0,0,1);
+	}
+		
+	// BALL DETECTION GREEN
+	r = 1;
+	miss = 0;	
+	while ( r < 50 ) {
+		miss = 0;
+		float start = sin(r+x*y)*3.14;
+		for ( float a = start; a < start+6.28; a+=0.5 ) {
+			vec4 col = texture(txtr,vec2(x+float(r)*cos(a)*dx,y+float(r)*sin(a)*dy),0.0);
+			if ( !(col.z==0 && col.y==1 && col.x==0) ) {
+				miss++;
+			}
+		}
+		if ( miss>=4 ) {
+			break;
+		}
+		r++;
+	}
+	if ( miss>=8 && r>=4 )
+		gl_FragColor = vec4(0,1,0,1);
 
 	
 	// WALL DETECTION
@@ -42,17 +57,17 @@ void main() {
 	vec4 colLower = texture(txtr,vec2(x,yLower),0.0);
 	
 	if ( col.z==0 && col.y==0 && col.x==1 ) {
-		while ( colUpper.z==0 && colUpper.y==0 && colUpper.x==1 ) {
+		while ( colUpper.z==0 && colUpper.y==0 && colUpper.x==1 && yUpper > 0) {
 			yUpper = yUpper - dy;
 			colUpper = texture(txtr,vec2(x,yUpper),0.0);
 		}
 		
-		while ( colLower.z==0 && colLower.y==0 && colLower.x==1 ) {
+		while ( colLower.z==0 && colLower.y==0 && colLower.x==1 && yUpper < 0) {
 			yLower = yLower + dy;
 			colLower = texture(txtr,vec2(x,yLower),0.0);
 		}
 		
-		gl_FragColor = vec4(0,0,4*(yLower - yUpper),1);
+		gl_FragColor = vec4(0,0,(yLower - yUpper),1);
 	}
 	
 	/*
