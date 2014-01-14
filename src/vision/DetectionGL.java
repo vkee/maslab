@@ -28,7 +28,7 @@ public class DetectionGL {
                 int pixel = centerImage.getRGB(x, y);
                 int red = (pixel >> 16) & 0xFF;
                 int green = (pixel >> 8) & 0xFF;
-                if (red > 0 && green > 0 && (centerX - x)*(centerX - x) +
+                if ( (red > 0 || green > 0) && (centerX - x)*(centerX - x) +
                         (centerY - y)*(centerY - y) < centerCost){
                     nextCenterX = x;
                     nextCenterY = y;
