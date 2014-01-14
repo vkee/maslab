@@ -14,6 +14,9 @@ import org.opencv.core.Mat;
 import org.opencv.highgui.Highgui;
 import org.opencv.highgui.VideoCapture;
 
+import comm.MapleComm;
+import comm.MapleIO;
+import devices.actuators.Cytron;
 import Core.Engine;
 import Core.FilterOp;
 import vision.Detection;
@@ -27,59 +30,72 @@ public class TrackBall {
 	PID pidY;
 	int height;
 	int width;
-	KitBotModel model;
+	MapleComm comm;
+	Cytron motor1;
+	Cytron motor2;
 	
-	public TrackBall(KitBotModel model, double proportionalC, double derivativeC,
+	public TrackBall(MapleComm comm, double proportionalC, double derivativeC,
 	        double integralC, org.opencv.core.Point point, int width, int height) {
+		this.comm = comm;
+		motor1 = new Cytron(2, 1);
+		motor2 = new Cytron(7, 6);
+		comm.registerDevice(motor1);
+		comm.registerDevice(motor2);
+		comm.initialize();
+		comm.updateSensorData();
+		
 	    this.height = height;
 	    this.width = width;
 		pidX = new PID(width/2, proportionalC, derivativeC, integralC);
 		pidY = new PID(0.95*height, proportionalC, derivativeC, integralC);
 		double pidOutX = pidX.update(point.x, true);
-		double pidOutY = pidY.update(point.y, true);
+		//double pidOutY = pidY.update(point.y, true);
 		double turn1 = Math.min(0.1, pidOutX/width);
 		double turn = Math.max(-0.1, turn1);
 		
-		double forward1 = Math.min(0.1, pidOutY/height);
-		double forward = Math.max(-0.1, forward1);
+		//double forward1 = Math.min(0.1, pidOutY/height);
+		//double forward = Math.max(-0.1, forward1);
+		double forward = 0;
 		
-		if (point.x < 30) {
-			forward = 0;
-		}
-		
-		model.setMotors(forward+turn, forward-turn);
-		this.model = model;
+//		if (point.x < 30) {
+//			forward = 0;
+//		}
+		motor1.setSpeed(forward+turn);
+		motor2.setSpeed(forward-turn);
+		comm.transmit();
 	}
 	
 	public void update(org.opencv.core.Point point) {		
 		double pidOutX = pidX.update(point.x, false);
-		double pidOutY = pidY.update(point.y, false);
+		//double pidOutY = pidY.update(point.y, false);
 		
 		double turn1 = Math.min(0.1, pidOutX/width);
 		double turn = Math.max(-0.1, turn1);
 		
-		double forward1 = Math.min(0.1, pidOutY/height);
-		double forward = Math.max(-0.1, forward1);
+		//double forward1 = Math.min(0.1, pidOutY/height);
+		//double forward = Math.max(-0.1, forward1);
+		double forward = 0;
 		
 //		if (point.y < 30) {
 //			forward = 0;
 //		}
 //		
-//		if (point.x == 0.0) {
-//			turn = 0;
-//		}
+		if (point.x == 0.0) {
+			turn = 0;
+		}
 		//forward = 0.1;
 		
 		System.out.println("for: " + forward);
 		System.out.println("turn: " + turn);
 		
-		model.setMotors(forward+turn, forward-turn);
-		
+		motor1.setSpeed(forward+turn);
+		motor2.setSpeed(forward-turn);
+		comm.transmit();
 		//System.out.println(forward);
 	}
 	
 	public static void main(String[] args) {
-		KitBotModel model = new KitBotModel();
+        MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
 		
 		// Load the OpenCV library
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -119,7 +135,7 @@ public class TrackBall {
         BufferedImage filtered = FilterOp.getImage();
         Point newCenter = DetectionGL.nextCenter(filtered, width, height);
         org.opencv.core.Point center1 = new org.opencv.core.Point(newCenter.x, newCenter.y);
-        TrackBall track = new TrackBall(model, 0.4, 0.3, 0, center1, width, height);
+        TrackBall track = new TrackBall(comm, 0.4, 0.3, 0, center1, width, height);
         
         while (true) {
         	
@@ -141,13 +157,14 @@ public class TrackBall {
             filtered = FilterOp.getImage();
             
             newCenter = DetectionGL.nextCenter(filtered, width, height);
+            System.out.println(newCenter.x);
             center1 = new org.opencv.core.Point(newCenter.x, newCenter.y);
             track.update(center1);
             
             // Update the GUI windows
             updateWindow(cameraPane, rawImage);
             opencvPane.setIcon(new ImageIcon(filtered));
-            System.out.println(Double.toString(System.currentTimeMillis()-time));
+            //System.out.println(Double.toString(System.currentTimeMillis()-time));
         }
 	}
 	

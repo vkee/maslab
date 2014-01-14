@@ -37,10 +37,12 @@ public class MapleComm {
 		
 		// Construct the initialization message
 		ByteArrayOutputStream data = new ByteArrayOutputStream();
+		data.write((byte) deviceList.size());
 		for (MapleDevice device : deviceList) {
 			consumeSize += device.expectedNumBytesFromMaple();
 			try {
-				data.write(device.generateInitMessage());
+				data.write(device.getDeviceCode());
+				data.write(device.getInitializationBytes());
 			} catch (IOException e) { }
 		}
 		mapleIO.setExpectedInboundMessageSize(consumeSize);
@@ -62,7 +64,7 @@ public class MapleComm {
 			if (command.length > 0) {
 				data.write(counter);
 				try {
-					data.write(device.generateCommandToMaple());
+					data.write(command);
 				} catch (IOException e) { }
 			}
 			counter++;
@@ -73,7 +75,7 @@ public class MapleComm {
 	}
 	
 	/*
-	 * Process the returned byte buffer from the Maple.
+	 * Wait for, and process, up-to-date sensor data from the Maple
 	 */
 	public void updateSensorData() {
 		mapleIO.sendSensorDataRequest();
@@ -81,10 +83,8 @@ public class MapleComm {
 			Thread.sleep(1);
 		} catch (InterruptedException e) { }
 		ByteBuffer buff = ByteBuffer.wrap(mapleIO.getMostRecentMessage());
-		if (buff.array().length != consumeSize) {
-			System.err.println("Received sensor data message is different size from expected");
-			return;
-		}
+		
+		// Give the byte buffer to each device and let it take what it needs
 		for (MapleDevice device : deviceList) {
 			device.consumeMessageFromMaple(buff);
 		}

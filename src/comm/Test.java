@@ -1,41 +1,73 @@
 package comm;
 
+
 import devices.actuators.Cytron;
-import devices.sensors.Infrared;
+import devices.sensors.Encoder;
+import devices.sensors.Gyroscope;
 import devices.sensors.Ultrasonic;
 
 public class Test {
-	public static void main ( String[] args ) {
+
+	public static void main(String[] args) {
 		new Test();
 		System.exit(0);
 	}
-	
+
 	public Test() {
-		//MapleComm comm = new MapleComm(MapleIO.SerialPortType.SIMULATION);
-		MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
 		
-		Infrared infra1 = new Infrared(1);
-		Infrared infra2 = new Infrared(2);
+		/*
+		 * Create your Maple communication framework by specifying what kind of 
+		 * serial port you would like to try to autoconnect to.
+		 */
+		// MapleComm comm = new MapleComm(MapleIO.SerialPortType.SIMULATION);
+		MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
+
+		/*
+		 * Create an object for each device. The constructor arguments specify
+		 * their pins (or, in the case of the gyroscope, the index of a fixed
+		 * combination of pins).
+		 * Devices are generally either Sensors or Actuators. For example, a
+		 * motor controller is an actuator, and an encoder is a sensor.
+		 */
+		Encoder encoder1 = new Encoder(18, 17);
+		Encoder encoder2 = new Encoder(19, 20);
+		Gyroscope gyro = new Gyroscope(1, 8);
 		Cytron motor1 = new Cytron(2, 1);
 		Cytron motor2 = new Cytron(7, 6);
-		
-		comm.registerDevice(infra1);
-		comm.registerDevice(infra2);
+
+		/*
+		 * Build up a list of devices that will be sent to the Maple for the
+		 * initialization step.
+		 */
+		comm.registerDevice(encoder1);
+		comm.registerDevice(encoder2);
 		comm.registerDevice(motor1);
 		comm.registerDevice(motor2);
-		
-		System.out.println("Initializing");
+		comm.registerDevice(gyro);
+
+		// Send information about connected devices to the Maple
 		comm.initialize();
-		
+
 		while (true) {
+			
+			// Request sensor data from the Maple and update sensor objects accordingly
 			comm.updateSensorData();
-			System.out.println(infra1.getDistance() + " " + infra2.getDistance());
+			System.out.println(gyro.getOmega());
+			motor1.setSpeed(0.1);
+			motor2.setSpeed(-0.1);
+			// All sensor classes have getters.
+			//System.out.println(gyro.getOmega() + " " + ultra1.getDistance());
+//			System.out.println(ultra1.getDistance() + " " + ultra2.getDistance());
+			//System.out.println(enc.getTotalAngularDistance() + " " + enc.getAngularSpeed());
 			
-			motor1.setSpeed(0.5);
-			motor2.setSpeed(0.5);
-			
+			// All actuator classes have setters.
+			//motor1.setSpeed(0.2);
+			//motor2.setSpeed(-0.3);
+
+			// Request that the Maple write updated values to the actuators
 			comm.transmit();
 			
+			// Just for console-reading purposes; don't worry about timing
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) { }
