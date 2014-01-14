@@ -13,13 +13,13 @@ public class WallFollow {
 	
 	public WallFollow() {
 		MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
-		Ultrasonic sonar1 = new Ultrasonic(1,2);
-		//Ultrasonic sonar2 = new Ultrasonic(5,6);
-		Cytron motor1 = new Cytron(7, 8);
-		Cytron motor2 = new Cytron(9, 10);
+		Ultrasonic sonar1 = new Ultrasonic(24,26);
+		Ultrasonic sonar2 = new Ultrasonic(29,30);
+		Cytron motor1 = new Cytron(2, 1);
+		Cytron motor2 = new Cytron(7, 6);
 		
 		comm.registerDevice(sonar1);
-		//comm.registerDevice(sonar2);
+		comm.registerDevice(sonar2);
 		comm.registerDevice(motor1);
 		comm.registerDevice(motor2);
 		
@@ -29,7 +29,7 @@ public class WallFollow {
 		double forward = 0.1; 
 		
 		comm.updateSensorData();
-		PID pid = new PID(5.0,1.0,0.0,0.0);
+		PID pid = new PID(300.0,1.0,0.0,0.0);
 		double turn = pid.update(sonar1.getDistance(), true);
 		motor1.setSpeed(forward + turn);
 		motor1.setSpeed(forward - turn);
@@ -40,6 +40,7 @@ public class WallFollow {
 			//System.out.println(sonar1.getDistance() + " " + sonar2.getDistance());
 			
 			turn = pid.update(sonar1.getDistance(), true);
+			System.out.println(sonar1.getDistance());
 			motor1.setSpeed(forward + turn);
 			motor1.setSpeed(forward - turn);
 			
