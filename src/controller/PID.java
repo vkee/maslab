@@ -26,7 +26,7 @@ public class PID {
 		
 		double proportional;
 		double derivative;
-		double scaledError;
+		double scaledError = 0;
 		
 		if (start) {
 			double time = System.currentTimeMillis();
