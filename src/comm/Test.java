@@ -29,21 +29,27 @@ public class Test {
 		 * Devices are generally either Sensors or Actuators. For example, a
 		 * motor controller is an actuator, and an encoder is a sensor.
 		 */
-		Encoder encoder1 = new Encoder(18, 17);
-		Encoder encoder2 = new Encoder(19, 20);
-		Gyroscope gyro = new Gyroscope(1, 8);
-		Cytron motor1 = new Cytron(2, 1);
-		Cytron motor2 = new Cytron(7, 6);
+//		Encoder encoder1 = new Encoder(18, 17);
+//		Encoder encoder2 = new Encoder(19, 20);
+//		Gyroscope gyro = new Gyroscope(1, 8);
+//		Cytron motor1 = new Cytron(2, 1);
+//		Cytron motor2 = new Cytron(7, 6);
+		Ultrasonic sonar1 = new Ultrasonic(32,31);
+		Ultrasonic sonar2 = new Ultrasonic(34,33);
+		Ultrasonic sonar3 = new Ultrasonic(30,29);
 
 		/*
 		 * Build up a list of devices that will be sent to the Maple for the
 		 * initialization step.
 		 */
-		comm.registerDevice(encoder1);
-		comm.registerDevice(encoder2);
-		comm.registerDevice(motor1);
-		comm.registerDevice(motor2);
-		comm.registerDevice(gyro);
+//		comm.registerDevice(encoder1);
+//		comm.registerDevice(encoder2);
+//		comm.registerDevice(motor1);
+//		comm.registerDevice(motor2);
+//		comm.registerDevice(gyro);
+		comm.registerDevice(sonar1);
+		comm.registerDevice(sonar2);
+		comm.registerDevice(sonar3);
 
 		// Send information about connected devices to the Maple
 		comm.initialize();
@@ -52,9 +58,12 @@ public class Test {
 			
 			// Request sensor data from the Maple and update sensor objects accordingly
 			comm.updateSensorData();
-			System.out.println(gyro.getOmega());
-			motor1.setSpeed(0.1);
-			motor2.setSpeed(-0.1);
+			System.out.println(sonar1.getDistance());
+			System.out.println(sonar2.getDistance());
+			System.out.println(sonar3.getDistance());
+//			System.out.println(gyro.getOmega());
+//			motor1.setSpeed(0.1);
+//			motor2.setSpeed(-0.1);
 			// All sensor classes have getters.
 			//System.out.println(gyro.getOmega() + " " + ultra1.getDistance());
 //			System.out.println(ultra1.getDistance() + " " + ultra2.getDistance());

@@ -28,9 +28,11 @@ public class WallFollow {
 		Cytron motor1 = new Cytron(2, 1);
 		Cytron motor2 = new Cytron(7, 6);
 
-		Ultrasonic sonar1 = new Ultrasonic(26, 24);
+		Ultrasonic sonar1 = new Ultrasonic(34, 33);
 		Ultrasonic sonar2 = new Ultrasonic(30, 29);
 		Ultrasonic sonar3 = new Ultrasonic(32, 31);
+//		Ultrasonic sonar3 = new Ultrasonic(30, 29);
+//		Ultrasonic sonar2 = new Ultrasonic(32, 31);
 		//Gyroscope gyro = new Gyroscope(1, 9);
 		
 
@@ -61,9 +63,10 @@ public class WallFollow {
 		comm.transmit();
 		
 		while (true) {
-			comm.updateSensorData();
+			//comm.updateSensorData();
 			while (sonar3.getDistance() < 0.2) {
 				System.out.println("obstacle in front");
+				//comm.updateSensorData();
 				System.out.println("sonar1: " + sonar1.getDistance());
 				System.out.println("sonar2: " + sonar2.getDistance());
 				System.out.println("sonar3: " + sonar3.getDistance());
@@ -78,6 +81,7 @@ public class WallFollow {
 
 			while (sonar1.getDistance() > 5 && sonar2.getDistance() > 5 && sonar3.getDistance() > 5) {
 				System.out.println("cant find anything close");
+				//comm.updateSensorData();
 				System.out.println("sonar1: " + sonar1.getDistance());
 				System.out.println("sonar2: " + sonar2.getDistance());
 				System.out.println("sonar3: " + sonar3.getDistance());
@@ -92,6 +96,7 @@ public class WallFollow {
 
 			while (sonar1.getDistance() < 0.1 && sonar2.getDistance() > 0.3) {
 				System.out.println("back too close");
+				//comm.updateSensorData();
 				System.out.println("sonar1: " + sonar1.getDistance());
 				System.out.println("sonar2: " + sonar2.getDistance());
 				System.out.println("sonar3: " + sonar3.getDistance());
@@ -106,6 +111,7 @@ public class WallFollow {
 
 			while (sonar2.getDistance() < 0.1 && sonar1.getDistance() > 0.3) {
 				System.out.println("front too close");
+				//comm.updateSensorData();
 				System.out.println("sonar1: " + sonar1.getDistance());
 				System.out.println("sonar2: " + sonar2.getDistance());
 				System.out.println("sonar3: " + sonar3.getDistance());
@@ -120,9 +126,8 @@ public class WallFollow {
 
 
 			System.out.println("normal");
+			comm.updateSensorData();
 			turn = Math.max(-0.04, Math.min(0.04, pid.update(sonar1.getDistance() + sonar2.getDistance(), false)));
-					
-					
 			System.out.println("sonar1: " + sonar1.getDistance());
 			System.out.println("sonar2: " + sonar2.getDistance());
 			System.out.println("sonar3: " + sonar3.getDistance());
