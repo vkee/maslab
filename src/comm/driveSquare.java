@@ -30,7 +30,7 @@ public class driveSquare {
 		
 		comm.updateSensorData();
 		
-		PID pid = new PID(0,0.05,0.03,0.0);
+		PID pid = new PID(0.0,0.05,0.0,0.0);
 		
 		double turn = pid.update(gyro.getOmega(), true);
 		double c = 0;
@@ -41,23 +41,26 @@ public class driveSquare {
 		comm.transmit();
 		
 		for (int i = 0; i < 4; i++) {
-			while (encoder2.getTotalAngularDistance() - c < 8) {
+			time = System.currentTimeMillis();
+			while (encoder2.getTotalAngularDistance() - c < 15) {
 				comm.updateSensorData();
-				//System.out.println(gyro.getOmega());
-				turn = Math.max(-0.05, Math.min(0.05,pid.update(gyro.getOmega(), false)));
+				angle += (System.currentTimeMillis() - time) * gyro.getOmega() / 1000;
+				time = System.currentTimeMillis();
+				System.out.println(angle);
+				turn = Math.max(-0.05, Math.min(0.05,pid.update(angle-i*Math.PI/2, false)));
 
 				motor1.setSpeed(forward + turn);
 				motor2.setSpeed(forward - turn);
 				comm.transmit();
+
+				System.out.println("turn: " + turn);
 				System.out.println(encoder2.getTotalAngularDistance());
-				try {
-					Thread.sleep(10);
-				} catch (InterruptedException e) { }
+//				try {
+//					Thread.sleep(10);
+//				} catch (InterruptedException e) { }
 			}
 
-			angle = 0;
-			time = System.currentTimeMillis();
-			while (angle < Math.PI/2) {
+			while (angle-i*Math.PI/2 < Math.PI/2) {
 				comm.updateSensorData();
 				angle += (System.currentTimeMillis() - time) * gyro.getOmega() / 1000;
 				time = System.currentTimeMillis();
@@ -65,9 +68,9 @@ public class driveSquare {
 				motor1.setSpeed(0.1);
 				motor2.setSpeed(-0.1);
 				comm.transmit();
-				try {
-					Thread.sleep(10);
-				} catch (InterruptedException e) { }
+//				try {
+//					Thread.sleep(10);
+//				} catch (InterruptedException e) { }
 			}
 
 			c = encoder2.getTotalAngularDistance();

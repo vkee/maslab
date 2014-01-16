@@ -18,7 +18,6 @@ public class stop1footFromWall {
         Cytron motor1 = new Cytron(2, 1);
         Cytron motor2 = new Cytron(7, 6);
         
-        comm.registerDevice(encoder);
         comm.registerDevice(gyro);
         comm.registerDevice(sonar);
         comm.registerDevice(motor1);
@@ -28,9 +27,11 @@ public class stop1footFromWall {
         comm.initialize();
         comm.updateSensorData();
         
-        PID pid_forward = new PID(0.3, 0.05, 0.0, 0.0);
         
-        double forward = Math.max(-0.1, Math.min(0.1, pid_forward.update(sonar.getDistance(), true)));
+        
+        PID pid_forward = new PID(0.3, 1, 0.0, 0.0);
+        
+        double forward = Math.max(-0.1, Math.min(0.1, -pid_forward.update(sonar.getDistance(), true)));
         
         PID pid_turn = new PID(0,0.03,0.0,0.0);
         
@@ -42,16 +43,17 @@ public class stop1footFromWall {
         
         while (true) {
             comm.updateSensorData();
-            
-            forward = Math.max(-0.1, Math.min(0.1, pid_forward.update(sonar.getDistance(), false)));
+            System.out.println(sonar.getDistance());
+            forward = Math.max(-0.1, Math.min(0.1, -pid_forward.update(sonar.getDistance(), false)));
             turn = Math.max(-0.04, Math.min(0.04,pid_turn.update(gyro.getOmega(), false)));
             
             motor1.setSpeed(forward + turn);
             motor2.setSpeed(forward - turn);
+            System.out.println(forward);
             comm.transmit();
             
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

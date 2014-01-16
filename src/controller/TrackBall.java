@@ -50,7 +50,7 @@ public class TrackBall {
 		pidY = new PID(0.95*height, proportionalC, derivativeC, integralC);
 		double pidOutX = pidX.update(point.x, true);
 		//double pidOutY = pidY.update(point.y, true);
-		double turn1 = Math.min(0.1, pidOutX/width);
+		double turn1 = Math.min(0.1, -pidOutX/width);
 		double turn = Math.max(-0.1, turn1);
 		
 		//double forward1 = Math.min(0.1, pidOutY/height);
@@ -69,7 +69,7 @@ public class TrackBall {
 		double pidOutX = pidX.update(point.x, false);
 		//double pidOutY = pidY.update(point.y, false);
 		
-		double turn1 = Math.min(0.1, pidOutX/width);
+		double turn1 = Math.min(0.1, -pidOutX/width);
 		double turn = Math.max(-0.1, turn1);
 		
 		//double forward1 = Math.min(0.1, pidOutY/height);

@@ -30,6 +30,7 @@ public class WallFollow {
 
 		Ultrasonic sonar1 = new Ultrasonic(26, 24);
 		Ultrasonic sonar2 = new Ultrasonic(30, 29);
+		Ultrasonic sonar3 = new Ultrasonic(32, 31);
 		//Gyroscope gyro = new Gyroscope(1, 9);
 		
 
@@ -41,6 +42,7 @@ public class WallFollow {
 		comm.registerDevice(motor2);
 		comm.registerDevice(sonar1);
 		comm.registerDevice(sonar2);
+		comm.registerDevice(sonar3);
 
 		// Send information about connected devices to the Maple
 		comm.initialize();
@@ -48,38 +50,114 @@ public class WallFollow {
 		double forward = 0.1; 
 		
 		comm.updateSensorData();
-		PID pid_center = new PID(0.15,0.1,0.0,0.0);
-		PID pid_angle = new PID(0,0.01,0.0,0.0);
+		PID pid = new PID(0.4,0.05,0.0,0.0);
+//		PID pid_angle = new PID(0,0.01,0.0,0.0);
 		
-		double turn_center = pid_center.update(sonar1.getDistance(), true);
-		double turn_angle = 0;
+		double turn = pid.update(sonar1.getDistance() + sonar2.getDistance(), true);
+//		double turn_angle = 0;
 		
-		motor1.setSpeed(forward + turn_center);
-		motor2.setSpeed(forward - turn_center);
+//		motor1.setSpeed(forward + turn_center);
+//		motor2.setSpeed(forward - turn_center);
 		comm.transmit();
 		
 		while (true) {
 			comm.updateSensorData();
-			//System.out.println(sonar1.getDistance() + " " + sonar2.getDistance());
-			
-			turn_center = Math.max(-0.05, Math.min(0.05, 
-					pid_center.update((sonar1.getDistance()+sonar2.getDistance())/2, false)));
-//			turn_angle = Math.max(-0.05, Math.min(0.05, 
-//					pid_angle.update(sonar1.getDistance() - sonar2.getDistance(), false)));
-			turn_angle = 0;
-			
-			System.out.println((sonar1.getDistance()+sonar2.getDistance())/2);
-			System.out.println("turn_angle: " + turn_angle);
-			System.out.println("turn_center: " + turn_center);
-			
-			motor1.setSpeed(forward + turn_center + turn_angle);
-			motor2.setSpeed(forward - turn_center - turn_angle);
-			
+			while (sonar3.getDistance() < 0.2) {
+				System.out.println("obstacle in front");
+				System.out.println("sonar1: " + sonar1.getDistance());
+				System.out.println("sonar2: " + sonar2.getDistance());
+				System.out.println("sonar3: " + sonar3.getDistance());
+				motor1.setSpeed(0.1);
+				motor2.setSpeed(-0.1);
+				comm.updateSensorData();
+				comm.transmit();
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) { }
+			}
+
+			while (sonar1.getDistance() > 5 && sonar2.getDistance() > 5 && sonar3.getDistance() > 5) {
+				System.out.println("cant find anything close");
+				System.out.println("sonar1: " + sonar1.getDistance());
+				System.out.println("sonar2: " + sonar2.getDistance());
+				System.out.println("sonar3: " + sonar3.getDistance());
+				motor1.setSpeed(0.1);
+				motor2.setSpeed(-0.1);
+				comm.updateSensorData();
+				comm.transmit();
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) { }
+			}
+
+			while (sonar1.getDistance() < 0.1 && sonar2.getDistance() > 0.3) {
+				System.out.println("back too close");
+				System.out.println("sonar1: " + sonar1.getDistance());
+				System.out.println("sonar2: " + sonar2.getDistance());
+				System.out.println("sonar3: " + sonar3.getDistance());
+				motor1.setSpeed(-0.1);
+				motor2.setSpeed(0.1);
+				comm.updateSensorData();
+				comm.transmit();
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) { }
+			}
+
+			while (sonar2.getDistance() < 0.1 && sonar1.getDistance() > 0.3) {
+				System.out.println("front too close");
+				System.out.println("sonar1: " + sonar1.getDistance());
+				System.out.println("sonar2: " + sonar2.getDistance());
+				System.out.println("sonar3: " + sonar3.getDistance());
+				motor1.setSpeed(0.1);
+				motor2.setSpeed(-0.1);
+				comm.updateSensorData();
+				comm.transmit();
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) { }
+			}
+
+
+			System.out.println("normal");
+			turn = Math.max(-0.04, Math.min(0.04, pid.update(sonar1.getDistance() + sonar2.getDistance(), false)));
+					
+					
+			System.out.println("sonar1: " + sonar1.getDistance());
+			System.out.println("sonar2: " + sonar2.getDistance());
+			System.out.println("sonar3: " + sonar3.getDistance());
+			motor1.setSpeed(forward + turn);
+			motor2.setSpeed(forward - turn);
+			System.out.println("motor1: " + Double.toString(forward + turn));
+			System.out.println("motor2: " + Double.toString(forward - turn));
 			comm.transmit();
-			
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) { }
 		}
+		
+//		while (true) {
+//			comm.updateSensorData();
+//			//System.out.println(sonar1.getDistance() + " " + sonar2.getDistance());
+//			
+//			turn_center = Math.max(-0.05, Math.min(0.05, 
+//					pid_center.update((sonar1.getDistance()+sonar2.getDistance())/2, false)));
+////			turn_angle = Math.max(-0.05, Math.min(0.05, 
+////					pid_angle.update(sonar1.getDistance() - sonar2.getDistance(), false)));
+//			turn_angle = 0;
+//			
+//			System.out.println((sonar1.getDistance()+sonar2.getDistance())/2);
+//			System.out.println("turn_angle: " + turn_angle);
+//			System.out.println("turn_center: " + turn_center);
+//			
+//			motor1.setSpeed(forward + turn_center + turn_angle);
+//			motor2.setSpeed(forward - turn_center - turn_angle);
+//			
+//			comm.transmit();
+//			
+//			try {
+//				Thread.sleep(100);
+//			} catch (InterruptedException e) { }
+//		}
 	}
 }
