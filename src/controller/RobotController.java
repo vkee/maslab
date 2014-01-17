@@ -38,9 +38,9 @@ public class RobotController {
         motorR = new Cytron(7, 6);
         
         //sonarA = new Ultrasonic(34, 33);
-        sonarB = new Ultrasonic(30, 29);
+        sonarB = new Ultrasonic(32, 31);
         //sonarC = new Ultrasonic(32, 31);
-        sonarL = new Ultrasonic(3, 4); // Fill in with different ports
+        sonarL = new Ultrasonic(30, 29); // Fill in with different ports
         //sonarR = new Ultrasonic(5, 6); // Fill in with different ports
         
         //gyro = new Gyroscope(1, 8);
