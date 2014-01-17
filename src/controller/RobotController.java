@@ -55,7 +55,7 @@ public class RobotController {
         
         System.out.println("Initializing...");
         comm.initialize();
-        comm.updateSensorData();
+        //comm.updateSensorData();
         
         control_state = ControlState.WALL_FOLLOW;
         map_state = MapState.DEFAULT;
@@ -73,7 +73,7 @@ public class RobotController {
         //double angle = 0;
         double distanceL = sonarL.getDistance();
         double distanceB = sonarB.getDistance();
-        MapState prev_map_state = MapState.DEFAULT;
+        //MapState prev_map_state = MapState.DEFAULT;
         
         // PID
         PID pid_align = new PID(0.15, 0.2, 0.01, 0.01);
@@ -106,7 +106,7 @@ public class RobotController {
             System.out.println("distanceB: " + distanceB);
             System.out.println("distanceL: " + distanceL);
             
-            prev_map_state = map_state;
+            //prev_map_state = map_state;
 
             if (distanceB < 0.15){
                 map_state = MapState.WALL_IMMEDIATE;
@@ -161,7 +161,6 @@ public class RobotController {
                 forward = 0;
             }
             
-            forward = 0.1; // remove
             
             System.out.println("forward: " + forward);
             System.out.println("turn: " + turn);
