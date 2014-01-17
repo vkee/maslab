@@ -32,8 +32,8 @@ public class Test {
 //		Encoder encoder1 = new Encoder(18, 17);
 //		Encoder encoder2 = new Encoder(19, 20);
 //		Gyroscope gyro = new Gyroscope(1, 8);
-//		Cytron motor1 = new Cytron(2, 1);
-//		Cytron motor2 = new Cytron(7, 6);
+		Cytron motor1 = new Cytron(2, 1);
+		Cytron motor2 = new Cytron(7, 6);
 		Ultrasonic sonar1 = new Ultrasonic(32,31);
 		Ultrasonic sonar2 = new Ultrasonic(34,33);
 		Ultrasonic sonar3 = new Ultrasonic(30,29);
@@ -44,12 +44,13 @@ public class Test {
 		 */
 //		comm.registerDevice(encoder1);
 //		comm.registerDevice(encoder2);
-//		comm.registerDevice(motor1);
-//		comm.registerDevice(motor2);
+		comm.registerDevice(motor1);
+		comm.registerDevice(motor2);
 //		comm.registerDevice(gyro);
 		comm.registerDevice(sonar1);
 		comm.registerDevice(sonar2);
 		comm.registerDevice(sonar3);
+		//comm.registerDevice(sonar2);
 
 		// Send information about connected devices to the Maple
 		comm.initialize();
@@ -58,12 +59,12 @@ public class Test {
 			
 			// Request sensor data from the Maple and update sensor objects accordingly
 			comm.updateSensorData();
-			System.out.println(sonar1.getDistance());
-			System.out.println(sonar2.getDistance());
-			System.out.println(sonar3.getDistance());
+			System.out.println("sonar1: " + sonar1.getDistance());
+			System.out.println("sonar2: " + sonar2.getDistance());
+			System.out.println("sonar3: " + sonar3.getDistance());
 //			System.out.println(gyro.getOmega());
-//			motor1.setSpeed(0.1);
-//			motor2.setSpeed(-0.1);
+			motor1.setSpeed(0.1);
+			motor2.setSpeed(0.1);
 			// All sensor classes have getters.
 			//System.out.println(gyro.getOmega() + " " + ultra1.getDistance());
 //			System.out.println(ultra1.getDistance() + " " + ultra2.getDistance());
@@ -78,7 +79,7 @@ public class Test {
 			
 			// Just for console-reading purposes; don't worry about timing
 			try {
-				Thread.sleep(100);
+				Thread.sleep(10);
 			} catch (InterruptedException e) { }
 		}
 	}
