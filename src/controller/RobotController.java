@@ -95,13 +95,13 @@ public class RobotController {
             distanceL = sonarL.getDistance();
             distanceB = sonarB.getDistance();
             
-            if (Math.abs(distanceL - prev_dist) < 0.002 && Math.abs(distanceL - 0.15) < 0.01){
+            if (distanceB < 0.15){
+                map_state = MapState.WALL_IMMEDIATE;
+            } else if (distanceB < 0.3){
+                map_state = MapState.WALL_AHEAD;
+            } else if (Math.abs(distanceL - prev_dist) < 0.002 && Math.abs(distanceL - 0.15) < 0.01){
                 map_state = MapState.ALIGNED;
                 angle = 0;
-            } else if (distanceB < 0.3 && distanceB >= 0.15){
-                map_state = MapState.WALL_AHEAD;
-            } else if (distanceB < 0.15){
-                map_state = MapState.WALL_IMMEDIATE;
             } else {
                 map_state = MapState.DEFAULT;
             }
