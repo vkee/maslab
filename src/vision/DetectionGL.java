@@ -22,14 +22,14 @@ public class DetectionGL {
         double centerY = height/2.0;
         int nextCenterX = 0;
         int nextCenterY = 0;
-        double centerCost = centerX*centerX + centerY*centerY;
+        double centerCost = centerX*centerX; // + centerY*centerY;
         for (int x = 0; x < centerImage.getWidth(); x++){
             for (int y = 0; y < centerImage.getHeight(); y++){
                 int pixel = centerImage.getRGB(x, y);
                 int red = (pixel >> 16) & 0xFF;
                 int green = (pixel >> 8) & 0xFF;
                 if ( (red > 0 || green > 0) && (centerX - x)*(centerX - x) +
-                        (centerY - y)*(centerY - y) < centerCost){
+                        (2*centerY - y)*(2*centerY - y) < centerCost){
                     nextCenterX = x;
                     nextCenterY = y;
                 }
