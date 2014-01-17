@@ -50,6 +50,8 @@ public class RobotController {
         //comm.registerDevice(sonarC);
         comm.registerDevice(sonarL);
         //comm.registerDevice(sonarR);
+        comm.registerDevice(motorL);
+        comm.registerDevice(motorR);
         
         System.out.println("Initializing...");
         comm.initialize();
