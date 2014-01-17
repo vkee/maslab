@@ -2,8 +2,8 @@ package controller;
 
 import comm.MapleComm;
 import comm.MapleIO;
-
 import devices.actuators.Cytron;
+import devices.sensors.Encoder;
 import devices.sensors.Gyroscope;
 import devices.sensors.Ultrasonic;
 
@@ -20,7 +20,8 @@ public class RobotController {
     Cytron motorL, motorR;
     //Ultrasonic sonarA, sonarB, sonarC, sonarL, sonarR;
     Ultrasonic sonarB, sonarL;
-    Gyroscope gyro;
+    //Gyroscope gyro;
+    //Encoder encoderL, encoderR;
     
     ControlState control_state;
     MapState map_state;
@@ -42,6 +43,8 @@ public class RobotController {
         //sonarC = new Ultrasonic(32, 31);
         sonarL = new Ultrasonic(30, 29); // Fill in with different ports
         //sonarR = new Ultrasonic(5, 6); // Fill in with different ports
+        //encoderL = new Encoder(19, 20);
+        //encoderR = new Encoder(18, 17);
         
         //gyro = new Gyroscope(1, 8);
         
@@ -52,6 +55,9 @@ public class RobotController {
         //comm.registerDevice(sonarR);
         comm.registerDevice(motorL);
         comm.registerDevice(motorR);
+        //comm.registerDevice(gyro);
+        //comm.registerDevice(encoderL);
+        //comm.registerDevice(encoderR);
         
         System.out.println("Initializing...");
         comm.initialize();
@@ -62,6 +68,26 @@ public class RobotController {
         map_state_count = 0;
     }
     
+    /*
+     * NOTES:
+     * Ideally the control loop will look something like this:
+     *  - Spend minimal time in DEFAULT finding a wall to align with (which is not encoder or gyro optimized)
+     *  - Spend majority of time in ALIGNED moving along the wall (which is encoder and gyro optimized)
+     *  - If see a ball, chance to BALL_COLLECT and after briefly DEFAULT until ALIGNED
+     *  - Spend minimal time in WALL_AHEAD and ideally almost no time in WALL_IMMEDIATE (which is a time sink)
+     * Need to get this pattern working and optimized as above. Possibly should integrate some vision method
+     * to make the aligning process faster and minimize time spent in DEFAULT. Turning might be made faster
+     * using additional sonars to making turning smoother and minimize time in WALL_IMMEDIATE.
+     * 
+     * We need to decide on several things:
+     *  - Should we do a wander from target to target strategy while avoiding walls or should we follow along walls?
+     *    Some ways to wander might be pick the farthest wall and move towards it in hopes of finding more balls
+     *    along the way or to move towards a tower/ball (toward the center of a detected blob)
+     *  - What measures can we take for robustness? Where should we use encoders, gyros, ultrasonics and what should
+     *    be the protocols? We need to make sure the robot does not fail and also that it does not get stuck in anything
+     *    glitchy like rapid state transitions. I think the best way is to have our robot complete point-tasks such as
+     *    collecting a specific ball or going to a specific tower.
+     */
     private void wallFollow(){ 
         System.out.println("Beginning to follow wall...");
         comm.updateSensorData();
@@ -71,6 +97,8 @@ public class RobotController {
         double prev_dist = sonarL.getDistance();
         //double time = 0;
         //double angle = 0;
+        //double prev_encoder_diff = 0;
+        //double encoder_diff = 0;
         double distanceL = sonarL.getDistance();
         double distanceB = sonarB.getDistance();
         MapState prev_map_state = MapState.DEFAULT;
@@ -78,7 +106,9 @@ public class RobotController {
         // PID
         PID pid_align = new PID(0.15, 0.2, 0.01, 0.01);
         //PID pid_gyro = new PID(0, 0.2, 0.01, 0.01);
+        //PID pid_encoder = new PID(0, 0.2, 0.01, 0.01);
         //pid_gyro.update(0, true);
+        //pid_encoder.update(0, true);
         turn = Math.max(-0.05, Math.min(0.05, pid_align.update(0.5*(prev_dist + distanceL), false)));
         forward = 0.1;
         
@@ -102,6 +132,7 @@ public class RobotController {
             //angle += (time - prev_time)*gyro.getOmega();
             distanceL = sonarL.getDistance();
             distanceB = sonarB.getDistance();
+            //encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
 
             System.out.println("distanceB: " + distanceB);
             System.out.println("distanceL: " + distanceL);
@@ -115,7 +146,6 @@ public class RobotController {
                     map_state = MapState.WALL_AHEAD;
                 } else if (Math.abs(distanceL - prev_dist) < 0.002 && Math.abs(distanceL - 0.15) < 0.01){
                     map_state = MapState.ALIGNED;
-                    //angle = 0;
                 } else {
                     map_state = MapState.DEFAULT;
                 }
@@ -123,6 +153,10 @@ public class RobotController {
             
             if (prev_map_state != map_state){
                 map_state_count = 0;
+//                if (map_state == MapState.ALIGNED){
+//                    angle = 0;
+//                    prev_encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
+//                }
             }
 
             switch (map_state){
@@ -132,8 +166,9 @@ public class RobotController {
                 System.out.println("Default");
             case ALIGNED:
                 turn = Math.max(-0.05, Math.min(0.05, pid_align.update(0.5*(prev_dist + distanceL), false)));
-                //turn = 0.5*Math.max(-0.05, Math.min(0.05, pid_gyro.update(angle, false)));
-                //turn += 0.5*Math.max(-0.05, Math.min(0.05, pid_align.update(0.5*(prev_dist + distanceL), false)));
+                //turn = 0.4*Math.max(-0.05, Math.min(0.05, pid_gyro.update(angle, false)));
+                //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_align.update(0.5*(prev_dist + distanceL), false)));
+                //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_encoder.update(encoder_diff - prev_encoder_diff, false)));
                 forward = 0.1;
                 System.out.println("Aligned");
             case WALL_AHEAD:
