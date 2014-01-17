@@ -161,6 +161,8 @@ public class RobotController {
                 forward = 0;
             }
             
+            forward = 0.1; // remove
+            
             System.out.println("forward: " + forward);
             System.out.println("turn: " + turn);
             
