@@ -19,7 +19,8 @@ public class RobotController {
     
     MapleComm comm;
     Cytron motorL, motorR;
-    Ultrasonic sonarA, sonarB, sonarC, sonarL, sonarR;
+    //Ultrasonic sonarA, sonarB, sonarC, sonarL, sonarR;
+    Ultrasonic sonarB, sonarL;
     Gyroscope gyro;
     
     ControlState control_state;
@@ -36,19 +37,19 @@ public class RobotController {
         motorL = new Cytron(2, 1);
         motorR = new Cytron(7, 6);
         
-        sonarA = new Ultrasonic(34, 33);
+        //sonarA = new Ultrasonic(34, 33);
         sonarB = new Ultrasonic(30, 29);
-        sonarC = new Ultrasonic(32, 31);
+        //sonarC = new Ultrasonic(32, 31);
         sonarL = new Ultrasonic(3, 4); // Fill in with different ports
-        sonarR = new Ultrasonic(5, 6); // Fill in with different ports
+        //sonarR = new Ultrasonic(5, 6); // Fill in with different ports
         
-        gyro = new Gyroscope(1, 8);
+        //gyro = new Gyroscope(1, 8);
         
-        comm.registerDevice(sonarA);
+        //comm.registerDevice(sonarA);
         comm.registerDevice(sonarB);
-        comm.registerDevice(sonarC);
+        //comm.registerDevice(sonarC);
         comm.registerDevice(sonarL);
-        comm.registerDevice(sonarR);
+        //comm.registerDevice(sonarR);
         
         comm.initialize();
         comm.updateSensorData();
@@ -61,17 +62,17 @@ public class RobotController {
         comm.updateSensorData();
         
         // Values
-        double prev_time = 0;
+        //double prev_time = 0;
         double prev_dist = sonarL.getDistance();
-        double time = 0;
-        double angle = 0;
+        //double time = 0;
+        //double angle = 0;
         double distanceL = sonarL.getDistance();
         double distanceB = sonarB.getDistance();
         
         // PID
         PID pid_align = new PID(0.15, 0.2, 0.01, 0.01);
-        PID pid_gyro = new PID(0, 0.2, 0.01, 0.01);
-        pid_gyro.update(0, true);
+        //PID pid_gyro = new PID(0, 0.2, 0.01, 0.01);
+        //pid_gyro.update(0, true);
         turn = Math.max(-0.05, Math.min(0.05, pid_align.update(0.5*(prev_dist + distanceL), false)));
         forward = 0.1;
         
@@ -90,8 +91,8 @@ public class RobotController {
         while (true){
             comm.updateSensorData();
             
-            time = System.currentTimeMillis();
-            angle += (time - prev_time)*gyro.getOmega();
+            //time = System.currentTimeMillis();
+            //angle += (time - prev_time)*gyro.getOmega();
             distanceL = sonarL.getDistance();
             distanceB = sonarB.getDistance();
             
@@ -101,7 +102,7 @@ public class RobotController {
                 map_state = MapState.WALL_AHEAD;
             } else if (Math.abs(distanceL - prev_dist) < 0.002 && Math.abs(distanceL - 0.15) < 0.01){
                 map_state = MapState.ALIGNED;
-                angle = 0;
+                //angle = 0;
             } else {
                 map_state = MapState.DEFAULT;
             }
@@ -111,7 +112,9 @@ public class RobotController {
                 turn = Math.max(-0.05, Math.min(0.05, pid_align.update(0.5*(prev_dist + distanceL), false)));
                 forward = 0.1;
             case ALIGNED:
-                turn = Math.max(-0.05, Math.min(0.05, pid_gyro.update(angle, false)));
+                turn = Math.max(-0.05, Math.min(0.05, pid_align.update(0.5*(prev_dist + distanceL), false)));
+                //turn = 0.5*Math.max(-0.05, Math.min(0.05, pid_gyro.update(angle, false)));
+                //turn += 0.5*Math.max(-0.05, Math.min(0.05, pid_align.update(0.5*(prev_dist + distanceL), false)));
                 forward = 0.1;
             case WALL_AHEAD:
                 turn = 0.03;
