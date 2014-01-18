@@ -208,8 +208,8 @@ public class RobotController {
             System.out.println("forward: " + forward);
             System.out.println("turn: " + turn);
             
-            motorL.setSpeed(forward - turn);
-            motorR.setSpeed(forward + turn);
+            motorL.setSpeed(forward + turn);
+            motorR.setSpeed(forward - turn);
 
             comm.transmit();
             
