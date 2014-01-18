@@ -4,6 +4,7 @@ import controller.PID;
 import devices.actuators.Cytron;
 import devices.sensors.Encoder;
 import devices.sensors.Gyroscope;
+import devices.sensors.Ultrasonic;
 
 public class driveSquare {
 	public static void main(String[] args) {
@@ -12,11 +13,16 @@ public class driveSquare {
 	
 	public driveSquare() {
 		MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
-		Encoder encoder1 = new Encoder(18, 17);
-		Encoder encoder2 = new Encoder(19, 20);
-		Gyroscope gyro = new Gyroscope(1, 8);
-		Cytron motor1 = new Cytron(2, 1);
-		Cytron motor2 = new Cytron(7, 6);
+//		Encoder encoder1 = new Encoder(5, 6);
+		Encoder encoder2 = new Encoder(7, 8);
+		Gyroscope gyro = new Gyroscope(1, 9);
+		Cytron motor1 = new Cytron(0, 1);
+		Cytron motor2 = new Cytron(2, 3);
+//		Ultrasonic sonar1 = new Ultrasonic(26,25);
+//		Ultrasonic sonar2 = new Ultrasonic(30,29);
+//		Ultrasonic sonar3 = new Ultrasonic(32,31);
+//		Ultrasonic sonar4 = new Ultrasonic(34,33);
+//		Ultrasonic sonar5 = new Ultrasonic(36,35);
 		
 		comm.registerDevice(encoder2);
 		comm.registerDevice(gyro);
@@ -26,6 +32,15 @@ public class driveSquare {
 		System.out.println("Initializing");
 		comm.initialize();
 		
+		double time = System.currentTimeMillis();
+		double prevTime = System.currentTimeMillis();
+		double gyroError = 0;
+		while (System.currentTimeMillis() - time < 5000) {
+			comm.updateSensorData();
+			gyroError += gyro.getOmega() * (System.currentTimeMillis() - prevTime)/5000;
+			prevTime = System.currentTimeMillis();
+		}
+		
 		double forward = 0.1; 
 		
 		comm.updateSensorData();
@@ -34,17 +49,16 @@ public class driveSquare {
 		
 		double turn = pid.update(gyro.getOmega(), true);
 		double c = 0;
-		double time = 0;
 		double angle = 0;
-		motor1.setSpeed(forward + turn);
-		motor2.setSpeed(forward - turn);
-		comm.transmit();
+		//motor1.setSpeed(forward + turn);
+		//motor2.setSpeed(forward - turn);
+		//comm.transmit();
 		
 		for (int i = 0; i < 4; i++) {
 			time = System.currentTimeMillis();
-			while (encoder2.getTotalAngularDistance() - c < 15) {
+			while (encoder2.getTotalAngularDistance() - c < 8) {
 				comm.updateSensorData();
-				angle += (System.currentTimeMillis() - time) * gyro.getOmega() / 1000;
+				angle += (System.currentTimeMillis() - time) * (gyro.getOmega()-gyroError) / 1000;
 				time = System.currentTimeMillis();
 				System.out.println(angle);
 				turn = Math.max(-0.05, Math.min(0.05,pid.update(angle-i*Math.PI/2, false)));
@@ -62,7 +76,7 @@ public class driveSquare {
 
 			while (angle-i*Math.PI/2 < Math.PI/2) {
 				comm.updateSensorData();
-				angle += (System.currentTimeMillis() - time) * gyro.getOmega() / 1000;
+				angle += (System.currentTimeMillis() - time) * (gyro.getOmega()-gyroError) / 1000;
 				time = System.currentTimeMillis();
 				System.out.println(angle);
 				motor1.setSpeed(0.1);

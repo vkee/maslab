@@ -66,6 +66,8 @@ public class WallFollow {
 //		motor2.setSpeed(forward - turn_center);
 //		comm.transmit();
 		
+		
+		
 		while (true) {
 			comm.updateSensorData();
 			sonar1dist = 0.3*sonar1.getDistance() + 0.7*sonar1dist;
