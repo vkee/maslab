@@ -181,7 +181,9 @@ public class RobotController {
 //                    prev_encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
 //                }
             }
-
+            
+            map_state_count++;
+            
             if (map_state == MapState.DEFAULT){
                 turn = Math.max(-0.05, Math.min(0.05, pid_align.update(dist_exp, false)));
                 forward = 0.1;
