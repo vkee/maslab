@@ -153,6 +153,7 @@ public class RobotController {
             dist_exp = (WIN_LENGTH*dist_exp + distanceL - prev_dist)/WIN_LENGTH;
             dist_sqexp = (WIN_LENGTH*dist_sqexp + distanceL*distanceL - prev_dist*prev_dist)/WIN_LENGTH;
             dist_var = dist_sqexp - dist_exp*dist_exp;
+            prev_dists.add(distanceL);
             prev_dists.remove(0);
             
             System.out.println("dist_var: " + dist_var);
