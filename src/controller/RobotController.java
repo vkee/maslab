@@ -162,7 +162,7 @@ public class RobotController {
             
             prev_map_state = map_state;
             
-            if (map_state_count > 30){
+            //if (map_state_count > 30){
                 if (distanceB < 0.15){
                     map_state = MapState.WALL_IMMEDIATE;
                 } else if (distanceB < 0.3){
@@ -172,7 +172,7 @@ public class RobotController {
                 } else {
                     map_state = MapState.DEFAULT;
                 }
-            }
+            //}
             
             if (prev_map_state != map_state){
                 map_state_count = 0;
@@ -206,8 +206,8 @@ public class RobotController {
             System.out.println("forward: " + forward);
             System.out.println("turn: " + turn);
             
-            motorL.setSpeed(forward + turn);
-            motorR.setSpeed(forward - turn);
+            motorL.setSpeed(forward - turn);
+            motorR.setSpeed(forward + turn);
 
             comm.transmit();
             
