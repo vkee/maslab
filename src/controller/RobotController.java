@@ -1,5 +1,8 @@
 package controller;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import comm.MapleComm;
 import comm.MapleIO;
 import devices.actuators.Cytron;
@@ -94,7 +97,6 @@ public class RobotController {
         
         // Values
         //double prev_time = 0;
-        double prev_dist = sonarL.getDistance();
         //double time = 0;
         //double angle = 0;
         //double prev_encoder_diff = 0;
@@ -103,13 +105,24 @@ public class RobotController {
         double distanceB = sonarB.getDistance();
         MapState prev_map_state = MapState.DEFAULT;
         
+        // Distance Window
+        List<Double> prev_dists = new LinkedList<Double>();
+        int WIN_LENGTH = 6;
+        for (int i = 0; i < WIN_LENGTH; i++){
+            prev_dists.add(distanceB);
+        }
+        double dist_exp = distanceL;
+        double dist_sqexp = distanceL*distanceL;
+        double prev_dist = distanceL;
+        double dist_var = 0;
+        
         // PID
         PID pid_align = new PID(0.15, 0.2, 0.01, 0.01);
         //PID pid_gyro = new PID(0, 0.2, 0.01, 0.01);
         //PID pid_encoder = new PID(0, 0.2, 0.01, 0.01);
         //pid_gyro.update(0, true);
         //pid_encoder.update(0, true);
-        turn = Math.max(-0.05, Math.min(0.05, pid_align.update(0.5*(prev_dist + distanceL), false)));
+        turn = Math.max(-0.05, Math.min(0.05, pid_align.update(dist_exp, false)));
         forward = 0.1;
         
         // Initialize
@@ -128,12 +141,21 @@ public class RobotController {
             System.out.println("NEW ITERATION:");
             comm.updateSensorData();
             
+            // UPDATE VALUES
             //time = System.currentTimeMillis();
             //angle += (time - prev_time)*gyro.getOmega();
             distanceL = sonarL.getDistance();
             distanceB = sonarB.getDistance();
             //encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
 
+            // UPDATE DISTANCE WINDOW
+            prev_dist = prev_dists.get(0);
+            dist_exp = (WIN_LENGTH*dist_exp + distanceL - prev_dist)/WIN_LENGTH;
+            dist_sqexp = (WIN_LENGTH*dist_sqexp + distanceL*distanceL - prev_dist*prev_dist)/WIN_LENGTH;
+            dist_var = dist_sqexp - dist_exp*dist_exp;
+            prev_dists.remove(0);
+            
+            System.out.println("dist_var: " + dist_var);
             System.out.println("distanceB: " + distanceB);
             System.out.println("distanceL: " + distanceL);
             
@@ -144,7 +166,7 @@ public class RobotController {
                     map_state = MapState.WALL_IMMEDIATE;
                 } else if (distanceB < 0.3){
                     map_state = MapState.WALL_AHEAD;
-                } else if (Math.abs(distanceL - prev_dist) < 0.002 && Math.abs(distanceL - 0.15) < 0.01){
+                } else if (dist_var < 0.005 && Math.abs(distanceL - 0.15) < 0.01){
                     map_state = MapState.ALIGNED;
                 } else {
                     map_state = MapState.DEFAULT;
@@ -161,13 +183,13 @@ public class RobotController {
 
             switch (map_state){
             case DEFAULT:
-                turn = Math.max(-0.05, Math.min(0.05, pid_align.update(0.5*(prev_dist + distanceL), false)));
+                turn = Math.max(-0.05, Math.min(0.05, pid_align.update(dist_exp, false)));
                 forward = 0.1;
                 System.out.println("Default");
             case ALIGNED:
-                turn = Math.max(-0.05, Math.min(0.05, pid_align.update(0.5*(prev_dist + distanceL), false)));
+                turn = Math.max(-0.05, Math.min(0.05, pid_align.update(dist_exp, false)));
                 //turn = 0.4*Math.max(-0.05, Math.min(0.05, pid_gyro.update(angle, false)));
-                //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_align.update(0.5*(prev_dist + distanceL), false)));
+                //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_align.update(dist_exp, false)));
                 //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_encoder.update(encoder_diff - prev_encoder_diff, false)));
                 forward = 0.1;
                 System.out.println("Aligned");
