@@ -38,13 +38,13 @@ public class RobotController {
         forward = 0;
         turn = 0;
         
-        motorL = new Cytron(2, 1);
-        motorR = new Cytron(7, 6);
+        motorL = new Cytron(0, 1);
+        motorR = new Cytron(2, 3);
         
         //sonarA = new Ultrasonic(34, 33);
         sonarB = new Ultrasonic(32, 31);
         //sonarC = new Ultrasonic(32, 31);
-        sonarL = new Ultrasonic(30, 29); // Fill in with different ports
+        sonarL = new Ultrasonic(36, 35); // Fill in with different ports
         //sonarR = new Ultrasonic(5, 6); // Fill in with different ports
         //encoderL = new Encoder(19, 20);
         //encoderR = new Encoder(18, 17);
