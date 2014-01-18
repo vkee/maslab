@@ -182,23 +182,22 @@ public class RobotController {
 //                }
             }
 
-            switch (map_state){
-            case DEFAULT:
+            if (map_state == MapState.DEFAULT){
                 turn = Math.max(-0.05, Math.min(0.05, pid_align.update(dist_exp, false)));
                 forward = 0.1;
                 System.out.println("Default");
-            case ALIGNED:
+            } else if (map_state == MapState.ALIGNED){
                 turn = Math.max(-0.05, Math.min(0.05, pid_align.update(dist_exp, false)));
                 //turn = 0.4*Math.max(-0.05, Math.min(0.05, pid_gyro.update(angle, false)));
                 //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_align.update(dist_exp, false)));
                 //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_encoder.update(encoder_diff - prev_encoder_diff, false)));
                 forward = 0.1;
                 System.out.println("Aligned");
-            case WALL_AHEAD:
+            } else if (map_state == MapState.WALL_AHEAD){
                 turn = 0.1;
                 forward = (distanceB - 0.15)/1.5;
                 System.out.println("Wall Ahead");
-            case WALL_IMMEDIATE:
+            } else if (map_state == MapState.WALL_IMMEDIATE){
                 System.out.println("Wall Immediate");
                 turn = 0.1;
                 forward = 0;
