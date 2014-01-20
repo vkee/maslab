@@ -26,14 +26,27 @@ public class Control {
     private final int A = 2;
     private final int B = 3;
     private final int C = 4;
+    private final int WIDTH = 320;
+    private final int HEIGHT = 240;
     private final int BUFF_LENGTH = 6;
     private final int CAMERA_NUM = 1;
+    private final int CHANGE_THRES = 5;
+    private final double K_PROP = 0.2;
+    private final double K_INT = 0.01;
+    private final double K_DIFF = 0.01;
     
     // VISION
     Vision vision;
     
-    // VALUES
+    // STATE VALUES
     double[] distance;
+    double time;
+    double prev_time;
+    double angle;
+    double encoder_diff;
+    double prev_encoder_diff;
+    double target_x;
+    double target_y;
     
     // MOTOR INPUTS
     private double forward;
@@ -44,6 +57,9 @@ public class Control {
     private Ultrasonic[] sonar;
     private Encoder[] encoder;
     private Gyroscope gyro;
+    
+    // PIDS
+    PID pid_align, pid_gyro, pid_encoder, pid_target_x, pid_target_y;
     
     // BUFFERS
     private List<Double>[] sonar_buff;
@@ -57,7 +73,9 @@ public class Control {
     private ControlState control_state;
     private WanderState wander_state;
     private BallCollectState ball_collect_state;
+    private int control_state_count;
     private int wander_state_count;
+    private int ball_collect_state_count;
     
     private enum ControlState { WANDER, BALL_COLLECT };
     private enum WanderState { DEFAULT, WALL_ADJACENT, ALIGNED, WALL_AHEAD, WALL_IMMEDIATE };
@@ -71,10 +89,17 @@ public class Control {
         turn = 0;
         
         // VISION
-        vision = new Vision(CAMERA_NUM);
+        vision = new Vision(CAMERA_NUM, WIDTH, HEIGHT);
         
         // VALUES
-        double[] distance = new double[5];
+        distance = new double[5];
+        time = 0;
+        prev_time = 0;
+        angle = 0;
+        encoder_diff = 0;
+        prev_encoder_diff = 0;
+        target_x = WIDTH + 1;
+        target_y = HEIGHT + 1;
         
         // SENSORS AND ACTUATORS
         motorL = new Cytron(0, 1);
@@ -92,6 +117,19 @@ public class Control {
         encoder = new Encoder[]{encoderL, encoderR};
         
         gyro = new Gyroscope(1, 8); // Fill in with different ports
+        
+        // PIDS
+        pid_align = new PID(0.15, K_PROP, K_DIFF, K_INT);
+        pid_gyro = new PID(0, K_PROP, K_DIFF, K_INT);
+        pid_encoder = new PID(0, K_PROP, K_DIFF, K_INT);
+        pid_target_x = new PID(WIDTH/2, K_PROP, K_DIFF, K_INT);
+        pid_target_y = new PID(0, K_PROP, K_DIFF, K_INT);
+        
+        pid_align.update(sonar[L].getDistance(), true);
+        pid_gyro.update(0, true);
+        pid_encoder.update(0, true);
+        pid_target_x.update(WIDTH/2, true);
+        pid_target_y.update(0, true);
         
         // BUFFERS
         sonar_buff = new LinkedList[5];
@@ -126,7 +164,9 @@ public class Control {
         control_state = ControlState.WANDER;
         wander_state = WanderState.DEFAULT;
         ball_collect_state = BallCollectState.TARGETING;
+        control_state_count = 0;
         wander_state_count = 0;
+        ball_collect_state_count = 0;
     }
     
     /*
@@ -153,35 +193,27 @@ public class Control {
         System.out.println("Beginning to follow wall...");
         comm.updateSensorData();
         
-        // VALUES
-        //double prev_time = 0;
-        //double time = 0;
-        //double angle = 0;
-        //double prev_encoder_diff = 0;
-        //double encoder_diff = 0;
+        // UPDATE DISTANCES
         distance[L] = sonar[L].getDistance();
+        distance[R] = sonar[R].getDistance();
+        distance[A] = sonar[A].getDistance();
         distance[B] = sonar[B].getDistance();
-        WanderState prev_wander_state = WanderState.DEFAULT;
+        distance[C] = sonar[C].getDistance();
         
         // BUFFER INITIALIZATION
         sonarBuffInit(L, distance[L]);
+        sonarBuffInit(R, distance[R]);
+        sonarBuffInit(A, distance[A]);
         sonarBuffInit(B, distance[B]);
+        sonarBuffInit(C, distance[C]);
         double dist_var, exp_L, exp_B;
         
-        // PID INITIALIZATION
-        PID pid_align = new PID(0.15, 0.2, 0.01, 0.01); // May want to move to constructor
-        //PID pid_gyro = new PID(0, 0.2, 0.01, 0.01);
-        //PID pid_encoder = new PID(0, 0.2, 0.01, 0.01);
-        //pid_gyro.update(0, true);
-        //pid_encoder.update(0, true);
-        
-        // INPUTS
-        turn = Math.max(-0.05, Math.min(0.05, pid_align.update(distance[L], false)));
-        forward = 0.1;
+        // STATE INITIALIZATION
+        WanderState prev_wander_state = WanderState.DEFAULT;
         
         // INITIALIZE
-        motorL.setSpeed(forward + turn);
-        motorR.setSpeed(forward - turn);
+        motorL.setSpeed(0);
+        motorR.setSpeed(0);
 
         comm.transmit();
         
@@ -195,16 +227,23 @@ public class Control {
             System.out.println("NEW ITERATION:");
             comm.updateSensorData();
             
-            // UPDATE VALUES
-            //time = System.currentTimeMillis();
-            //angle += (time - prev_time)*gyro.getOmega();
+            // UPDATE DISTANCES
             distance[L] = sonar[L].getDistance();
+            distance[R] = sonar[R].getDistance();
+            distance[A] = sonar[A].getDistance();
             distance[B] = sonar[B].getDistance();
-            //encoder_diff = encoder[L].getTotalAngularDistance() - encoder[R].getTotalAngularDistance();
-
-            // UPDATE DISTANCE WINDOW
-            sonarBuffUpdate(B, distance[B]);
+            distance[C] = sonar[C].getDistance();
+            
             sonarBuffUpdate(L, distance[L]);
+            sonarBuffUpdate(R, distance[R]);
+            sonarBuffUpdate(A, distance[A]);
+            sonarBuffUpdate(B, distance[B]);
+            sonarBuffUpdate(C, distance[C]);
+            
+            // UPDATE STATE VALUES
+            time = System.currentTimeMillis();
+            angle += (time - prev_time)*gyro.getOmega();
+            encoder_diff = encoder[L].getTotalAngularDistance() - encoder[R].getTotalAngularDistance();
             
             exp_L = sonar_buff_stats[L][0];
             exp_B = sonar_buff_stats[B][0];
@@ -214,7 +253,10 @@ public class Control {
             System.out.println("distanceB: " + distance[B]);
             System.out.println("distanceL: " + distance[L]);
             
-            // ESTIMATE MAP STATE
+            // UPDATE VISION
+            vision.update();
+            
+            // ESTIMATE WANDER STATE
             prev_wander_state = wander_state;
             estimateWanderState();
             
@@ -264,6 +306,24 @@ public class Control {
                 exc.printStackTrace();
             }
         }
+    }
+    
+    private void updateMotorInputs(){
+        
+    }
+    
+    private void estimateControlState(){
+        try {
+            target_x = vision.getNextBallX();
+            target_y = vision.getNextBallY();
+            control_state = ControlState.BALL_COLLECT;
+        } catch (Exception exc){
+            control_state = ControlState.WANDER;
+        }
+    }
+    
+    private void estimateBallCollectState(){
+        
     }
     
     private void estimateWanderState(){

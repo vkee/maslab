@@ -20,7 +20,7 @@ import Core.FilterOp;
 
 public class Vision {
     public void main(String[] args){
-        final Vision vision = new Vision(1);
+        final Vision vision = new Vision(1, 320, 240);
         Thread display_thread = new Thread(new Runnable(){
             public void run(){
                 JLabel display_pane = createWindow("Camera output", WIDTH, HEIGHT);
@@ -34,8 +34,7 @@ public class Vision {
     }
     
     // CONSTANTS
-    public final int WIDTH = 320;
-    public final int HEIGHT = 240;
+    public final int WIDTH, HEIGHT;
     
     // FIELDS
     private final int camera_number;
@@ -47,7 +46,10 @@ public class Vision {
     // FILTERS
     private final FilterOp blur, colorize, objRec;
     
-    public Vision(int camera_number){
+    public Vision(int camera_number, int width, int height){
+        this.WIDTH = width;
+        this.HEIGHT = height;
+        
         // LOAD LIBARIES
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         Engine.initGL(WIDTH, HEIGHT);
