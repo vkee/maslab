@@ -11,7 +11,7 @@ public class KitBotModel {
     
 	public KitBotModel() {
 		try {
-			serialPort = new SerialPort("COM7");
+			serialPort = new SerialPort("COM8");
             serialPort.openPort();
             serialPort.setParams(115200, 8, 1, 0);
         }
@@ -23,17 +23,17 @@ public class KitBotModel {
 	public void updateData() {
 		try {
 			String data = serialPort.readString();
-			System.out.println(data);
+			//System.out.println(data);
 			if (data != null && data.contains("Sonar1: ")) {
 				System.out.println(data);
 				//System.out.println(data.substring(8,data.indexOf(".")));
-				sonar1Distance = Double.parseDouble(data.substring(8,data.indexOf(".")));
+				sonar1Distance = Double.parseDouble(data.substring(8));
 				//System.out.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
 			}
 			if (data != null && data.contains("Sonar2: ")) {
-				System.out.println(data.substring(8,data.indexOf(".")));
-				sonar2Distance = Double.parseDouble(data.substring(8,data.indexOf(".")));
-				//System.out.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+				//System.out.println(data.substring(8,data.indexOf(".")));
+				sonar2Distance = Double.parseDouble(data.substring(8));
+				System.out.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
 			}
 			
 		} catch (Exception e) {
@@ -51,8 +51,8 @@ public class KitBotModel {
 	}
 	
 	public void setMotors( double powerLeft, double powerRight ) {
-		motorA = (byte)(-powerRight*127);
-		motorB = (byte)(-powerLeft*127);
+		motorA = (byte)(powerRight);
+		motorB = (byte)(powerLeft);
 		modified();
 	}
 	
