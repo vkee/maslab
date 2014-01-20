@@ -24,7 +24,7 @@ void main() {
 		r++;
 	}
 	if ( miss>=8 && r>=4 ) {
-		gl_FragColor = vec4(0,0,1,1);
+		gl_FragColor = vec4(0,0,r/50.0,1);
 	}
 		
 	// BALL DETECTION GREEN
@@ -45,7 +45,7 @@ void main() {
 		r++;
 	}
 	if ( miss>=8 && r>=4 )
-		gl_FragColor = vec4(0,1,0,1);
+		gl_FragColor = vec4(0,r/50.0,0,1);
 
 	
 	// WALL DETECTION

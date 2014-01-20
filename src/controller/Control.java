@@ -3,6 +3,7 @@ package controller;
 import java.util.LinkedList;
 import java.util.List;
 
+import vision.Vision;
 import comm.MapleComm;
 import comm.MapleIO;
 import devices.actuators.Cytron;
@@ -10,9 +11,9 @@ import devices.sensors.Encoder;
 import devices.sensors.Gyroscope;
 import devices.sensors.Ultrasonic;
 
-public class RobotController {
+public class Control {
     public static void main(String[] args){      
-        RobotController robot = new RobotController();
+        Control robot = new Control();
         robot.wallFollow();
     }
     
@@ -26,6 +27,10 @@ public class RobotController {
     private final int B = 3;
     private final int C = 4;
     private final int BUFF_LENGTH = 6;
+    private final int CAMERA_NUM = 1;
+    
+    // VISION
+    Vision vision;
     
     // VALUES
     double[] distance;
@@ -50,18 +55,23 @@ public class RobotController {
     
     // STATES
     private ControlState control_state;
-    private MapState map_state;
-    private int map_state_count;
+    private WanderState wander_state;
+    private BallCollectState ball_collect_state;
+    private int wander_state_count;
     
-    private enum ControlState { WALL_FOLLOW, BALL_COLLECT };
-    private enum MapState { DEFAULT, ALIGNED, WALL_AHEAD, WALL_IMMEDIATE };
+    private enum ControlState { WANDER, BALL_COLLECT };
+    private enum WanderState { DEFAULT, WALL_ADJACENT, ALIGNED, WALL_AHEAD, WALL_IMMEDIATE };
+    private enum BallCollectState { TARGETING, COLLECTING };
     
-    public RobotController(){
+    public Control(){
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         
         // MOTOR INPUTS
         forward = 0;
         turn = 0;
+        
+        // VISION
+        vision = new Vision(CAMERA_NUM);
         
         // VALUES
         double[] distance = new double[5];
@@ -113,9 +123,10 @@ public class RobotController {
         comm.initialize();
         
         // STATE INITIALIZATION
-        control_state = ControlState.WALL_FOLLOW;
-        map_state = MapState.DEFAULT;
-        map_state_count = 0;
+        control_state = ControlState.WANDER;
+        wander_state = WanderState.DEFAULT;
+        ball_collect_state = BallCollectState.TARGETING;
+        wander_state_count = 0;
     }
     
     /*
@@ -150,7 +161,7 @@ public class RobotController {
         //double encoder_diff = 0;
         distance[L] = sonar[L].getDistance();
         distance[B] = sonar[B].getDistance();
-        MapState prev_map_state = MapState.DEFAULT;
+        WanderState prev_wander_state = WanderState.DEFAULT;
         
         // BUFFER INITIALIZATION
         sonarBuffInit(L, distance[L]);
@@ -204,36 +215,36 @@ public class RobotController {
             System.out.println("distanceL: " + distance[L]);
             
             // ESTIMATE MAP STATE
-            prev_map_state = map_state;
-            estimateMapState();
+            prev_wander_state = wander_state;
+            estimateWanderState();
             
-            if (prev_map_state != map_state){
-                map_state_count = 0;
-//                if (map_state == MapState.ALIGNED){
+            if (prev_wander_state != wander_state){
+                wander_state_count = 0;
+//                if (wander_state == WanderState.ALIGNED){
 //                    angle = 0;
 //                    prev_encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
 //                }
             }
             
-            map_state_count++;
+            wander_state_count++;
             
             // CALCULATE MOTOR INPUTS
-            if (map_state == MapState.DEFAULT){
+            if (wander_state == WanderState.DEFAULT){
                 turn = Math.max(-0.05, Math.min(0.05, pid_align.update(exp_L, false)));
                 forward = 0.1;
                 System.out.println("Default");
-            } else if (map_state == MapState.ALIGNED){
+            } else if (wander_state == WanderState.ALIGNED){
                 turn = Math.max(-0.05, Math.min(0.05, pid_align.update(exp_L, false)));
                 //turn = 0.4*Math.max(-0.05, Math.min(0.05, pid_gyro.update(angle, false)));
                 //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_align.update(dist_exp, false)));
                 //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_encoder.update(encoder_diff - prev_encoder_diff, false)));
                 forward = 0.1;
                 System.out.println("Aligned");
-            } else if (map_state == MapState.WALL_AHEAD){
+            } else if (wander_state == WanderState.WALL_AHEAD){
                 turn = 0.1;
                 forward = (exp_B - 0.15)/1.5;
                 System.out.println("Wall Ahead");
-            } else if (map_state == MapState.WALL_IMMEDIATE){
+            } else if (wander_state == WanderState.WALL_IMMEDIATE){
                 System.out.println("Wall Immediate");
                 turn = 0.1;
                 forward = 0;
@@ -255,20 +266,20 @@ public class RobotController {
         }
     }
     
-    private void estimateMapState(){
-        if (map_state_count > 15){
+    private void estimateWanderState(){
+        if (wander_state_count > 15){
             double exp_L = sonar_buff_stats[L][0];
             double exp_B = sonar_buff_stats[B][0];
             double dist_var = sonar_buff_stats[L][2];
             
             if (exp_B < 0.15){
-                map_state = MapState.WALL_IMMEDIATE;
+                wander_state = WanderState.WALL_IMMEDIATE;
             } else if (exp_B < 0.3){
-                map_state = MapState.WALL_AHEAD;
+                wander_state = WanderState.WALL_AHEAD;
             } else if (dist_var < 0.005 && Math.abs(exp_L - 0.15) < 0.01){
-                map_state = MapState.ALIGNED;
+                wander_state = WanderState.ALIGNED;
             } else {
-                map_state = MapState.DEFAULT;
+                wander_state = WanderState.DEFAULT;
             }
         }
     }
