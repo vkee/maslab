@@ -53,11 +53,11 @@ public class Test {
 		comm.registerDevice(motor2);
 		comm.registerDevice(gyro);
 		comm.registerDevice(sonar1);
-		comm.registerDevice(sonar2);
-		comm.registerDevice(sonar3);
-		comm.registerDevice(sonar4);
-		comm.registerDevice(sonar5);
-		comm.registerDevice(d);
+		//comm.registerDevice(sonar2);
+//		comm.registerDevice(sonar3);
+//		comm.registerDevice(sonar4);
+//		comm.registerDevice(sonar5);
+//		comm.registerDevice(d);
 		//comm.registerDevice(sonar2);
 
 		// Send information about connected devices to the Maple
@@ -66,27 +66,27 @@ public class Test {
 		double time = System.currentTimeMillis();
 		double prevTime = System.currentTimeMillis();
 		double gyroError = 0;
-		while (System.currentTimeMillis() - time < 5000) {
-			comm.updateSensorData();
-			System.out.println("gyro: " + gyro.getOmega());
-			gyroError += gyro.getOmega() * (System.currentTimeMillis() - prevTime)/5000;
-			prevTime = System.currentTimeMillis();
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-		}
+//		while (System.currentTimeMillis() - time < 5000) {
+//			comm.updateSensorData();
+//			System.out.println("gyro: " + gyro.getOmega());
+//			gyroError += gyro.getOmega() * (System.currentTimeMillis() - prevTime)/5000;
+//			prevTime = System.currentTimeMillis();
+//			try {
+//				Thread.sleep(100);
+//			} catch (InterruptedException e1) {
+//				// TODO Auto-generated catch block
+//				e1.printStackTrace();
+//			}
+//		}
 		
 		System.out.println("gyroError: " + gyroError);
 		
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+//		try {
+//			Thread.sleep(10000);
+//		} catch (InterruptedException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
 		
 		while (true) {
 			
@@ -108,15 +108,15 @@ public class Test {
 //				// TODO Auto-generated catch block
 //				e1.printStackTrace();
 //			}
-//			System.out.println("sonar1: " + sonar1.getDistance());
+			System.out.println("sonar1: " + sonar1.getDistance());
 //			System.out.println("sonar2: " + sonar2.getDistance());
 //			System.out.println("sonar3: " + sonar3.getDistance());
 //			System.out.println("sonar4: " + sonar4.getDistance());
 //			System.out.println("sonar5: " + sonar5.getDistance());
-			System.out.println("gyro: " + (gyro.getOmega()-gyroError));
+//			System.out.println("gyro: " + (gyro.getOmega()-gyroError));
 			//System.out.println("gyro: " + gyro.getOmega());
-//			motor1.setSpeed(0.1);
-//			motor2.setSpeed(0.1);
+			motor1.setSpeed(0.1);
+			motor2.setSpeed(0.1);
 			// All sensor classes have getters.
 			//System.out.println(gyro.getOmega() + " " + ultra1.getDistance());
 //			System.out.println(ultra1.getDistance() + " " + ultra2.getDistance());
