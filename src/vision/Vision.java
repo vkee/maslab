@@ -19,14 +19,28 @@ import Core.Engine;
 import Core.FilterOp;
 
 public class Vision {
-    public void main(String[] args){
+    public static void main(String[] args){
         final Vision vision = new Vision(1, 320, 240);
         Thread display_thread = new Thread(new Runnable(){
             public void run(){
-                JLabel display_pane = createWindow("Camera output", WIDTH, HEIGHT);
+                JLabel display_pane = createWindow("Display output", vision.WIDTH, vision.HEIGHT);
+                int target_x, target_y;
                 while (true) {
                     vision.update();
-                    updateWindow(display_pane, vision.curr_image);
+                    //updateWindow(display_pane, vision.curr_image);
+                    updateWindow(display_pane, vision.filtered);
+                    try{
+                        target_x = vision.getNextBallX();
+                        target_y = vision.getNextBallY();
+                        System.out.println("//////////////////////");
+                        System.out.println("target_x: " + target_x);
+                        System.out.println("target_y: " + target_y);
+                        System.out.println("//////////////////////");
+                    } catch (Exception exc){
+                        System.out.println("//////////////////////");
+                        System.out.println("No Ball Found");
+                        System.out.println("//////////////////////");
+                    }
                 }
             }
         });
@@ -38,6 +52,7 @@ public class Vision {
     
     // FIELDS
     private final int camera_number;
+    public BufferedImage filtered;
     public final VideoCapture camera;
     private Mat rawImage;
     public BufferedImage curr_image;
@@ -78,6 +93,21 @@ public class Vision {
         blur = new FilterOp("blur");
         colorize = new FilterOp("colorize");
         objRec = new FilterOp("objectRecognition");
+        
+        // FILTERED IMAGE
+        while (!camera.read(rawImage)) {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        curr_image = Mat2Image.getImage(rawImage);
+        
+        blur.apply(curr_image);           
+        colorize.apply();
+        objRec.apply();
+        filtered = FilterOp.getImage();
     }
     
     public void update(){
@@ -93,12 +123,12 @@ public class Vision {
         blur.apply(curr_image);           
         colorize.apply();
         objRec.apply();
-        BufferedImage filtered = FilterOp.getImage();
+        filtered = FilterOp.getImage();
         
-        processFilteredImage(filtered);
+        processFilteredImage();
     }
     
-    private void processFilteredImage(BufferedImage filtered){
+    private void processFilteredImage(){
         red_target = new Ball(false);
         green_target = new Ball(false);
         int pixel, red, green, blue;
