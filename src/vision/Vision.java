@@ -35,11 +35,15 @@ public class Vision {
         Thread display_thread = new Thread(new Runnable(){
             public void run(){
                 JLabel display_pane = createWindow("Display output", vision.WIDTH, vision.HEIGHT);
+                JLabel camera_pane = createWindow("Camera output", vision.WIDTH, vision.HEIGHT);
+                JLabel colorize_pane = createWindow("Colorize output", vision.WIDTH, vision.HEIGHT);
                 int target_x, target_y;
                 while (true) {
                     vision.update();
                     //updateWindow(display_pane, vision.curr_image);
                     updateWindow(display_pane, vision.filtered);
+                    updateWindow(camera_pane, vision.curr_image);
+                    updateWindow(colorize_pane, vision.colorized);
                     try{
                         target_x = vision.getNextBallX();
                         target_y = vision.getNextBallY();
@@ -65,6 +69,7 @@ public class Vision {
     public final VideoCapture camera;
     private Mat rawImage;
     public BufferedImage curr_image;
+    public BufferedImage colorized;
     private Ball red_target, green_target;
     
     // FILTERS
@@ -115,6 +120,7 @@ public class Vision {
         
         blur.apply(curr_image);           
         colorize.apply();
+        colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
     }
@@ -131,6 +137,7 @@ public class Vision {
         
         blur.apply(curr_image);           
         colorize.apply();
+        colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
         
