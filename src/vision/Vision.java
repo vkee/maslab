@@ -15,6 +15,17 @@ import org.opencv.core.Mat;
 import org.opencv.highgui.Highgui;
 import org.opencv.highgui.VideoCapture;
 
+import com.google.zxing.ChecksumException;
+import com.google.zxing.FormatException;
+import com.google.zxing.NotFoundException;
+import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.common.DecoderResult;
+import com.google.zxing.common.DetectorResult;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.decoder.Decoder;
+import com.google.zxing.qrcode.detector.Detector;
+
 import Core.Engine;
 import Core.FilterOp;
 
@@ -153,6 +164,27 @@ public class Vision {
                 }
             }
         }
+    }
+    
+    /**
+     * Returns the decoded QR code or "QR code not found if no QR code found"
+     * @param original
+     * @return
+     */
+    public String detectQR(BufferedImage original) {
+    	BufferedImageLuminanceSource source = new BufferedImageLuminanceSource(original);
+		HybridBinarizer hb = new HybridBinarizer(source);
+		
+		try {
+			BitMatrix image = hb.getBlackMatrix();
+			Detector detector = new Detector(image);
+			DetectorResult detected = detector.detect();
+			Decoder decoder = new Decoder();
+			DecoderResult decoded = decoder.decode(detected.getBits());
+			return decoded.getText();
+		} catch (NotFoundException | ChecksumException | FormatException e1) {
+			return "QR code not found";
+		}
     }
     
     public int getNextBallX() throws RuntimeException {

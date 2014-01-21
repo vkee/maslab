@@ -19,8 +19,7 @@ public class QRcodeDetection {
 
 	public static void main(String[] args) {
 
-		TestBed tester = new TestBed(436,500);
-		BufferedImage original = TestBed.loadImage( new File("images\\qrLondon.jpg") );
+		BufferedImage original = TestBed.loadImage( new File("images\\qrNonCentered.jpg") );
 		BufferedImageLuminanceSource source = new BufferedImageLuminanceSource(original);
 		HybridBinarizer hb = new HybridBinarizer(source);
 		
@@ -35,9 +34,5 @@ public class QRcodeDetection {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
-		
-		
 	}
-
 }
