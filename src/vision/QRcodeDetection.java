@@ -2,12 +2,6 @@ package vision;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-
-
-
-
-
-
 import maslabGLvision.TestBed;
 
 import com.google.zxing.ChecksumException;
@@ -25,8 +19,8 @@ public class QRcodeDetection {
 
 	public static void main(String[] args) {
 
-		TestBed tester = new TestBed(220,220);
-		BufferedImage original = TestBed.loadImage( new File("images\\qr.png") );
+		TestBed tester = new TestBed(436,500);
+		BufferedImage original = TestBed.loadImage( new File("images\\qrLondon.jpg") );
 		BufferedImageLuminanceSource source = new BufferedImageLuminanceSource(original);
 		HybridBinarizer hb = new HybridBinarizer(source);
 		
