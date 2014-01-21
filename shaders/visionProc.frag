@@ -3,11 +3,11 @@ varying float y;
 uniform sampler2D txtr;
 
 void main() {
-    final float PI = 3.1415927
-    final float INCREMENT = 0.2;
-    final int LOW_THRES = 0.2;
-    final int HIGH_THRES = 0.8;
-    final int RADIUS_THRES = 3;
+    float PI = 3.1415927
+    float INCREMENT = 0.2;
+    float LOW_THRES = 0.2;
+    float HIGH_THRES = 0.8;
+    int RADIUS_THRES = 3;
 
 	float dx = 1.0/320.0;
 	float dy = 1.0/240.0;

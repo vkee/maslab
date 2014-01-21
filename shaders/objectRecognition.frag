@@ -3,12 +3,6 @@ varying float y;
 uniform sampler2D txtr;
 
 void main() {
-    final float PI = 3.1415927
-    final float INCREMENT = 0.2;
-    final int LOW_THRES = 0.3;
-    final int HIGH_THRES = 0.7;
-    final int RADIUS_THRES = 4;
-
 	float dx = 1.0/320.0;
 	float dy = 1.0/240.0;
 	
@@ -17,19 +11,19 @@ void main() {
 	int miss = 0;
 	while (radius < 50) {
 		miss = 0;
-		float start = sin(radius + x*y)*PI; // generate random number in [0, PI]
-		for (float a = start; a < start + 2*PI; a += INCREMENT) {
+		float start = sin(radius + x*y)*3.14;
+		for (float a = start; a < start + 6.28; a += 0.5) {
 			vec4 col = texture(txtr,vec2(x+float(r)*cos(a)*dx,y+float(r)*sin(a)*dy),0.0);
 			if ( !(col.z==1 && col.y==0 && col.x==0) ) {
 				miss++;
 			}
 		}
-		if (miss >= (int) (2*PI/INCREMENT)*LOW_THRES) {
+		if (miss >= 4) {
 			break;
 		}
 		r++;
 	}
-	if ((miss >= (int) (2*PI/INCREMENT)*HIGH_THRES) && (r >= RADIUS_THRES)) {
+	if (miss >= 8 && r >= 4) {
 		gl_FragColor = vec4(0, 0, r/50.0, 1);
 	}
 		
@@ -38,19 +32,19 @@ void main() {
 	miss = 0;
 	while (radius < 50) {
 		miss = 0;
-		float start = sin(radius + x*y)*PI; // generate random number in [0, PI]
-		for (float a = start; a < start + 2*PI; a += INCREMENT) {
+		float start = sin(radius + x*y)*3.14;
+		for (float a = start; a < start + 6.28; a += 0.5) {
 			vec4 col = texture(txtr,vec2(x+float(r)*cos(a)*dx,y+float(r)*sin(a)*dy),0.0);
 			if ( !(col.z==0 && col.y==1 && col.x==0) ) {
 				miss++;
 			}
 		}
-		if (miss >= (int) (2*PI/INCREMENT)*LOW_THRES) {
+		if (miss >= 4) {
 			break;
 		}
 		r++;
 	}
-	if ((miss >= (int) (2*PI/INCREMENT)*HIGH_THRES) && (r >= RADIUS_THRES)) {
+	if (miss >= 8 && r >= 4) {
 		gl_FragColor = vec4(0, r/50.0, 0, 1);
 	}
 	
