@@ -5,9 +5,9 @@ uniform sampler2D txtr;
 void main() {
     final float PI = 3.1415927
     final float INCREMENT = 0.2;
-    final int LOW_THRES = 0.3;
-    final int HIGH_THRES = 0.7;
-    final int RADIUS_THRES = 4;
+    final int LOW_THRES = 0.2;
+    final int HIGH_THRES = 0.8;
+    final int RADIUS_THRES = 3;
 
 	float dx = 1.0/320.0;
 	float dy = 1.0/240.0;
@@ -15,6 +15,7 @@ void main() {
 	// BALL DETECTION RED
 	int radius = 1;
 	int miss = 0;
+	boolean first_miss = false;
 	while (radius < 50) {
 		miss = 0;
 		float start = sin(radius + x*y)*PI; // generate random number in [0, PI]
@@ -25,17 +26,28 @@ void main() {
 			}
 		}
 		if (miss >= (int) (2*PI/INCREMENT)*LOW_THRES) {
-			break;
+			if (first_miss){
+				break;
+			} else {
+				first_miss = true;
+			}
+		} else {
+			if (first_miss){
+				first_miss = false;
+				break;
+			}
 		}
 		r++;
 	}
-	if ((miss >= (int) (2*PI/INCREMENT)*HIGH_THRES) && (r >= RADIUS_THRES)) {
-		gl_FragColor = vec4(0, 0, r/50.0, 1);
+	if (first_miss && (miss >= (int) (2*PI/INCREMENT)*HIGH_THRES) && (r >= RADIUS_THRES)) {
+		gl_FragColor = vec4(0, 0, (r-1)/50.0, 1);
 	}
-		
+	
+	
 	// BALL DETECTION GREEN
 	radius = 1;
 	miss = 0;
+	first_miss = false;
 	while (radius < 50) {
 		miss = 0;
 		float start = sin(radius + x*y)*PI; // generate random number in [0, PI]
@@ -46,16 +58,25 @@ void main() {
 			}
 		}
 		if (miss >= (int) (2*PI/INCREMENT)*LOW_THRES) {
-			break;
+			if (first_miss){
+				break;
+			} else {
+				first_miss = true;
+			}
+		} else {
+			if (first_miss){
+				first_miss = false;
+				break;
+			}
 		}
 		r++;
 	}
-	if ((miss >= (int) (2*PI/INCREMENT)*HIGH_THRES) && (r >= RADIUS_THRES)) {
-		gl_FragColor = vec4(0, r/50.0, 0, 1);
+	if (first_miss && (miss >= (int) (2*PI/INCREMENT)*HIGH_THRES) && (r >= RADIUS_THRES)) {
+		gl_FragColor = vec4(0, (r-1)/50.0, 0, 1);
 	}
 	
-	// WALL DETECTION
 	
+	// WALL DETECTION
 	float yUpper = y - dy;
 	float yLower = y + dy;
 	vec4 col = texture(txtr,vec2(x,y),0.0);

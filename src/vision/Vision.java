@@ -35,11 +35,9 @@ public class Vision {
                         System.out.println("//////////////////////");
                         System.out.println("target_x: " + target_x);
                         System.out.println("target_y: " + target_y);
-                        System.out.println("//////////////////////");
                     } catch (Exception exc){
                         System.out.println("//////////////////////");
                         System.out.println("No Ball Found");
-                        System.out.println("//////////////////////");
                     }
                 }
             }
