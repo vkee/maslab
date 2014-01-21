@@ -169,7 +169,7 @@ public class Vision {
      * @param original
      * @return
      */
-    public String detectQR(BufferedImage original) {
+    public String detectQR(BufferedImage original) throws RuntimeException {
     	BufferedImageLuminanceSource source = new BufferedImageLuminanceSource(original);
 		HybridBinarizer hb = new HybridBinarizer(source);
 		
@@ -181,7 +181,7 @@ public class Vision {
 			DecoderResult decoded = decoder.decode(detected.getBits());
 			return decoded.getText();
 		} catch (NotFoundException | ChecksumException | FormatException e1) {
-			return "QR code not found";
+		    throw new RuntimeException("QR code not found");
 		}
     }
     
