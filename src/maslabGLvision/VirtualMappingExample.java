@@ -23,7 +23,7 @@ public class VirtualMappingExample {
 		while ( true ) {
 			blur.apply(original);			
 			colorize.apply();
-			objRec.apply();
+			//objRec.apply();
 			BufferedImage filtered = FilterOp.getImage(); 
 			tester.setImage(filtered);
 			

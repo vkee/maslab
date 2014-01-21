@@ -7,46 +7,45 @@ void main() {
 	float dy = 1.0/240.0;
 	
 	// BALL DETECTION RED
-	int radius = 1;
-	int miss = 0;
-	while (radius < 50) {
+	int r = 1;
+	int miss = 0;	
+	while ( r < 50 ) {
 		miss = 0;
-		float start = sin(radius + x*y)*3.14;
-		for (float a = start; a < start + 6.28; a += 0.5) {
+		float start = sin(r+x*y)*3.14;
+		for ( float a = start; a < start+6.28; a+=0.5 ) {
 			vec4 col = texture(txtr,vec2(x+float(r)*cos(a)*dx,y+float(r)*sin(a)*dy),0.0);
 			if ( !(col.z==1 && col.y==0 && col.x==0) ) {
 				miss++;
 			}
 		}
-		if (miss >= 4) {
+		if ( miss>=4 ) {
 			break;
 		}
 		r++;
 	}
-	if (miss >= 8 && r >= 4) {
-		gl_FragColor = vec4(0, 0, r/50.0, 1);
+	if ( miss>=8 && r>=2 ) {
+		gl_FragColor = vec4(0,0,r/50.0,1);
 	}
 		
 	// BALL DETECTION GREEN
-	radius = 1;
-	miss = 0;
-	while (radius < 50) {
+	r = 1;
+	miss = 0;	
+	while ( r < 50 ) {
 		miss = 0;
-		float start = sin(radius + x*y)*3.14;
-		for (float a = start; a < start + 6.28; a += 0.5) {
+		float start = sin(r+x*y)*3.14;
+		for ( float a = start; a < start+6.28; a+=0.5 ) {
 			vec4 col = texture(txtr,vec2(x+float(r)*cos(a)*dx,y+float(r)*sin(a)*dy),0.0);
 			if ( !(col.z==0 && col.y==1 && col.x==0) ) {
 				miss++;
 			}
 		}
-		if (miss >= 4) {
+		if ( miss>=4 ) {
 			break;
 		}
 		r++;
 	}
-	if (miss >= 8 && r >= 4) {
-		gl_FragColor = vec4(0, r/50.0, 0, 1);
-	}
+	if ( miss>=8 && r>=2 )
+		gl_FragColor = vec4(0,r/50.0,0,1);
 	
 	// WALL DETECTION
 	
