@@ -31,18 +31,18 @@ public class Vision {
         final Vision vision = new Vision(1, 320, 240);
         Thread display_thread = new Thread(new Runnable(){
             public void run(){
-                JLabel display_pane = createWindow("Display output", vision.WIDTH, vision.HEIGHT);
+                //JLabel display_pane = createWindow("Display output", vision.WIDTH, vision.HEIGHT);
                 JLabel camera_pane = createWindow("Camera output", vision.WIDTH, vision.HEIGHT);
                 JLabel colorize_pane = createWindow("Colorize output", vision.WIDTH, vision.HEIGHT);
-                JLabel map_pane = createWindow("Map output", vision.WIDTH, vision.HEIGHT);
+                //JLabel map_pane = createWindow("Map output", vision.WIDTH, vision.HEIGHT);
                 int target_x, target_y;
                 while (true) {
                     vision.update();
                     //updateWindow(display_pane, vision.curr_image);
-                    updateWindow(display_pane, vision.filtered);
+                    //updateWindow(display_pane, vision.filtered);
                     updateWindow(camera_pane, vision.curr_image);
                     updateWindow(colorize_pane, vision.colorized);
-                    updateWindow(map_pane, vision.map.field);
+                    //updateWindow(map_pane, vision.map.field);
                     try{
                         target_x = vision.getNextBallX();
                         target_y = vision.getNextBallY();
@@ -73,12 +73,11 @@ public class Vision {
     public Map map;
     
     // FILTERS
-    private final FilterOp blur, colorize, objRec;
+    private final FilterOp blur, colorize, eliminateTop, objRec;
     
     public Vision(int camera_number, int width, int height){
         this.WIDTH = width;
         this.HEIGHT = height;
-        map = new Map(width, height);
         
         // LOAD LIBARIES
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -107,6 +106,7 @@ public class Vision {
         // FILTERS
         blur = new FilterOp("blur");
         colorize = new FilterOp("colorize");
+        eliminateTop = new FilterOp("eliminateTop");
         objRec = new FilterOp("objectRecognition");
         
         // FILTERED IMAGE
@@ -121,14 +121,17 @@ public class Vision {
         
         blur.apply(curr_image);           
         colorize.apply();
+        eliminateTop.apply();
         colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
+        
+        map = new Map(width, height, colorized);
     }
     
     public void update(){
         //REMOVE THIS IN THE FINAL VERSION
-        map.resetField();
+        //map.resetField();
         
         while (!camera.read(rawImage)) {
             try {
@@ -141,6 +144,7 @@ public class Vision {
         
         blur.apply(curr_image);           
         colorize.apply();
+        eliminateTop.apply();
         colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
@@ -149,7 +153,6 @@ public class Vision {
     }
     
     private void processFilteredImage(){
-        map.calibrateMapCalculations(filtered);
         red_target = new Ball(false);
         green_target = new Ball(false);
         int pixel, red, green, blue;
@@ -172,13 +175,14 @@ public class Vision {
                         green_target = new Ball(x, y, radius);
                     }
                 }
-                if (blue > 0 && y > 0 && ((filtered.getRGB(x, y-1)) & 0xFF) == 0){
-                    try{
-                        map.convertWallCoordinates(x, y, HEIGHT*blue/256.0);
-                    } catch (Exception exc){
-                        //exc.printStackTrace();
-                    }
-                }
+                //if (blue > 0 && y > 0 && ((filtered.getRGB(x, y-1)) & 0xFF) == 0){
+//                if (blue > 0){
+//                    try{
+//                        map.convertWallCoordinates(x, y, HEIGHT*blue/256.0);
+//                    } catch (Exception exc){
+//                        //exc.printStackTrace();
+//                    }
+//                }
             }
         }
     }
