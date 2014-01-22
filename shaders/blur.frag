@@ -20,5 +20,5 @@ void main() {
 	}
 	
 	sum = sum*1.0/wt;
-	gl_FragColor = vec4(sum.z,sum.y,sum.x,1);
+	gl_FragColor = vec4(sum.x,sum.y,sum.z,1);
 }

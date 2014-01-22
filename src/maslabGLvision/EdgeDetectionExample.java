@@ -14,13 +14,13 @@ public class EdgeDetectionExample {
 		FilterOp blur = new FilterOp("blur");
 		FilterOp edge = new FilterOp("edge");
 		
-		BufferedImage original = TestBed.loadImage( new File("images\\lena.png") );
+		BufferedImage original = TestBed.loadImage( new File("images\\field.png") );
 		tester.setImage(original);
 		
 		try{ Thread.sleep(1000); } catch ( Exception e ) {}
 		
 		blur.apply(original);
-		edge.apply();
+		//edge.apply();
 		BufferedImage filtered = FilterOp.getImage(); 
 		tester.setImage(filtered);	}
 }
