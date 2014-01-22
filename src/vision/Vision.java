@@ -1,10 +1,7 @@
 package vision;
 
 import java.awt.BorderLayout;
-import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;

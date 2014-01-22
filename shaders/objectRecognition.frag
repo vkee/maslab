@@ -46,7 +46,6 @@ void main() {
 	}
 	if ( miss>=8 && r>=2 )
 		gl_FragColor = vec4(0,r/50.0,0,1);
-
 	
 	// WALL DETECTION
 	
