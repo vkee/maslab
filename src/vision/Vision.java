@@ -34,6 +34,7 @@ public class Vision {
                 JLabel display_pane = createWindow("Display output", vision.WIDTH, vision.HEIGHT);
                 JLabel camera_pane = createWindow("Camera output", vision.WIDTH, vision.HEIGHT);
                 JLabel colorize_pane = createWindow("Colorize output", vision.WIDTH, vision.HEIGHT);
+                JLabel map_pane = createWindow("Map output", vision.WIDTH, vision.HEIGHT);
                 int target_x, target_y;
                 while (true) {
                     vision.update();
@@ -41,15 +42,16 @@ public class Vision {
                     updateWindow(display_pane, vision.filtered);
                     updateWindow(camera_pane, vision.curr_image);
                     updateWindow(colorize_pane, vision.colorized);
+                    updateWindow(map_pane, vision.map.field);
                     try{
                         target_x = vision.getNextBallX();
                         target_y = vision.getNextBallY();
-                        System.out.println("//////////////////////");
-                        System.out.println("target_x: " + target_x);
-                        System.out.println("target_y: " + target_y);
+                        //System.out.println("//////////////////////");
+                        //System.out.println("target_x: " + target_x);
+                        //System.out.println("target_y: " + target_y);
                     } catch (Exception exc){
-                        System.out.println("//////////////////////");
-                        System.out.println("No Ball Found");
+                        //System.out.println("//////////////////////");
+                        //System.out.println("No Ball Found");
                     }
                 }
             }
@@ -68,6 +70,7 @@ public class Vision {
     public BufferedImage curr_image;
     public BufferedImage colorized;
     private Ball red_target, green_target;
+    public Map map;
     
     // FILTERS
     private final FilterOp blur, colorize, objRec;
@@ -75,6 +78,7 @@ public class Vision {
     public Vision(int camera_number, int width, int height){
         this.WIDTH = width;
         this.HEIGHT = height;
+        map = new Map(width, height);
         
         // LOAD LIBARIES
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -123,6 +127,9 @@ public class Vision {
     }
     
     public void update(){
+        //REMOVE THIS IN THE FINAL VERSION
+        map.resetField();
+        
         while (!camera.read(rawImage)) {
             try {
                 Thread.sleep(1);
@@ -142,6 +149,7 @@ public class Vision {
     }
     
     private void processFilteredImage(){
+        map.calibrateMapCalculations(filtered);
         red_target = new Ball(false);
         green_target = new Ball(false);
         int pixel, red, green, blue;
@@ -162,6 +170,13 @@ public class Vision {
                     radius = 50*green/256.0;
                     if (radius > green_target.radius){
                         green_target = new Ball(x, y, radius);
+                    }
+                }
+                if (blue > 0 && y > 0 && ((filtered.getRGB(x, y-1)) & 0xFF) == 0){
+                    try{
+                        map.convertWallCoordinates(x, y, HEIGHT*blue/256.0);
+                    } catch (Exception exc){
+                        //exc.printStackTrace();
                     }
                 }
             }
