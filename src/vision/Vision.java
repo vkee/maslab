@@ -34,15 +34,12 @@ public class Vision {
                 //JLabel display_pane = createWindow("Display output", vision.WIDTH, vision.HEIGHT);
                 JLabel camera_pane = createWindow("Camera output", vision.WIDTH, vision.HEIGHT);
                 JLabel colorize_pane = createWindow("Colorize output", vision.WIDTH, vision.HEIGHT);
-                //JLabel map_pane = createWindow("Map output", vision.WIDTH, vision.HEIGHT);
                 int target_x, target_y;
                 while (true) {
                     vision.update();
                     //updateWindow(display_pane, vision.curr_image);
-                    //updateWindow(display_pane, vision.filtered);
                     updateWindow(camera_pane, vision.curr_image);
                     updateWindow(colorize_pane, vision.colorized);
-                    //updateWindow(map_pane, vision.map.field);
                     try{
                         target_x = vision.getNextBallX();
                         target_y = vision.getNextBallY();
@@ -70,7 +67,6 @@ public class Vision {
     public BufferedImage curr_image;
     public BufferedImage colorized;
     private Ball red_target, green_target;
-    public Map map;
     
     // FILTERS
     private final FilterOp blur, colorize, eliminateTop, objRec;
@@ -125,14 +121,9 @@ public class Vision {
         colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
-        
-        map = new Map(width, height, colorized);
     }
     
-    public void update(){
-        //REMOVE THIS IN THE FINAL VERSION
-        //map.resetField();
-        
+    public void update(){        
         while (!camera.read(rawImage)) {
             try {
                 Thread.sleep(1);
@@ -175,14 +166,6 @@ public class Vision {
                         green_target = new Ball(x, y, radius);
                     }
                 }
-                //if (blue > 0 && y > 0 && ((filtered.getRGB(x, y-1)) & 0xFF) == 0){
-//                if (blue > 0){
-//                    try{
-//                        map.convertWallCoordinates(x, y, HEIGHT*blue/256.0);
-//                    } catch (Exception exc){
-//                        //exc.printStackTrace();
-//                    }
-//                }
             }
         }
     }
