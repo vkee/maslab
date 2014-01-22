@@ -13,9 +13,10 @@ public class VirtualMappingExample {
 		Engine.initGL(320,240);
 		FilterOp blur = new FilterOp("blur");
 		FilterOp colorize = new FilterOp("colorize");
+		FilterOp eliminateTop = new FilterOp("eliminateTop");
 		FilterOp objRec = new FilterOp("objectRecognition");
 		
-		BufferedImage original = TestBed.loadImage( new File("images\\maslab.png") );
+		BufferedImage original = TestBed.loadImage( new File("images\\field.png") );
 		tester.setImage(original);
 		
 		int frames = 0;
@@ -23,7 +24,8 @@ public class VirtualMappingExample {
 		while ( true ) {
 			blur.apply(original);			
 			colorize.apply();
-			//objRec.apply();
+			eliminateTop.apply();
+			objRec.apply();
 			BufferedImage filtered = FilterOp.getImage(); 
 			tester.setImage(filtered);
 			
