@@ -5,7 +5,7 @@ uniform sampler2D txtr;
 void main() {
 	float dx = 1.0/320.0;
 	float dy = 1.0/240.0;
-	
+	float horizon = 0.52;
 	vec4 col = texture(txtr,vec2(x,y),0.0);
 	
 	//WALL/FLOOR
@@ -20,40 +20,40 @@ void main() {
 	vec4 horiSum = vec4(0,0,0,0);
 	float j = 0;
 	while (j <= 1) {
-		horiSum = horiSum + texture(txtr,vec2(i,0.5),0.0);
+		horiSum = horiSum + texture(txtr,vec2(i,horizon),0.0);
 		j = j + dx;
 	}
 	vec4 horiMean = normalize(horiSum);
-	if ( distance(col,horiMean)+0.03 < distance(col,floorMean) ) {
+	if ( distance(col,horiMean) < distance(col,floorMean) ) {
 		gl_FragColor = vec4(1,1,1,1);
 	}
 	
 	
 	//RED BAll
-	if ( col.z>col.x*1.2 && col.z>col.y*1.2 && y > 0.5)
+	if ( col.z>col.x*1.2 && col.z>col.y*1.2 && y > horizon)
 		gl_FragColor = vec4(0,0,1,1);
 	
 	//GREEN BALL
-	if ( col.y>col.x*1.2 && col.y>col.z*1.2 && y > 0.5)
+	if ( col.y>col.x*1.2 && col.y>col.z*1.2 && y > horizon)
 		gl_FragColor = vec4(0,1,0,1);
 	
 	//BLUE BAND
-	if ( col.x>col.y*1.2 && col.x>col.z*1.2 && y < 0.5) {
+	if ( col.x>col.y*1.2 && col.x>col.z*1.2 && y < horizon) {
 		gl_FragColor = vec4(1,0,0,1);
 	}
 	
 	//GREEN BAND
-	if ( col.y>col.x*1.2 && col.y>col.z*1.2 && y < 0.5) {
+	if ( col.y>col.x*1.2 && col.y>col.z*1.2 && y < horizon) {
 		gl_FragColor = vec4(0,1,0,1);
 	}
 	
 	//RED BAND
-	if ( col.z>col.x*1.2 && col.z>col.y*1.2 && y < 0.5) {
+	if ( col.z>col.x*1.2 && col.z>col.y*1.2 && y < horizon) {
 		gl_FragColor = vec4(0,0,1,1);
 	}
 	
 	//YELLOW BAND
-	if ( col.y>col.x*1.2 && col.z>col.x*1.2 && y < 0.5) {
+	if ( col.y>col.x*1.2 && col.z>col.x*1.2 && col.z<col.y*1.2 && col.y<col.z*1.2 && y < horizon) {
 		gl_FragColor = vec4(0,1,1,1);
 	}
 	

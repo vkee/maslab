@@ -10,17 +10,17 @@ void main() {
 	
 	//BLUE BAND
 	if ( col.x>col.y*1.2 && col.x>col.z*1.2) {
-		gl_FragColor = vec4(1,0,0,1);
+		gl_FragColor = col;//vec4(1,0,0,1);
 	}
 	
 	//GREEN BAND
 	if ( col.y>col.x*1.2 && col.y>col.z*1.2) {
-		gl_FragColor = vec4(0,1,0,1);
+		gl_FragColor = col;//vec4(0,1,0,1);
 	}
 	
 	//RED BAND
 	if ( col.z>col.x*1.2 && col.z>col.y*1.2) {
-		gl_FragColor = vec4(0,0,1,1);
+		gl_FragColor = col;//vec4(0,0,1,1);
 	}
 	
 	//YELLOW BAND

@@ -7,12 +7,12 @@ void main() {
 	float dy = 1.0/240.0;
 	
 	vec4 col = texture(txtr,vec2(x,y),0.0);
-	
+	float horizon = 0.54;
 	gl_FragColor = col;
 	//TOP
 	float yTemp = y;
 	vec4 colTemp = texture(txtr,vec2(x,yTemp),0.0);
-	if (y < 0.5) {
+	if (y < horizon) {
 		while (true) {
 			if ( !(col.x == colTemp.x && col.y == colTemp.y && col.z == colTemp.z) &&
 				 !(colTemp.x == 0 && colTemp.y == 0 && colTemp.y == 0) && 
@@ -20,7 +20,7 @@ void main() {
 				gl_FragColor = vec4(0,0,0,1);
 				break;
 			} else {
-				if ( yTemp < 0.5 ) {
+				if ( yTemp < horizon ) {
 					yTemp = yTemp + dy;
 					colTemp = texture(txtr,vec2(x,yTemp),0.0);
 				} else {
