@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import vision.ColorSensor;
 import vision.Vision;
 import comm.MapleComm;
 import comm.MapleIO;
@@ -50,14 +51,15 @@ public class Control {
     double prev_encoder_diff;
     double target_x;
     double target_y;
-    AtomicInteger green_ball_count;
-    AtomicInteger red_ball_count;
+    final AtomicInteger green_ball_count;
+    final AtomicInteger red_ball_count;
     
     // MOTOR INPUTS
     private double forward;
     private double turn;
     
     // SENSORS AND ACTUATORS
+    private ColorSensor color_sensor;
     private Cytron motorL, motorR;
     private Ultrasonic[] sonar;
     private Encoder[] encoder;
@@ -112,6 +114,9 @@ public class Control {
         red_ball_count = new AtomicInteger(0);
         
         // SENSORS AND ACTUATORS
+        color_sensor = new ColorSensor(red_ball_count, green_ball_count);
+        color_sensor.start();
+        
         motorL = new Cytron(0, 1);
         motorR = new Cytron(2, 3);
         

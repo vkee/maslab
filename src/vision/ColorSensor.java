@@ -70,6 +70,8 @@ public class ColorSensor {
                 Mat rawImage = new Mat();
                 BufferedImage curr_image, filtered;
                 int delay = 0;
+                int count_red = 0;
+                int count_green = 0;
                 int center, red, green;
                 while (true){
                     delay++;
@@ -88,18 +90,28 @@ public class ColorSensor {
                     red = (center >> 16) & 0xFF;
                     green = (center >> 8) & 0xFF;
                     
-                    if (delay >= 50 && red > 0){
+                    if (delay >= 30 && red > 0){
+                        count_red++;
+                    }
+                    
+                    if (delay >= 30 && green > 0){
+                        count_green++;
+                    }
+                    
+                    if (count_red >= 3){
                         red_ball_count.incrementAndGet();
+                        count_red = 0;
                         delay = 0;
                     }
                     
-                    if (delay > 50 && green > 0){
+                    if (count_green >= 3){
                         green_ball_count.incrementAndGet();
+                        count_green = 0;
                         delay = 0;
                     }
                     
                     try{
-                        Thread.sleep(10);
+                        Thread.sleep(1);
                     } catch (Exception exc){
                         exc.printStackTrace();
                     }
