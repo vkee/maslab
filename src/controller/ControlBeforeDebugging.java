@@ -16,9 +16,9 @@ import devices.sensors.Encoder;
 import devices.sensors.Gyroscope;
 import devices.sensors.Ultrasonic;
 
-public class Control {
+public class ControlBeforeDebugging {
     public static void main(String[] args){      
-        Control robot = new Control();
+        ControlBeforeDebugging robot = new ControlBeforeDebugging();
         robot.loop();
     }
     
@@ -26,6 +26,10 @@ public class Control {
     private MapleComm comm;
     
     // CONSTANTS
+    private final int L = 0;
+    private final int R = 1;
+    private final int A = 2;
+    private final int B = 3;
     private final int WIDTH = 320;
     private final int HEIGHT = 240;
     private final int BUFF_LENGTH = 6;
@@ -39,7 +43,7 @@ public class Control {
     Vision vision;
     
     // STATE VALUES
-    double distanceL, distanceR, distanceA, distanceB;
+    double[] distance;
     double time;
     double prev_time;
     double angle;
@@ -57,8 +61,8 @@ public class Control {
     // SENSORS AND ACTUATORS
     //private ColorSensor color_sensor;
     private Cytron motorL, motorR;
-    private Ultrasonic sonarL, sonarR, sonarA, sonarB;
-    private Encoder encoderL, encoderR;
+    private Ultrasonic[] sonar;
+    private Encoder[] encoder;
     private Gyroscope gyro;
     private DigitalOutput relay;
     
@@ -66,10 +70,10 @@ public class Control {
     PID pid_align, pid_gyro, pid_encoder, pid_target_x, pid_target_y;
     
     // BUFFERS
-    private List<Double> sonar_buffL, sonar_buffR, sonar_buffA, sonar_buffB;
-    private double[] sonar_buff_statsL, sonar_buff_statsR, sonar_buff_statsA, sonar_buff_statsB;
-    private List<Double> encoder_buffL, encoder_buffR;
-    private double[] encoder_buff_statsL, encoder_buff_statsR;
+    private List<Double>[] sonar_buff;
+    private double[][] sonar_buff_stats;
+    private List<Double>[] encoder_buff;
+    private double[][] encoder_buff_stats;
     private List<Double> gyro_buff;
     private double[] gyro_buff_stats;
     
@@ -88,7 +92,7 @@ public class Control {
     private enum BallCollectState { TARGETING, APPROACHING, COLLECTING };
     private enum DepositState { APPROACHING, ALIGNING, BACKING, CENTERING, DEPOSITING };
     
-    public Control(){
+    public ControlBeforeDebugging(){
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         
         // MOTOR INPUTS
@@ -99,6 +103,7 @@ public class Control {
         vision = new Vision(CAMERA_NUM, WIDTH, HEIGHT);
         
         // VALUES
+        distance = new double[5];
         time = 0;
         prev_time = 0;
         angle = 0;
@@ -116,17 +121,46 @@ public class Control {
         motorL = new Cytron(4, 0);
         motorR = new Cytron(10, 1);
         
-        sonarL = new Ultrasonic(36, 35);
-        sonarR = new Ultrasonic(26, 25);
-        sonarA = new Ultrasonic(32, 31);
-        sonarB = new Ultrasonic(34, 33);
+        Ultrasonic sonarA = new Ultrasonic(32, 31);
+        Ultrasonic sonarB = new Ultrasonic(34, 33);
+        Ultrasonic sonarL = new Ultrasonic(36, 35);
+        Ultrasonic sonarR = new Ultrasonic(26, 25);
+        sonar = new Ultrasonic[]{sonarL, sonarR, sonarA, sonarB};
         
-        encoderL = new Encoder(5, 7);
-        encoderR = new Encoder(6, 8);
+        Encoder encoderL = new Encoder(5, 7);
+        Encoder encoderR = new Encoder(6, 8);
+        encoder = new Encoder[]{encoderL, encoderR};
         
-        gyro = new Gyroscope(1, 9);
+        gyro = new Gyroscope(1, 9); // Fill in with different ports
         
         relay = new DigitalOutput(37);
+        
+        // PIDS
+        pid_align = new PID(0.15, K_PROP, K_DIFF, K_INT);
+        pid_gyro = new PID(0, K_PROP, K_DIFF, K_INT);
+        pid_encoder = new PID(0, K_PROP, K_DIFF, K_INT);
+        pid_target_x = new PID(WIDTH/2, K_PROP, K_DIFF, K_INT);
+        pid_target_y = new PID(0, K_PROP, K_DIFF, K_INT);
+        
+        pid_align.update(sonar[L].getDistance(), true);
+        pid_gyro.update(0, true);
+        pid_encoder.update(0, true);
+        pid_target_x.update(WIDTH/2, true);
+        pid_target_y.update(0, true);
+        
+        // BUFFERS
+        sonar_buff = new LinkedList[4];
+        sonar_buff_stats = new double[4][4];
+        for (int i = 0; i < 4; i++){
+            sonar_buff[i] = new LinkedList<Double>();
+        }
+        encoder_buff = new LinkedList[2];
+        encoder_buff_stats = new double[2][2];
+        for (int i = 0; i < 2; i++){
+            encoder_buff[i] = new LinkedList<Double>();
+        }
+        gyro_buff = new LinkedList<Double>();
+        gyro_buff_stats = new double[2];
         
         // REGISTER DEVICES AND INITIALIZE
         comm.registerDevice(sonarA);
@@ -142,30 +176,6 @@ public class Control {
         
         System.out.println("Initializing...");
         comm.initialize();
-        
-        comm.updateSensorData();
-        
-        // PIDS
-        pid_align = new PID(0.15, K_PROP, K_DIFF, K_INT);
-        pid_gyro = new PID(0, K_PROP, K_DIFF, K_INT);
-        pid_encoder = new PID(0, K_PROP, K_DIFF, K_INT);
-        pid_target_x = new PID(WIDTH/2, K_PROP, K_DIFF, K_INT);
-        pid_target_y = new PID(0, K_PROP, K_DIFF, K_INT);
-        
-        pid_align.update(sonarL.getDistance(), true);
-        pid_gyro.update(0, true);
-        pid_encoder.update(0, true);
-        pid_target_x.update(WIDTH/2, true);
-        pid_target_y.update(0, true);
-        
-        // DISTANCES
-        distanceL = sonarL.getDistance();
-        distanceR = sonarR.getDistance();
-        distanceA = sonarA.getDistance();
-        distanceB = sonarB.getDistance();
-        
-        // BUFFERS
-        sonarBuffInit();
         
         // STATE INITIALIZATION
         control_state = ControlState.WANDER;
@@ -208,10 +218,16 @@ public class Control {
         comm.updateSensorData();
         
         // UPDATE DISTANCES
-        distanceL = sonarL.getDistance();
-        distanceR = sonarR.getDistance();
-        distanceA = sonarA.getDistance();
-        distanceB = sonarB.getDistance();
+        distance[L] = sonar[L].getDistance();
+        distance[R] = sonar[R].getDistance();
+        distance[A] = sonar[A].getDistance();
+        distance[B] = sonar[B].getDistance();
+        
+        // BUFFER INITIALIZATION
+        sonarBuffInit(L, distance[L]);
+        sonarBuffInit(R, distance[R]);
+        sonarBuffInit(A, distance[A]);
+        sonarBuffInit(B, distance[B]);
         
         // INITIALIZE
         motorL.setSpeed(0);
@@ -229,25 +245,25 @@ public class Control {
             comm.updateSensorData();
             
             // UPDATE DISTANCES
-            distanceL = sonarL.getDistance();
-            distanceR = sonarR.getDistance();
-            distanceA = sonarA.getDistance();
-            distanceB = sonarB.getDistance();
+            distance[L] = sonar[L].getDistance();
+            distance[R] = sonar[R].getDistance();
+            distance[A] = sonar[A].getDistance();
+            distance[B] = sonar[B].getDistance();
             
-            System.out.println("distanceL: " + sonarL.getDistance());
-            System.out.println("distanceR: " + sonarR.getDistance());
-            System.out.println("distanceA: " + sonarA.getDistance());
-            System.out.println("distanceB: " + sonarB.getDistance());
+            System.out.println("distanceL: " + sonar[L].getDistance());
+            System.out.println("distanceR: " + sonar[R].getDistance());
+            System.out.println("distanceA: " + sonar[A].getDistance());
+            System.out.println("distanceB: " + sonar[B].getDistance());
             
-            sonarBuffUpdate(sonarL, sonar_buffL, sonar_buff_statsL);
-            sonarBuffUpdate(sonarR, sonar_buffR, sonar_buff_statsR);
-            sonarBuffUpdate(sonarA, sonar_buffA, sonar_buff_statsA);
-            sonarBuffUpdate(sonarB, sonar_buffB, sonar_buff_statsB);
+            sonarBuffUpdate(L, distance[L]);
+            sonarBuffUpdate(R, distance[R]);
+            sonarBuffUpdate(A, distance[A]);
+            sonarBuffUpdate(B, distance[B]);
             
             // UPDATE STATE VALUES
             time = System.currentTimeMillis();
             angle += (time - prev_time)*gyro.getOmega();
-            encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
+            encoder_diff = encoder[L].getTotalAngularDistance() - encoder[R].getTotalAngularDistance();
             
             // UPDATE VISION
             vision.update();
@@ -278,13 +294,13 @@ public class Control {
     
     private void printInputs(){
         System.out.println("/////////////////////////////");
-        double dist_var = sonar_buff_statsL[2];
+        double dist_var = sonar_buff_stats[L][2];
         
         System.out.println("dist_var: " + dist_var);
-        System.out.println("distanceL: " + distanceL);
-        System.out.println("distanceR: " + distanceR);
-        System.out.println("distanceA: " + distanceA);
-        System.out.println("distanceB: " + distanceB);
+        System.out.println("distanceL: " + distance[L]);
+        System.out.println("distanceR: " + distance[R]);
+        System.out.println("distanceA: " + distance[A]);
+        System.out.println("distanceB: " + distance[B]);
         
         System.out.println("forward: " + forward);
         System.out.println("turn: " + turn);
@@ -309,9 +325,9 @@ public class Control {
         } else {
             // ACCOUNT FOR MED_A
             
-            double med_A = sonar_buff_statsA[3];
-            double med_B = sonar_buff_statsB[3];
-            double med_L = sonar_buff_statsL[3];
+            double med_A = sonar_buff_stats[A][3];
+            double med_B = sonar_buff_stats[B][3];
+            double med_L = sonar_buff_stats[L][3];
             
             if (wander_state == WanderState.DEFAULT){
                 turn = Math.max(-0.05, Math.min(0.05, pid_align.update(med_L, false)));
@@ -393,10 +409,10 @@ public class Control {
     private void estimateWanderState(){        
         if (control_state == ControlState.WANDER){
             // ACCOUNT FOR MED_A
-            double med_L = sonar_buff_statsL[3];
-            double med_A = sonar_buff_statsA[3];
-            double med_B = sonar_buff_statsB[3];
-            double dist_var = sonar_buff_statsL[2];
+            double med_L = sonar_buff_stats[L][3];
+            double med_A = sonar_buff_stats[A][3];
+            double med_B = sonar_buff_stats[B][3];
+            double dist_var = sonar_buff_stats[L][2];
             WanderState temp_state = WanderState.DEFAULT;
 
             if (med_B < 0.15){
@@ -422,7 +438,7 @@ public class Control {
                 wander_state_count = 0;
                 if (wander_state == WanderState.ALIGNED){
                     angle = 0;
-                    prev_encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
+                    prev_encoder_diff = encoder[L].getTotalAngularDistance() - encoder[R].getTotalAngularDistance();
                 }
             }
         }
@@ -434,73 +450,42 @@ public class Control {
         }
     }
     
-    private void sonarBuffInit(){
-        sonar_buffL = new LinkedList<Double>();
-        sonar_buffR = new LinkedList<Double>();
-        sonar_buffA = new LinkedList<Double>();
-        sonar_buffB = new LinkedList<Double>();
+    private void sonarBuffInit(int label, double distance){
         for (int i = 0; i < BUFF_LENGTH; i++){
-            sonar_buffL.add(sonarL.getDistance());
-            sonar_buffR.add(sonarR.getDistance());
-            sonar_buffA.add(sonarA.getDistance());
-            sonar_buffB.add(sonarB.getDistance());
+            sonar_buff[label].add(distance);
         }
-        
-        sonar_buff_statsL = new double[4];
-        sonar_buff_statsR = new double[4];
-        sonar_buff_statsA = new double[4];
-        sonar_buff_statsB = new double[4];
-        
-        sonar_buff_statsL[0] = sonarL.getDistance();
-        sonar_buff_statsL[1] = sonarL.getDistance()*sonarL.getDistance();
-        sonar_buff_statsL[2] = 0;
-        sonar_buff_statsL[3] = sonarL.getDistance();
-        
-        sonar_buff_statsR[0] = sonarR.getDistance();
-        sonar_buff_statsR[1] = sonarR.getDistance()*sonarR.getDistance();
-        sonar_buff_statsR[2] = 0;
-        sonar_buff_statsR[3] = sonarR.getDistance();
-        
-        sonar_buff_statsA[0] = sonarA.getDistance();
-        sonar_buff_statsA[1] = sonarA.getDistance()*sonarA.getDistance();
-        sonar_buff_statsA[2] = 0;
-        sonar_buff_statsA[3] = sonarA.getDistance();
-        
-        sonar_buff_statsB[0] = sonarB.getDistance();
-        sonar_buff_statsB[1] = sonarB.getDistance()*sonarB.getDistance();
-        sonar_buff_statsB[2] = 0;
-        sonar_buff_statsB[3] = sonarB.getDistance();
-        
-        // IMPLEMENT ENCODER AND GYRO BUFFERS
+        sonar_buff_stats[label][0] = distance;
+        sonar_buff_stats[label][1] = distance*distance;
+        sonar_buff_stats[label][2] = 0;
+        sonar_buff_stats[label][3] = distance;
     }
     
-    private void sonarBuffUpdate(Ultrasonic sonar, List<Double> buffer, double[] buffer_stats){
-        if (buffer.size() != BUFF_LENGTH){
-            System.out.println("Buffer not yet initialized");
+    private void sonarBuffUpdate(int label, double distance){
+        if (sonar_buff[label].size() != BUFF_LENGTH){
+            System.out.println("Buffer " + label + " not yet initialized");
         } else {
-            double distance = sonar.getDistance();
-            double dist_exp = buffer_stats[0];
-            double dist_sqexp = buffer_stats[1];
-            double dist_var = buffer_stats[2];
-            double prev_dist = buffer.get(0);
+            double dist_exp = sonar_buff_stats[label][0];
+            double dist_sqexp = sonar_buff_stats[label][1];
+            double dist_var = sonar_buff_stats[label][2];
+            double prev_dist = sonar_buff[label].get(0);
             dist_exp = (BUFF_LENGTH*dist_exp + distance - prev_dist)/BUFF_LENGTH;
             dist_sqexp = (BUFF_LENGTH*dist_sqexp + distance*distance - prev_dist*prev_dist)/BUFF_LENGTH;
             dist_var = dist_sqexp - dist_exp*dist_exp;
             
             List<Double> sorted = new ArrayList<Double>();
-            for (Double num : buffer){
+            for (Double num : sonar_buff[label]){
                 sorted.add(num);
             }
             Collections.sort(sorted);
             double median = 0.5*(sorted.get((int) BUFF_LENGTH/2 - 1) + sorted.get((int) BUFF_LENGTH/2));
             
-            buffer.add(distance);
-            buffer.remove(0);
+            sonar_buff[label].add(distance);
+            sonar_buff[label].remove(0);
             
-            buffer_stats[0] = dist_exp;
-            buffer_stats[1] = dist_sqexp;
-            buffer_stats[2] = dist_var;
-            buffer_stats[3] = median;
+            sonar_buff_stats[label][0] = dist_exp;
+            sonar_buff_stats[label][1] = dist_sqexp;
+            sonar_buff_stats[label][2] = dist_var;
+            sonar_buff_stats[label][3] = median;
         }
     }
     

@@ -6,6 +6,7 @@ import java.util.List;
 import comm.MapleComm;
 import comm.MapleIO;
 import devices.actuators.Cytron;
+import devices.actuators.DigitalOutput;
 import devices.sensors.Encoder;
 import devices.sensors.Gyroscope;
 import devices.sensors.Ultrasonic;
@@ -21,10 +22,8 @@ public class RobotControlBasic {
     
     MapleComm comm;
     Cytron motorL, motorR;
-    //Ultrasonic sonarA, sonarB, sonarC, sonarL, sonarR;
-    Ultrasonic sonarB, sonarL;
-    //Gyroscope gyro;
-    //Encoder encoderL, encoderR;
+    Ultrasonic sonarA, sonarB, sonarL, sonarR;
+    DigitalOutput relay;
     
     ControlState control_state;
     MapState map_state;
@@ -41,30 +40,21 @@ public class RobotControlBasic {
         motorL = new Cytron(0, 1);
         motorR = new Cytron(2, 3);
         
-        //sonarA = new Ultrasonic(34, 33);
-        sonarB = new Ultrasonic(32, 31);
-        //sonarC = new Ultrasonic(32, 31);
-        sonarL = new Ultrasonic(36, 35); // Fill in with different ports
-        //sonarR = new Ultrasonic(5, 6); // Fill in with different ports
-        //encoderL = new Encoder(19, 20);
-        //encoderR = new Encoder(18, 17);
+        sonarA = new Ultrasonic(32, 31);
+        sonarB = new Ultrasonic(34, 33);
+        sonarL = new Ultrasonic(36, 35);
+        sonarR = new Ultrasonic(26, 25);
         
-        //gyro = new Gyroscope(1, 8);
+        relay = new DigitalOutput(37);
         
-        //comm.registerDevice(sonarA);
         comm.registerDevice(sonarB);
-        //comm.registerDevice(sonarC);
         comm.registerDevice(sonarL);
-        //comm.registerDevice(sonarR);
         comm.registerDevice(motorL);
         comm.registerDevice(motorR);
-        //comm.registerDevice(gyro);
-        //comm.registerDevice(encoderL);
-        //comm.registerDevice(encoderR);
+        comm.registerDevice(relay);
         
         System.out.println("Initializing...");
         comm.initialize();
-        //comm.updateSensorData();
         
         control_state = ControlState.WALL_FOLLOW;
         map_state = MapState.DEFAULT;
@@ -95,12 +85,10 @@ public class RobotControlBasic {
         System.out.println("Beginning to follow wall...");
         comm.updateSensorData();
         
+        // Initialize Sonars
+        relay.setValue(false);
+        
         // Values
-        //double prev_time = 0;
-        //double time = 0;
-        //double angle = 0;
-        //double prev_encoder_diff = 0;
-        //double encoder_diff = 0;
         double distanceL = sonarL.getDistance();
         double distanceB = sonarB.getDistance();
         MapState prev_map_state = MapState.DEFAULT;
@@ -118,10 +106,6 @@ public class RobotControlBasic {
         
         // PID
         PID pid_align = new PID(0.15, 0.2, 0.01, 0.01);
-        //PID pid_gyro = new PID(0, 0.2, 0.01, 0.01);
-        //PID pid_encoder = new PID(0, 0.2, 0.01, 0.01);
-        //pid_gyro.update(0, true);
-        //pid_encoder.update(0, true);
         turn = Math.max(-0.05, Math.min(0.05, pid_align.update(dist_exp, false)));
         forward = 0.1;
         
@@ -142,11 +126,8 @@ public class RobotControlBasic {
             comm.updateSensorData();
             
             // UPDATE VALUES
-            //time = System.currentTimeMillis();
-            //angle += (time - prev_time)*gyro.getOmega();
             distanceL = sonarL.getDistance();
             distanceB = sonarB.getDistance();
-            //encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
 
             // UPDATE DISTANCE WINDOW
             prev_dist = prev_dists.get(0);
@@ -159,27 +140,21 @@ public class RobotControlBasic {
             System.out.println("dist_var: " + dist_var);
             System.out.println("distanceB: " + distanceB);
             System.out.println("distanceL: " + distanceL);
-            
+
             prev_map_state = map_state;
-            
-            //if (map_state_count > 30){
-                if (distanceB < 0.15){
-                    map_state = MapState.WALL_IMMEDIATE;
-                } else if (distanceB < 0.3){
-                    map_state = MapState.WALL_AHEAD;
-                } else if (dist_var < 0.005 && Math.abs(distanceL - 0.15) < 0.01){
-                    map_state = MapState.ALIGNED;
-                } else {
-                    map_state = MapState.DEFAULT;
-                }
-            //}
+
+            if (distanceB < 0.15){
+                map_state = MapState.WALL_IMMEDIATE;
+            } else if (distanceB < 0.3){
+                map_state = MapState.WALL_AHEAD;
+            } else if (dist_var < 0.005 && Math.abs(distanceL - 0.15) < 0.01){
+                map_state = MapState.ALIGNED;
+            } else {
+                map_state = MapState.DEFAULT;
+            }
             
             if (prev_map_state != map_state){
                 map_state_count = 0;
-//                if (map_state == MapState.ALIGNED){
-//                    angle = 0;
-//                    prev_encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
-//                }
             }
             
             map_state_count++;
@@ -190,9 +165,6 @@ public class RobotControlBasic {
                 System.out.println("Default");
             } else if (map_state == MapState.ALIGNED){
                 turn = Math.max(-0.05, Math.min(0.05, pid_align.update(dist_exp, false)));
-                //turn = 0.4*Math.max(-0.05, Math.min(0.05, pid_gyro.update(angle, false)));
-                //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_align.update(dist_exp, false)));
-                //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_encoder.update(encoder_diff - prev_encoder_diff, false)));
                 forward = 0.1;
                 System.out.println("Aligned");
             } else if (map_state == MapState.WALL_AHEAD){
