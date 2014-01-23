@@ -1,28 +1,23 @@
 package controller;
 
+import comm.MapleComm;
+import comm.MapleIO;
+import devices.actuators.PWMOutput;
+
 public class Test {
 
 	public static void main(String[] args) {
-		KitBotModel model = new KitBotModel();
-		//model.setMotors(0.1, 0.1);
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		model.setMotors(128, 128);
+		MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
+		PWMOutput left = new PWMOutput(0);
+		PWMOutput right = new PWMOutput(1);
+		comm.registerDevice(left);
+		comm.registerDevice(right);
+		comm.initialize();
 		
 		while (true) {
-			model.updateData();
-			System.out.println("sonar1: " + model.getSonar1Distance());
-			System.out.println("sonar2: " + model.getSonar2Distance());
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			left.setValue(0.5);
+			right.setValue(0.5);
+			comm.transmit();
 		}
 	}
 }
