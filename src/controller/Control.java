@@ -10,10 +10,10 @@ import vision.ColorSensor;
 import vision.Vision;
 import comm.MapleComm;
 import comm.MapleIO;
+import devices.actuators.Cytron;
 import devices.sensors.Encoder;
 import devices.sensors.Gyroscope;
 import devices.sensors.Ultrasonic;
-import devices.actuators.PWMOutput;
 
 public class Control {
     public static void main(String[] args){      
@@ -59,7 +59,7 @@ public class Control {
     
     // SENSORS AND ACTUATORS
     private ColorSensor color_sensor;
-    private MotorController motorL, motorR;
+    private Cytron motorL, motorR;
     private Ultrasonic[] sonar;
     private Encoder[] encoder;
     private Gyroscope gyro;
@@ -116,23 +116,20 @@ public class Control {
         color_sensor = new ColorSensor(red_ball_count, green_ball_count);
         color_sensor.start();
         
-        motorL = new MotorController(1);
-        motorR = new MotorController(2);
-        PWMOutput motorL_pwm = motorL.getPWM();
-        PWMOutput motorR_pwm = motorR.getPWM();
+        motorL = new Cytron(4, 0);
+        motorR = new Cytron(10, 1);
         
-        Ultrasonic sonarA = new Ultrasonic(34, 33); // Fill in with different ports
-        Ultrasonic sonarB = new Ultrasonic(32, 31);
-        Ultrasonic sonarC = new Ultrasonic(32, 31); // Fill in with different ports
+        Ultrasonic sonarA = new Ultrasonic(32, 31); // Fill in with different ports
+        Ultrasonic sonarB = new Ultrasonic(34, 33);
         Ultrasonic sonarL = new Ultrasonic(36, 35);
-        Ultrasonic sonarR = new Ultrasonic(5, 6); // Fill in with different ports
-        sonar = new Ultrasonic[]{sonarL, sonarR, sonarA, sonarB, sonarC};
+        Ultrasonic sonarR = new Ultrasonic(26, 25); // Fill in with different ports
+        sonar = new Ultrasonic[]{sonarL, sonarR, sonarA, sonarB};
         
-        Encoder encoderL = new Encoder(19, 20); // Fill in with different ports
-        Encoder encoderR = new Encoder(18, 17); // Fill in with different ports
+        Encoder encoderL = new Encoder(5, 7); // Fill in with different ports
+        Encoder encoderR = new Encoder(6, 8); // Fill in with different ports
         encoder = new Encoder[]{encoderL, encoderR};
         
-        gyro = new Gyroscope(1, 8); // Fill in with different ports
+        gyro = new Gyroscope(1, 9); // Fill in with different ports
         
         // PIDS
         pid_align = new PID(0.15, K_PROP, K_DIFF, K_INT);
@@ -164,11 +161,10 @@ public class Control {
         // REGISTER DEVICES AND INITIALIZE
         comm.registerDevice(sonarA);
         comm.registerDevice(sonarB);
-        comm.registerDevice(sonarC);
         comm.registerDevice(sonarL);
         comm.registerDevice(sonarR);
-        comm.registerDevice(motorL_pwm);
-        comm.registerDevice(motorR_pwm);
+        comm.registerDevice(motorL);
+        comm.registerDevice(motorR);
         comm.registerDevice(gyro);
         comm.registerDevice(encoderL);
         comm.registerDevice(encoderR);
@@ -299,12 +295,15 @@ public class Control {
     private void updateMotorInputs(){
         if (control_state == ControlState.BALL_COLLECT){
             if (ball_collect_state == BallCollectState.TARGETING){
+                System.out.println("BALL_COLLECT: TARGETING");
                 turn = Math.max(-0.05, Math.min(0.05, pid_target_x.update(target_x, false)));
                 forward = 0;
             } else if (ball_collect_state == BallCollectState.APPROACHING){
+                System.out.println("BALL_COLLECT: APPROACHING");
                 turn = Math.max(-0.05, Math.min(0.05, pid_target_x.update(target_x, false)));
                 forward = 0.1;
             } else {
+                System.out.println("BALL_COLLECT: COLLECTING");
                 turn = Math.max(-0.05, Math.min(0.05, pid_target_x.update(target_x, false)));
                 forward = Math.max(0, Math.min(0.05, pid_target_y.update(target_y, false)));
             }
@@ -483,31 +482,5 @@ public class Control {
     
     private void releaseRedBall(){
         //Servo releases all red balls and resets after a delay
-    }
-    
-    private class MotorController {
-        private final PWMOutput pwm;
-        
-        public MotorController(int pin){
-            pwm = new PWMOutput(pin);
-        }
-        
-        public void setSpeed(double speed){
-            pwm.setValue(0.5 + speed);
-        }
-        
-        public PWMOutput getPWM(){
-            return pwm;
-        }
-    }
-    
-    private class Servo {
-        public Servo(){
-            // Initialize servo
-        }
-        
-        public void activate(){
-            // Active servo
-        }
     }
 }

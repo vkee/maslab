@@ -67,6 +67,7 @@ public class Vision {
     public BufferedImage curr_image;
     public BufferedImage colorized;
     private Ball red_target, green_target;
+    private Reactor reactor_target;
     
     // FILTERS
     private final FilterOp blur, colorize, eliminateTop, objRec;
@@ -98,6 +99,7 @@ public class Vision {
         // SETUP TARGETS
         red_target = new Ball(false);
         green_target = new Ball(false);
+        reactor_target = new Reactor(false);
         
         // FILTERS
         blur = new FilterOp("blur");
@@ -211,13 +213,29 @@ public class Vision {
         }
     }
     
-    public int getNextBallY(){
+    public int getNextBallY() throws RuntimeException{
         if (!green_target.target && !red_target.target){
             throw new RuntimeException("No ball to target");
         } else if (green_target.radius > red_target.radius){
             return green_target.y;
         } else {
             return red_target.y;
+        }
+    }
+    
+    public int getNextReactorX() throws RuntimeException {
+        if (!reactor_target.target){
+            throw new RuntimeException("No reactor to target");
+        } else {
+            return reactor_target.x;
+        }
+    }
+    
+    public int getNextReactorY() throws RuntimeException {
+        if (!reactor_target.target){
+            throw new RuntimeException("No reactor to target");
+        } else {
+            return reactor_target.y;
         }
     }
     
@@ -257,10 +275,30 @@ public class Vision {
         }
         
         public Ball(boolean target){
-            this.target = false;
+            this.target = target;
             this.x = 0;
             this.y = 0;
             this.radius = 0;
+        }
+    }
+    
+    private class Reactor {
+        public boolean target;
+        public int x;
+        public int y;
+        public double dimension;
+        
+        public Reactor(int x, int y, double dimension){
+            this.target = true;
+            this.x = x;
+            this.y = y;
+            this.dimension = dimension;
+        }
+        
+        public Reactor(boolean target){
+            this.target = false;
+            this.x = 0;
+            this.y = 0;
         }
     }
 }
