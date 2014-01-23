@@ -14,12 +14,12 @@ void main() {
 	}
 	
 	//GREEN BAND
-	if ( col.y>col.x*1.2 && col.y>col.z*1.2) {
+	if ( col.y>col.x*1.7 && col.y>col.z*1.7) {
 		gl_FragColor = col;//vec4(0,1,0,1);
 	}
 	
 	//RED BAND
-	if ( col.z>col.x*1.2 && col.z>col.y*1.2) {
+	if ( col.z>col.x*1.7 && col.z>col.y*1.7) {
 		gl_FragColor = col;//vec4(0,0,1,1);
 	}
 	
