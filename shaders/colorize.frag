@@ -30,30 +30,30 @@ void main() {
 	
 	
 	//RED BAll
-	if ( col.z>col.x*1.2 && col.z>col.y*1.2 && y > horizon)
+	if ( col.z>col.x*1.3 && col.z>col.y*1.3 && y > horizon)
 		gl_FragColor = vec4(0,0,1,1);
 	
 	//GREEN BALL
-	if ( col.y>col.x*1.2 && col.y>col.z*1.2 && y > horizon)
+	if ( col.y>col.x*1.3 && col.y>col.z*1.3 && y > horizon)
 		gl_FragColor = vec4(0,1,0,1);
 	
 	//BLUE BAND
-	if ( col.x>col.y*1.2 && col.x>col.z*1.2 && y < horizon) {
+	if ( col.x>col.y*1.3 && col.x>col.z*1.3 && y < horizon) {
 		gl_FragColor = vec4(1,0,0,1);
 	}
 	
 	//GREEN BAND
-	if ( col.y>col.x*1.2 && col.y>col.z*1.2 && y < horizon) {
+	if ( col.y>col.x*1.3 && col.y>col.z*1.3 && y < horizon) {
 		gl_FragColor = vec4(0,1,0,1);
 	}
 	
 	//RED BAND
-	if ( col.z>col.x*1.2 && col.z>col.y*1.2 && y < horizon) {
+	if ( col.z>col.x*1.3 && col.z>col.y*1.3 && y < horizon) {
 		gl_FragColor = vec4(0,0,1,1);
 	}
 	
 	//YELLOW BAND
-	if ( col.y>col.x*1.2 && col.z>col.x*1.2 && col.z<col.y*1.2 && col.y<col.z*1.2 && y < horizon) {
+	if ( col.y>col.x*1.3 && col.z>col.x*1.3 && col.z<col.y*1.3 && col.y<col.z*1.3 && y < horizon) {
 		gl_FragColor = vec4(0,1,1,1);
 	}
 	
