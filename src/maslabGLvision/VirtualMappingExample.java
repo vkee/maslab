@@ -20,19 +20,19 @@ public class VirtualMappingExample {
 		FilterOp wallFilter = new FilterOp("wallFilter");
 		FilterOp wallFilterRefine = new FilterOp("wallFilterRefine");
 		
-		BufferedImage original = TestBed.loadImage( new File("images\\field.png") );
+		BufferedImage original = TestBed.loadImage( new File("images\\greenband.png") );
 		tester.setImage(original);
 		
 		int frames = 0;
 		long prev = System.currentTimeMillis();
 		while ( true ) {
-			//blur.apply(original);
-			//colorize.apply();
-			//eliminateTop.apply();
-			//objRec.apply();
-		    wallDetection.apply(original);
-		    wallFilter.apply();
-		    wallFilterRefine.apply();
+			blur.apply(original);
+			colorize.apply();
+			eliminateTop.apply();
+			objRec.apply();
+//		    wallDetection.apply(original);
+//		    wallFilter.apply();
+//		    wallFilterRefine.apply();
 			BufferedImage filtered = FilterOp.getImage(); 
 			tester.setImage(filtered);
 			
