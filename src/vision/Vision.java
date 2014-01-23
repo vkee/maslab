@@ -148,22 +148,32 @@ public class Vision {
         green_target = new Ball(false);
         int pixel, red, green, blue;
         double radius;
-        for (int x = 0; x < filtered.getWidth(); x++){
-            for (int y = 0; y < filtered.getHeight(); y++){
-                pixel = filtered.getRGB(x, y);
-                red = (pixel >> 16) & 0xFF;
-                green = (pixel >> 8) & 0xFF;
-                blue = (pixel) & 0xFF;
-                if (red > 0){
-                    radius = 50*red/256.0;
-                    if (radius > red_target.radius){
-                        red_target = new Ball(x, y, radius);
+        for (int x = 0; x < WIDTH; x++){
+            for (int y = 0; y < HEIGHT; y++){
+                if (y >= HEIGHT/2){
+                    pixel = filtered.getRGB(x, y);
+                    red = (pixel >> 16) & 0xFF;
+                    green = (pixel >> 8) & 0xFF;
+                    blue = (pixel) & 0xFF;
+                    if (red > 0){
+                        radius = 50*red/256.0;
+                        if (radius > red_target.radius){
+                            red_target = new Ball(x, y, radius);
+                        }
                     }
-                }
-                if (green > 0){
-                    radius = 50*green/256.0;
-                    if (radius > green_target.radius){
-                        green_target = new Ball(x, y, radius);
+                    if (green > 0){
+                        radius = 50*green/256.0;
+                        if (radius > green_target.radius){
+                            green_target = new Ball(x, y, radius);
+                        }
+                    }
+                } else {
+                    pixel = colorized.getRGB(x, y);
+                    red = (pixel >> 16) & 0xFF;
+                    green = (pixel >> 8) & 0xFF;
+                    blue = (pixel) & 0xFF;
+                    if (green > 0){
+                        // FILL IN WITH CODE TO FIND REACTOR CENTER
                     }
                 }
             }

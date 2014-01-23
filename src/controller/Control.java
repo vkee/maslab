@@ -10,10 +10,10 @@ import vision.ColorSensor;
 import vision.Vision;
 import comm.MapleComm;
 import comm.MapleIO;
-import devices.actuators.Cytron;
 import devices.sensors.Encoder;
 import devices.sensors.Gyroscope;
 import devices.sensors.Ultrasonic;
+import devices.actuators.PWMOutput;
 
 public class Control {
     public static void main(String[] args){      
@@ -29,7 +29,6 @@ public class Control {
     private final int R = 1;
     private final int A = 2;
     private final int B = 3;
-    private final int C = 4;
     private final int WIDTH = 320;
     private final int HEIGHT = 240;
     private final int BUFF_LENGTH = 6;
@@ -60,7 +59,7 @@ public class Control {
     
     // SENSORS AND ACTUATORS
     private ColorSensor color_sensor;
-    private Cytron motorL, motorR;
+    private MotorController motorL, motorR;
     private Ultrasonic[] sonar;
     private Encoder[] encoder;
     private Gyroscope gyro;
@@ -117,8 +116,10 @@ public class Control {
         color_sensor = new ColorSensor(red_ball_count, green_ball_count);
         color_sensor.start();
         
-        motorL = new Cytron(0, 1);
-        motorR = new Cytron(2, 3);
+        motorL = new MotorController(1);
+        motorR = new MotorController(2);
+        PWMOutput motorL_pwm = motorL.getPWM();
+        PWMOutput motorR_pwm = motorR.getPWM();
         
         Ultrasonic sonarA = new Ultrasonic(34, 33); // Fill in with different ports
         Ultrasonic sonarB = new Ultrasonic(32, 31);
@@ -147,9 +148,9 @@ public class Control {
         pid_target_y.update(0, true);
         
         // BUFFERS
-        sonar_buff = new LinkedList[5];
-        sonar_buff_stats = new double[5][4];
-        for (int i = 0; i < 5; i++){
+        sonar_buff = new LinkedList[4];
+        sonar_buff_stats = new double[4][4];
+        for (int i = 0; i < 4; i++){
             sonar_buff[i] = new LinkedList<Double>();
         }
         encoder_buff = new LinkedList[2];
@@ -166,8 +167,8 @@ public class Control {
         comm.registerDevice(sonarC);
         comm.registerDevice(sonarL);
         comm.registerDevice(sonarR);
-        comm.registerDevice(motorL);
-        comm.registerDevice(motorR);
+        comm.registerDevice(motorL_pwm);
+        comm.registerDevice(motorR_pwm);
         comm.registerDevice(gyro);
         comm.registerDevice(encoderL);
         comm.registerDevice(encoderR);
@@ -215,14 +216,12 @@ public class Control {
         distance[R] = sonar[R].getDistance();
         distance[A] = sonar[A].getDistance();
         distance[B] = sonar[B].getDistance();
-        distance[C] = sonar[C].getDistance();
         
         // BUFFER INITIALIZATION
         sonarBuffInit(L, distance[L]);
         sonarBuffInit(R, distance[R]);
         sonarBuffInit(A, distance[A]);
         sonarBuffInit(B, distance[B]);
-        sonarBuffInit(C, distance[C]);
         
         // INITIALIZE
         motorL.setSpeed(0);
@@ -244,13 +243,11 @@ public class Control {
             distance[R] = sonar[R].getDistance();
             distance[A] = sonar[A].getDistance();
             distance[B] = sonar[B].getDistance();
-            distance[C] = sonar[C].getDistance();
             
             sonarBuffUpdate(L, distance[L]);
             sonarBuffUpdate(R, distance[R]);
             sonarBuffUpdate(A, distance[A]);
             sonarBuffUpdate(B, distance[B]);
-            sonarBuffUpdate(C, distance[C]);
             
             // UPDATE STATE VALUES
             time = System.currentTimeMillis();
@@ -289,8 +286,10 @@ public class Control {
         double dist_var = sonar_buff_stats[L][2];
         
         System.out.println("dist_var: " + dist_var);
-        System.out.println("distanceB: " + distance[B]);
-        System.out.println("distanceL: " + distance[L]);
+        System.out.println("distanceB: " + distance[L]);
+        System.out.println("distanceL: " + distance[R]);
+        System.out.println("distanceB: " + distance[A]);
+        System.out.println("distanceL: " + distance[B]);
         
         System.out.println("forward: " + forward);
         System.out.println("turn: " + turn);
@@ -310,6 +309,9 @@ public class Control {
                 forward = Math.max(0, Math.min(0.05, pid_target_y.update(target_y, false)));
             }
         } else {
+            // ACCOUNT FOR MED_A
+            
+            double med_A = sonar_buff_stats[A][3];
             double med_B = sonar_buff_stats[B][3];
             double med_L = sonar_buff_stats[L][3];
             
@@ -339,6 +341,8 @@ public class Control {
     }
     
     private void estimateControlState(){
+        // INCLUDE CODE TO DEAL WITH DEPOSIT STATE
+        
         ControlState temp_state = ControlState.WANDER;
         
         try {
@@ -390,7 +394,9 @@ public class Control {
      */
     private void estimateWanderState(){        
         if (control_state == ControlState.WANDER){
+            // ACCOUNT FOR MED_A
             double med_L = sonar_buff_stats[L][3];
+            double med_A = sonar_buff_stats[A][3];
             double med_B = sonar_buff_stats[B][3];
             double dist_var = sonar_buff_stats[L][2];
             WanderState temp_state = WanderState.DEFAULT;
@@ -426,7 +432,7 @@ public class Control {
     
     private void estimateDepositState(){
         if (control_state == ControlState.DEPOSIT){
-            
+            // FINISH ESTIMATION OF DEPOSIT STATE
         }
     }
     
@@ -480,12 +486,18 @@ public class Control {
     }
     
     private class MotorController {
-        public MotorController(){
-            // Initialize motor controller
+        private final PWMOutput pwm;
+        
+        public MotorController(int pin){
+            pwm = new PWMOutput(pin);
         }
         
-        public void set(){
-            // Set motor speed
+        public void setSpeed(double speed){
+            pwm.setValue(0.5 + speed);
+        }
+        
+        public PWMOutput getPWM(){
+            return pwm;
         }
     }
     
