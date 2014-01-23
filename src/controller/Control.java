@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import vision.Vision;
 import comm.MapleComm;
@@ -49,6 +50,8 @@ public class Control {
     double prev_encoder_diff;
     double target_x;
     double target_y;
+    AtomicInteger green_ball_count;
+    AtomicInteger red_ball_count;
     
     // MOTOR INPUTS
     private double forward;
@@ -75,13 +78,16 @@ public class Control {
     private ControlState control_state;
     private WanderState wander_state;
     private BallCollectState ball_collect_state;
+    private DepositState deposit_state;
     private int control_state_count;
     private int wander_state_count;
     private int ball_collect_state_count;
+    private int deposit_state_count;
     
-    private enum ControlState { WANDER, BALL_COLLECT };
+    private enum ControlState { WANDER, BALL_COLLECT, DEPOSIT };
     private enum WanderState { DEFAULT, WALL_ADJACENT, ALIGNED, WALL_AHEAD, WALL_IMMEDIATE };
-    private enum BallCollectState { TARGETING, FINDING, COLLECTING };
+    private enum BallCollectState { TARGETING, APPROACHING, COLLECTING };
+    private enum DepositState { APPROACHING, ALIGNING, BACKING, CENTERING, DEPOSITING };
     
     public Control(){
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
@@ -102,6 +108,8 @@ public class Control {
         prev_encoder_diff = 0;
         target_x = WIDTH + 1;
         target_y = HEIGHT + 1;
+        green_ball_count = new AtomicInteger(0);
+        red_ball_count = new AtomicInteger(0);
         
         // SENSORS AND ACTUATORS
         motorL = new Cytron(0, 1);
@@ -166,9 +174,11 @@ public class Control {
         control_state = ControlState.WANDER;
         wander_state = WanderState.DEFAULT;
         ball_collect_state = BallCollectState.TARGETING;
+        deposit_state = DepositState.APPROACHING;
         control_state_count = 0;
         wander_state_count = 0;
         ball_collect_state_count = 0;
+        deposit_state_count = 0;
     }
     
     /*
@@ -287,7 +297,7 @@ public class Control {
             if (ball_collect_state == BallCollectState.TARGETING){
                 turn = Math.max(-0.05, Math.min(0.05, pid_target_x.update(target_x, false)));
                 forward = 0;
-            } else if (ball_collect_state == BallCollectState.FINDING){
+            } else if (ball_collect_state == BallCollectState.APPROACHING){
                 turn = Math.max(-0.05, Math.min(0.05, pid_target_x.update(target_x, false)));
                 forward = 0.1;
             } else {
@@ -409,6 +419,12 @@ public class Control {
         }
     }
     
+    private void estimateDepositState(){
+        if (control_state == ControlState.DEPOSIT){
+            
+        }
+    }
+    
     private void sonarBuffInit(int label, double distance){
         for (int i = 0; i < BUFF_LENGTH; i++){
             sonar_buff[label].add(distance);
@@ -443,6 +459,38 @@ public class Control {
             sonar_buff_stats[label][1] = dist_sqexp;
             sonar_buff_stats[label][2] = dist_var;
             sonar_buff_stats[label][3] = median;
+        }
+    }
+    
+    private void lowerRamp(double angle){
+        // Servo lowers the ramp to the specified angle
+    }
+    
+    private void releaseGreenBall(){
+        // Servo releases a green ball and resets after a delay
+    }
+    
+    private void releaseRedBall(){
+        //Servo releases all red balls and resets after a delay
+    }
+    
+    private class MotorController {
+        public MotorController(){
+            // Initialize motor controller
+        }
+        
+        public void set(){
+            // Set motor speed
+        }
+    }
+    
+    private class Servo {
+        public Servo(){
+            // Initialize servo
+        }
+        
+        public void activate(){
+            // Active servo
         }
     }
 }

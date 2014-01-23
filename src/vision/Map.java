@@ -5,12 +5,10 @@ import java.awt.image.BufferedImage;
 import comm.BotClientMap.Point;
 
 public class Map {
-    /*
-     * NOTES:
-     * Have vision class process necessary information then pass it to an
-     * instance of this class which is initialized with input map. Find
-     * way to reliably aim the camera directly ahead.
-     */
+    public static void main(String[] args){
+        Vision vision = new Vision(1, 320, 240);
+        
+    }
     
     // CONSTANTS
     private final double CAMERA_DIST = 50;
@@ -31,32 +29,6 @@ public class Map {
         field = init;
         resetField();
     }
-    
-//    public void calibrateMapCalculations(BufferedImage colorized){
-//        int pixel, blue;
-//        double ratio_1, ratio_2;
-//        int num = 0;
-//        double exp_lin = 0;
-//        double exp_sq = 0;
-//        for (int x = 0; x < colorized.getWidth(); x++){
-//            for (int y = 1; y < colorized.getHeight(); y++){
-//                pixel = colorized.getRGB(x, y);
-//                blue = (pixel) & 0xFF;
-//                if (blue > 0 && ((colorized.getRGB(x, y-1)) & 0xFF) == 0){
-//                    ratio_1 = Math.abs(WALL_BLUE_HEIGHT/blue);
-//                    ratio_2 = Math.abs(WALL_WHITE_HEIGHT - CAMERA_HEIGHT)/(y - (HEIGHT/2));
-//                    num++;
-//                    exp_lin += (ratio_1/ratio_2);
-//                    exp_sq += (ratio_1/ratio_2)*(ratio_1/ratio_2);
-//                }
-//            }
-//        }
-//        exp_lin = exp_lin/num;
-//        exp_sq = exp_sq/num;
-//        double var = exp_sq - (exp_lin*exp_lin);
-//        System.out.println("Expected ratio: " + exp_lin);
-//        System.out.println("Variance: " + var);
-//    }
     
     public void resetField(){
         for (int x = 0; x < WIDTH; x++){

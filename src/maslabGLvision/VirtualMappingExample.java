@@ -16,6 +16,9 @@ public class VirtualMappingExample {
 		FilterOp eliminateTop = new FilterOp("eliminateTop");
 		FilterOp objRec = new FilterOp("objectRecognition");
 		FilterOp edge = new FilterOp("edge");
+		FilterOp wallDetection = new FilterOp("wallDetection");
+		FilterOp wallFilter = new FilterOp("wallFilter");
+		FilterOp wallFilterRefine = new FilterOp("wallFilterRefine");
 		
 		BufferedImage original = TestBed.loadImage( new File("images\\field.png") );
 		tester.setImage(original);
@@ -23,10 +26,13 @@ public class VirtualMappingExample {
 		int frames = 0;
 		long prev = System.currentTimeMillis();
 		while ( true ) {
-			blur.apply(original);
-			colorize.apply();
-			eliminateTop.apply();
+			//blur.apply(original);
+			//colorize.apply();
+			//eliminateTop.apply();
 			//objRec.apply();
+		    wallDetection.apply(original);
+		    wallFilter.apply();
+		    wallFilterRefine.apply();
 			BufferedImage filtered = FilterOp.getImage(); 
 			tester.setImage(filtered);
 			
