@@ -5,6 +5,7 @@ import comm.MapleIO;
 import devices.actuators.Cytron;
 import devices.actuators.DigitalOutput;
 import devices.actuators.PWMOutput;
+import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
 public class Test {
@@ -18,6 +19,10 @@ public class Test {
         Ultrasonic sonarL = new Ultrasonic(36, 35);
         Ultrasonic sonarR = new Ultrasonic(26, 25);
         DigitalOutput relay = new DigitalOutput(37);
+        
+        //Encoder encoderL = new Encoder(5, 7);
+        //Encoder encoderR = new Encoder(6, 8);
+        
 		comm.registerDevice(motorL);
 		comm.registerDevice(motorR);
         comm.registerDevice(sonarA);
@@ -25,6 +30,10 @@ public class Test {
         comm.registerDevice(sonarL);
         comm.registerDevice(sonarR);
         comm.registerDevice(relay);
+        
+        //comm.registerDevice(encoderL);
+        //comm.registerDevice(encoderR);
+        
 		comm.initialize();
 		
 		relay.setValue(false);
@@ -119,12 +128,12 @@ public class Test {
 		    System.out.println("DistanceA: " + distanceA);
 		    System.out.println("DistanceB: " + distanceB);
 		    
-			motorL.setSpeed(0.1);
-			motorR.setSpeed(0.1);
+			//motorL.setSpeed(0.1);
+			//motorR.setSpeed(0.1);
 			comm.transmit();
 			
 			try {
-                Thread.sleep(100);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

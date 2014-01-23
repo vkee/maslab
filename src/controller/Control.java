@@ -58,7 +58,7 @@ public class Control {
     //private ColorSensor color_sensor;
     private Cytron motorL, motorR;
     private Ultrasonic sonarL, sonarR, sonarA, sonarB;
-    private Encoder encoderL, encoderR;
+    //private Encoder encoderL, encoderR;
     private Gyroscope gyro;
     private DigitalOutput relay;
     
@@ -121,8 +121,8 @@ public class Control {
         sonarA = new Ultrasonic(32, 31);
         sonarB = new Ultrasonic(34, 33);
         
-        encoderL = new Encoder(5, 7);
-        encoderR = new Encoder(6, 8);
+        //encoderL = new Encoder(5, 7);
+        //encoderR = new Encoder(6, 8);
         
         gyro = new Gyroscope(1, 9);
         
@@ -136,8 +136,8 @@ public class Control {
         comm.registerDevice(motorL);
         comm.registerDevice(motorR);
         comm.registerDevice(gyro);
-        comm.registerDevice(encoderL);
-        comm.registerDevice(encoderR);
+        //comm.registerDevice(encoderL);
+        //comm.registerDevice(encoderR);
         comm.registerDevice(relay);
         
         System.out.println("Initializing...");
@@ -247,7 +247,7 @@ public class Control {
             // UPDATE STATE VALUES
             time = System.currentTimeMillis();
             angle += (time - prev_time)*gyro.getOmega();
-            encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
+            //encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
             
             // UPDATE VISION
             vision.update();
@@ -314,21 +314,26 @@ public class Control {
             double med_L = sonar_buff_statsL[3];
             
             if (wander_state == WanderState.DEFAULT){
+                System.out.println("WANDER: DEFAULT");
                 turn = Math.max(-0.05, Math.min(0.05, pid_align.update(med_L, false)));
                 forward = 0.1;
             } else if (wander_state == WanderState.ALIGNED){
+                System.out.println("WANDER: ALIGNED");
                 turn = Math.max(-0.05, Math.min(0.05, pid_align.update(med_L, false)));
                 //turn = 0.4*Math.max(-0.05, Math.min(0.05, pid_gyro.update(angle, false)));
                 //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_align.update(med_L, false)));
                 //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_encoder.update(encoder_diff - prev_encoder_diff, false)));
                 forward = 0.1;
             } else if (wander_state == WanderState.WALL_AHEAD){
+                System.out.println("WANDER: WALL_AHEAD");
                 turn = 0.1;
                 forward = (med_B - 0.15)/1.5;
             } else if (wander_state == WanderState.WALL_IMMEDIATE){
+                System.out.println("WANDER: WALL_IMMEDIATE");
                 turn = 0.1;
                 forward = 0;
             } else {
+                System.out.println("WANDER: WALL_IMMEDIATE");
                 turn = Math.max(-0.05, Math.min(0.05, pid_align.update(med_L, false)));
                 //turn = 0.4*Math.max(-0.05, Math.min(0.05, pid_gyro.update(angle, false)));
                 //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_align.update(med_L, false)));
@@ -422,7 +427,7 @@ public class Control {
                 wander_state_count = 0;
                 if (wander_state == WanderState.ALIGNED){
                     angle = 0;
-                    prev_encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
+                    //prev_encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
                 }
             }
         }
