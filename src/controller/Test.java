@@ -39,6 +39,8 @@ public class Test {
 		relay.setValue(false);
 		comm.transmit();
 		
+		comm.updateSensorData();
+		
 		int countL = 0;
 		int countR = 0;
 		int countA = 0;
@@ -49,8 +51,16 @@ public class Test {
 		double distanceB = 0;
 		double prev = 0;
 		
+		double forward, turn;
+		PID pid_align = new PID(0.15, 0.3, 0.08, 0.01);
+		pid_align.update(sonarL.getDistance(), true);
+		
+		long start_time, end_time;
+		
 		while (true) {
 		    comm.updateSensorData();
+		    
+		    start_time = System.currentTimeMillis();
 		    
 //		    prev = distanceL;
 //		    distanceL = sonarL.getDistance();
@@ -123,17 +133,41 @@ public class Test {
 		    distanceA = sonarA.getDistance();
 		    distanceB = sonarB.getDistance();
 		    
-		    System.out.println("DistanceL: " + distanceL);
-		    System.out.println("DistanceR: " + distanceR);
-		    System.out.println("DistanceA: " + distanceA);
-		    System.out.println("DistanceB: " + distanceB);
+		    //System.out.println("DistanceL: " + distanceL);
+		    //System.out.println("DistanceR: " + distanceR);
+		    //System.out.println("DistanceA: " + distanceA);
+		    //System.out.println("DistanceB: " + distanceB);
 		    
-			//motorL.setSpeed(0.1);
-			//motorR.setSpeed(0.1);
+		    if (distanceA < 0.25 || distanceB < 0.25){
+		        System.out.println("WALL AHEAD");
+                turn = 0.12;
+                forward = 0;
+		    } else if (distanceL < 0.13){
+		        System.out.println("TOO CLOSE ON THE LEFT");
+		        turn = 0.05;
+		        forward = 0.07;
+//		    } else if (distanceL > 0.4){
+//		        System.out.println("TOO FAR ON THE LEFT");
+//		        turn = -0.05;
+//		        forward = 0.05;
+//		    } else if (distanceR < 0.25){
+//		        System.out.println("ON THE RIGHT");
+//		        turn = 0.08;
+//		        forward = 0;
+		    } else {
+		        System.out.println("DEFAULT");
+		        turn = pid_align.update(distanceL, false);
+		        forward = 0.08;
+		    }
+		    
+			motorL.setSpeed(-(forward + turn));
+			motorR.setSpeed(forward - turn);
 			comm.transmit();
 			
+			end_time = System.currentTimeMillis();
+			
 			try {
-                Thread.sleep(1000);
+                Thread.sleep(100 + start_time - end_time);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
