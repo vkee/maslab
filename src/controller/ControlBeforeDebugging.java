@@ -100,7 +100,7 @@ public class ControlBeforeDebugging {
         turn = 0;
         
         // VISION
-        vision = new Vision(CAMERA_NUM, WIDTH, HEIGHT);
+        vision = new Vision(CAMERA_NUM, WIDTH, HEIGHT, false);
         
         // VALUES
         distance = new double[5];

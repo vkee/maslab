@@ -28,7 +28,7 @@ import Core.FilterOp;
 
 public class Vision {
     public static void main(String[] args){
-        final Vision vision = new Vision(1, 320, 240);
+        final Vision vision = new Vision(1, 320, 240, false);
         Thread display_thread = new Thread(new Runnable(){
             public void run(){
                 //JLabel display_pane = createWindow("Display output", vision.WIDTH, vision.HEIGHT);
@@ -58,6 +58,7 @@ public class Vision {
     
     // CONSTANTS
     public final int WIDTH, HEIGHT;
+    private final boolean DISPLAY_ON;
     
     // FIELDS
     private final int camera_number;
@@ -68,13 +69,15 @@ public class Vision {
     public BufferedImage colorized;
     private Ball red_target, green_target;
     private Reactor reactor_target;
+    private JLabel camera_pane, colorize_pane;
     
     // FILTERS
     private final FilterOp blur, colorize, eliminateTop, objRec;
     
-    public Vision(int camera_number, int width, int height){
+    public Vision(int camera_number, int width, int height, boolean display_on){
         this.WIDTH = width;
         this.HEIGHT = height;
+        this.DISPLAY_ON = display_on;
         
         // LOAD LIBARIES
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -123,6 +126,12 @@ public class Vision {
         colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
+        
+        // OPTIONAL DISPLAY
+        if (DISPLAY_ON){
+            camera_pane = createWindow("Camera output", WIDTH, HEIGHT);
+            colorize_pane = createWindow("Colorize output", WIDTH, HEIGHT);
+        }
     }
     
     public void update(){        
@@ -143,6 +152,11 @@ public class Vision {
         filtered = FilterOp.getImage();
         
         processFilteredImage();
+        
+        if (DISPLAY_ON){
+            updateWindow(camera_pane, curr_image);
+            updateWindow(colorize_pane, colorized);
+        }
     }
     
     private void processFilteredImage(){
