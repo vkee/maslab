@@ -42,6 +42,7 @@ public class ControlDebug {
     //double angle;
     double target_x;
     double target_y;
+    boolean target_found;
     
     // MOTOR INPUTS
     private double forward;
@@ -52,7 +53,7 @@ public class ControlDebug {
     private Cytron motorL, motorR;
     private Ultrasonic sonarL, sonarR, sonarA, sonarB, sonarC;
     //private Encoder encoderL, encoderR;
-    private Gyroscope gyro;
+    //private Gyroscope gyro;
     private DigitalOutput relay;
     
     // PIDS
@@ -60,15 +61,10 @@ public class ControlDebug {
     //PID pid_gyro, pid_encoder, pid_target_x, pid_target_y;
     
     // STATES
-    private ControlState control_state;
-    private WanderState wander_state;
-    private BallCollectState ball_collect_state;
-    //private DepositState deposit_state;
+    private State state;
     
-    private enum ControlState { WANDER, BALL_COLLECT, DEPOSIT };
-    private enum WanderState { DEFAULT, WALL_AHEAD, TURNING, ADJACENT_LEFT, ADJACENT_RIGHT };
-    private enum BallCollectState { TARGETING, APPROACHING, COLLECTING };
-    private enum DepositState { APPROACHING, ALIGNING, BACKING, CENTERING, DEPOSITING };
+    private enum ControlState { DEFAULT, WALL_AHEAD, TURNING, ADJACENT_LEFT,
+        ADJACENT_RIGHT, TARGETING_BALL, APPROACHING_BALL, COLLECTING_BALL };
     
     public ControlDebug(){
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
@@ -140,11 +136,13 @@ public class ControlDebug {
         distanceB = sonarB.getDistance();
         distanceC = sonarC.getDistance();
         
+        // VALUES
+        target_found = false;
+        target_x = 0;
+        target_y = 0;
+        
         // STATE INITIALIZATION
-        control_state = ControlState.WANDER;
-        wander_state = WanderState.DEFAULT;
-        ball_collect_state = BallCollectState.TARGETING;
-        //deposit_state = DepositState.APPROACHING;
+        state = new State(ControlState.DEFAULT);
     }
     
     private void loop(){ 
@@ -185,10 +183,8 @@ public class ControlDebug {
             // UPDATE VISION
             vision.update();
             
-            // ESTIMATE STATES
-            estimateControlState();
-            estimateWanderState();
-            estimateBallCollectState();
+            // ESTIMATE STATE
+            estimateState();
             
             // CALCULATE MOTOR INPUTS
             updateMotorInputs();
@@ -221,83 +217,108 @@ public class ControlDebug {
         motorL.setSpeed(-(forward + turn));
         motorR.setSpeed(forward - turn);
     }
+    
+    private void updateMotorInputs(){
+        if (state.state == ControlState.WALL_AHEAD){
+            System.out.println("WALL AHEAD");
+            turn = 0.12;
+            forward = 0;
+        } else if (state.state == ControlState.TURNING){
+            // Maybe eliminate second condition
+            System.out.println("TURNING");
+            turn = 0.12;
+            forward = 0;
+        } else if (state.state == ControlState.ADJACENT_LEFT){
+            System.out.println("ADJACENT_LEFT");
+            turn = 0.05;
+            forward = 0.07;
+        } else if (state.state == ControlState.ADJACENT_RIGHT){
+            System.out.println("ADJACENT_RIGHT");
+            turn = -0.08;
+            forward = 0;
+        } else if (state.state == ControlState.DEFAULT){
+            System.out.println("DEFAULT");
+            turn = Math.max(-0.1, Math.min(0.1, pid_align.update(distanceL, false)));
+            forward = 0.08;
+        } else if (state.state == ControlState.TARGETING_BALL){
+            System.out.println("TARGETING_BALL");
+            turn = Math.max(-0.05, Math.min(0.05, pid_target.update(target_x, false)));
+            forward = 0;
+        } else if (state.state == ControlState.APPROACHING_BALL){
+            System.out.println("APPROACHING_BALL");
+            turn = Math.max(-0.05, Math.min(0.05, pid_target.update(target_x, false)));
+            forward = 0.08;
+        } else if (state.state == ControlState.COLLECTING_BALL) {
+            System.out.println("COLLECTING_BALL");
+            turn = 0;
+            forward = 0.08;
+        }
+    }
 
-    private void estimateControlState(){
+    private void estimateState(){      
         try {
             target_x = vision.getNextBallX();
             target_y = vision.getNextBallY();
-            control_state = ControlState.BALL_COLLECT;
+            target_found = true;
         } catch (Exception exc){
-            control_state = ControlState.WANDER;
+            target_x = 0;
+            target_y = 0;
+            target_found = false;
         }
-    }
-    
-    private void updateMotorInputs(){
-        if (control_state == ControlState.WANDER){
-            if (wander_state == WanderState.WALL_AHEAD){
-                System.out.println("WALL AHEAD");
-                turn = 0.12;
-                forward = 0;
-            } else if (wander_state == WanderState.TURNING){
-                // Maybe eliminate second condition
-                System.out.println("TURNING");
-                turn = 0.12;
-                forward = 0;
-            } else if (wander_state == WanderState.ADJACENT_LEFT){
-                System.out.println("ADJACENT_LEFT");
-                turn = 0.05;
-                forward = 0.07;
-            } else if (wander_state == WanderState.ADJACENT_RIGHT){
-                System.out.println("ADJACENT_RIGHT");
-                turn = -0.08;
-                forward = 0;
+        
+        ControlState temp_state = ControlState.DEFAULT;
+        
+        if (target_found){
+            if (target_y > 0.75*HEIGHT && (state.state == ControlState.APPROACHING_BALL
+                    || state.state == ControlState.COLLECTING_BALL)){
+                temp_state = ControlState.COLLECTING_BALL;
+            } else if (Math.abs(target_x - WIDTH/2) < 20 && (state.state == ControlState.TARGETING_BALL
+                    || state.state == ControlState.APPROACHING_BALL)){
+                temp_state = ControlState.APPROACHING_BALL;
             } else {
-                System.out.println("DEFAULT");
-                turn = Math.max(-0.1, Math.min(0.1, pid_align.update(distanceL, false)));
-                forward = 0.08;
+                temp_state = ControlState.TARGETING_BALL;
             }
         } else {
-            if (ball_collect_state == BallCollectState.TARGETING){
-                System.out.println("TARGETING");
-                turn = Math.max(-0.05, Math.min(0.05, pid_target.update(target_x, false)));
-                forward = 0;
-            } else if (ball_collect_state == BallCollectState.APPROACHING){
-                System.out.println("APPROACHING");
-                turn = Math.max(-0.05, Math.min(0.05, pid_target.update(target_x, false)));
-                forward = 0.08;
+            if (distanceC < 0.2){
+                temp_state = ControlState.WALL_AHEAD;
+            } else if (distanceB < 0.2 || (distanceA < 0.22 && distanceB < 0.22)){
+                temp_state = ControlState.TURNING;
+            } else if (distanceL < 0.13){
+                temp_state = ControlState.ADJACENT_LEFT;
+            } else if (distanceR < 0.1){
+                temp_state = ControlState.ADJACENT_RIGHT;
             } else {
-                System.out.println("COLLECTING");
-                turn = 0;
-                forward = 0.05;
+                temp_state = ControlState.DEFAULT;
             }
         }
-    }
-
-    private void estimateWanderState(){        
-        if (control_state == ControlState.WANDER){
-            if (distanceC < 0.2){
-                wander_state = WanderState.WALL_AHEAD;
-            } else if (distanceB < 0.2 || (distanceA < 0.22 && distanceB < 0.22)){
-                wander_state = WanderState.TURNING;
-            } else if (distanceL < 0.13){
-                wander_state = WanderState.ADJACENT_LEFT;
-            } else if (distanceR < 0.1){
-                wander_state = WanderState.ADJACENT_RIGHT;
-            } else {
-                wander_state = WanderState.DEFAULT;
-            }
+        
+        if (state.getTime() > 400){
+            state.changeState(temp_state);
+        }
+        
+        if (state.getTime() > 10000){
+            state.changeState(ControlState.DEFAULT);
         }
     }
     
-    private void estimateBallCollectState(){
-        if (control_state == ControlState.BALL_COLLECT){
-            if (Math.abs(target_x - WIDTH/2) > 20 && ball_collect_state == BallCollectState.TARGETING){
-                ball_collect_state = BallCollectState.TARGETING;
-            } else if (target_y < 0.75*HEIGHT && ball_collect_state != BallCollectState.COLLECTING){
-                ball_collect_state = BallCollectState.APPROACHING;
-            } else if (ball_collect_state != BallCollectState.TARGETING){
-                ball_collect_state = BallCollectState.COLLECTING;
+    private class State {
+        private long start_time;
+        public ControlState state;
+        
+        public State(ControlState init){
+            start_time = System.currentTimeMillis();
+            state = init;
+        }
+        
+        public void changeState(ControlState new_state){
+            if (state != new_state){
+                start_time = System.currentTimeMillis();
+                state = new_state;
             }
+        }
+        
+        public long getTime(){
+            return System.currentTimeMillis() - start_time;
         }
     }
 }
