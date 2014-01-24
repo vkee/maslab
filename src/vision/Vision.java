@@ -162,15 +162,14 @@ public class Vision {
     private void processFilteredImage(){
         red_target = new Ball(false);
         green_target = new Ball(false);
-        int pixel, red, green, blue;
-        double radius;
+        int pixel, red, green;
+        double radius, height;
         for (int x = 0; x < WIDTH; x++){
             for (int y = 0; y < HEIGHT; y++){
                 if (y >= HEIGHT/2){
                     pixel = filtered.getRGB(x, y);
                     red = (pixel >> 16) & 0xFF;
                     green = (pixel >> 8) & 0xFF;
-                    blue = (pixel) & 0xFF;
                     if (red > 0){
                         radius = 50*red/256.0;
                         if (radius > red_target.radius){
@@ -185,11 +184,12 @@ public class Vision {
                     }
                 } else {
                     pixel = colorized.getRGB(x, y);
-                    red = (pixel >> 16) & 0xFF;
                     green = (pixel >> 8) & 0xFF;
-                    blue = (pixel) & 0xFF;
                     if (green > 0){
-                        // FILL IN WITH CODE TO FIND REACTOR CENTER
+                        height = HEIGHT*green/256.0;
+                        if (height > reactor_target.height){
+                            reactor_target = new Reactor(x, y, height);
+                        }
                     }
                 }
             }
@@ -300,19 +300,20 @@ public class Vision {
         public boolean target;
         public int x;
         public int y;
-        public double dimension;
+        public double height;
         
-        public Reactor(int x, int y, double dimension){
+        public Reactor(int x, int y, double height){
             this.target = true;
             this.x = x;
             this.y = y;
-            this.dimension = dimension;
+            this.height = height;
         }
         
         public Reactor(boolean target){
             this.target = false;
             this.x = 0;
             this.y = 0;
+            this.height = 0;
         }
     }
 }
