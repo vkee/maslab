@@ -6,7 +6,7 @@ import comm.BotClientMap.Point;
 
 public class Map {
     public static void main(String[] args){
-        Vision vision = new Vision(1, 320, 240);
+        Vision vision = new Vision(1, 320, 240, false);
         
     }
     

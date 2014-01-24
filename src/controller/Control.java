@@ -30,10 +30,11 @@ public class Control {
     private final int HEIGHT = 240;
     private final int BUFF_LENGTH = 6;
     private final int CAMERA_NUM = 1;
-    private final int CHANGE_THRES = 5;
+    private final int CHANGE_THRES = 2;
     private final double K_PROP = 0.2;
     private final double K_INT = 0.01;
     private final double K_DIFF = 0.01;
+    private final boolean DISPLAY_ON = true;
     
     // VISION
     Vision vision;
@@ -84,7 +85,7 @@ public class Control {
     private int deposit_state_count;
     
     private enum ControlState { WANDER, BALL_COLLECT, DEPOSIT };
-    private enum WanderState { DEFAULT, WALL_ADJACENT, ALIGNED, WALL_AHEAD, WALL_IMMEDIATE };
+    private enum WanderState { DEFAULT, WALL_ADJACENT_L, WALL_ADJACENT_R, ALIGNED, WALL_AHEAD, WALL_IMMEDIATE };
     private enum BallCollectState { TARGETING, APPROACHING, COLLECTING };
     private enum DepositState { APPROACHING, ALIGNING, BACKING, CENTERING, DEPOSITING };
     
@@ -96,7 +97,7 @@ public class Control {
         turn = 0;
         
         // VISION
-        vision = new Vision(CAMERA_NUM, WIDTH, HEIGHT);
+        vision = new Vision(CAMERA_NUM, WIDTH, HEIGHT, DISPLAY_ON);
         
         // VALUES
         time = 0;
@@ -225,7 +226,12 @@ public class Control {
             exc.printStackTrace();
         }
         
+        long start_time, end_time;
+        
         while (true){
+            // START TIME
+            start_time = System.currentTimeMillis();
+            
             comm.updateSensorData();
             
             // UPDATE DISTANCES
@@ -233,11 +239,6 @@ public class Control {
             distanceR = sonarR.getDistance();
             distanceA = sonarA.getDistance();
             distanceB = sonarB.getDistance();
-            
-            System.out.println("distanceL: " + sonarL.getDistance());
-            System.out.println("distanceR: " + sonarR.getDistance());
-            System.out.println("distanceA: " + sonarA.getDistance());
-            System.out.println("distanceB: " + sonarB.getDistance());
             
             sonarBuffUpdate(sonarL, sonar_buffL, sonar_buff_statsL);
             sonarBuffUpdate(sonarR, sonar_buffR, sonar_buff_statsR);
@@ -260,20 +261,46 @@ public class Control {
             // CALCULATE MOTOR INPUTS
             updateMotorInputs();
             
-            motorL.setSpeed(forward + turn);
-            motorR.setSpeed(forward - turn);
+            // DRIVE MOTORS
+            driveMotors();
 
             comm.transmit();
             
             // PRINT
             //printInputs();
             
+            System.out.println("distanceL: " + sonarL.getDistance());
+            System.out.println("distanceR: " + sonarR.getDistance());
+            System.out.println("distanceA: " + sonarA.getDistance());
+            System.out.println("distanceB: " + sonarB.getDistance());
+            System.out.println("forward: " + forward);
+            System.out.println("turn: " + turn);
+            
+            // POWER CYCLING
+//            if (System.currentTimeMillis() % 2000 < 50){
+//                powerCycle();
+//            }
+            
+            // END TIME
+            end_time = System.currentTimeMillis();
+            
             try {
-                Thread.sleep(10);
+                Thread.sleep(40 + end_time - start_time);
             } catch (InterruptedException exc) {
                 exc.printStackTrace();
             }
         }
+    }
+    
+    private void driveMotors(){
+        double left = -(forward + turn);
+        double right = (forward - turn);
+        
+        double left_band = Math.max(-0.1, Math.min(0.1, left));
+        double right_band = Math.max(-0.1, Math.min(0.1, right));
+        
+        motorL.setSpeed(left_band);
+        motorR.setSpeed(right_band);
     }
     
     private void printInputs(){
@@ -281,10 +308,10 @@ public class Control {
         double dist_var = sonar_buff_statsL[2];
         
         System.out.println("dist_var: " + dist_var);
-        System.out.println("distanceL: " + distanceL);
-        System.out.println("distanceR: " + distanceR);
-        System.out.println("distanceA: " + distanceA);
-        System.out.println("distanceB: " + distanceB);
+        System.out.println("distanceL: " + sonarL.getDistance());
+        System.out.println("distanceR: " + sonarR.getDistance());
+        System.out.println("distanceA: " + sonarA.getDistance());
+        System.out.println("distanceB: " + sonarB.getDistance());
         
         System.out.println("forward: " + forward);
         System.out.println("turn: " + turn);
@@ -295,16 +322,16 @@ public class Control {
         if (control_state == ControlState.BALL_COLLECT){
             if (ball_collect_state == BallCollectState.TARGETING){
                 System.out.println("BALL_COLLECT: TARGETING");
-                turn = Math.max(-0.05, Math.min(0.05, pid_target_x.update(target_x, false)));
+                turn = Math.max(-0.04, Math.min(0.04, pid_target_x.update(target_x, false)));
                 forward = 0;
             } else if (ball_collect_state == BallCollectState.APPROACHING){
                 System.out.println("BALL_COLLECT: APPROACHING");
-                turn = Math.max(-0.05, Math.min(0.05, pid_target_x.update(target_x, false)));
-                forward = 0.1;
+                turn = Math.max(-0.04, Math.min(0.04, pid_target_x.update(target_x, false)));
+                forward = 0.06;
             } else {
                 System.out.println("BALL_COLLECT: COLLECTING");
-                turn = Math.max(-0.05, Math.min(0.05, pid_target_x.update(target_x, false)));
-                forward = Math.max(0, Math.min(0.05, pid_target_y.update(target_y, false)));
+                turn = Math.max(-0.04, Math.min(0.04, pid_target_x.update(target_x, false)));
+                forward = Math.max(0, Math.min(0.04, pid_target_y.update(target_y, false)));
             }
         } else {
             // ACCOUNT FOR MED_A
@@ -315,30 +342,38 @@ public class Control {
             
             if (wander_state == WanderState.DEFAULT){
                 System.out.println("WANDER: DEFAULT");
-                turn = Math.max(-0.05, Math.min(0.05, pid_align.update(med_L, false)));
-                forward = 0.1;
+                //turn = Math.max(-0.04, Math.min(0.04, pid_align.update(med_L, false)));
+                turn = 0;
+                forward = 0.06;
             } else if (wander_state == WanderState.ALIGNED){
                 System.out.println("WANDER: ALIGNED");
-                turn = Math.max(-0.05, Math.min(0.05, pid_align.update(med_L, false)));
+                turn = Math.max(-0.04, Math.min(0.04, pid_align.update(med_L, false)));
                 //turn = 0.4*Math.max(-0.05, Math.min(0.05, pid_gyro.update(angle, false)));
                 //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_align.update(med_L, false)));
                 //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_encoder.update(encoder_diff - prev_encoder_diff, false)));
-                forward = 0.1;
+                forward = 0.06;
             } else if (wander_state == WanderState.WALL_AHEAD){
                 System.out.println("WANDER: WALL_AHEAD");
-                turn = 0.1;
-                forward = (med_B - 0.15)/1.5;
+                turn = 0.08;
+                forward = (Math.min(med_A, med_B) - 0.15)/3;
             } else if (wander_state == WanderState.WALL_IMMEDIATE){
                 System.out.println("WANDER: WALL_IMMEDIATE");
-                turn = 0.1;
+                turn = 0.08;
                 forward = 0;
-            } else {
-                System.out.println("WANDER: WALL_IMMEDIATE");
-                turn = Math.max(-0.05, Math.min(0.05, pid_align.update(med_L, false)));
+            } else if (wander_state == WanderState.WALL_ADJACENT_L){
+                System.out.println("WANDER: WALL_ADJACENT_L");
+                turn = Math.max(-0.04, Math.min(0.04, pid_align.update(med_L, false)));
                 //turn = 0.4*Math.max(-0.05, Math.min(0.05, pid_gyro.update(angle, false)));
                 //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_align.update(med_L, false)));
                 //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_encoder.update(encoder_diff - prev_encoder_diff, false)));
-                forward = 0.1;
+                forward = 0.06;
+            } else {
+                System.out.println("WANDER: WALL_ADJACENT_R");
+                turn = -0.08;
+                //turn = 0.4*Math.max(-0.05, Math.min(0.05, pid_gyro.update(angle, false)));
+                //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_align.update(med_L, false)));
+                //turn += 0.4*Math.max(-0.05, Math.min(0.05, pid_encoder.update(encoder_diff - prev_encoder_diff, false)));
+                forward = 0.06;
             }
         }
     }
@@ -399,19 +434,24 @@ public class Control {
         if (control_state == ControlState.WANDER){
             // ACCOUNT FOR MED_A
             double med_L = sonar_buff_statsL[3];
+            double med_R = sonar_buff_statsR[3];
             double med_A = sonar_buff_statsA[3];
             double med_B = sonar_buff_statsB[3];
             double dist_var = sonar_buff_statsL[2];
             WanderState temp_state = WanderState.DEFAULT;
 
-            if (med_B < 0.15){
+            if ((med_A < 0.15 || med_B < 0.15) && (wander_state == WanderState.WALL_IMMEDIATE ||
+                    wander_state == WanderState.WALL_AHEAD)){
                 temp_state = WanderState.WALL_IMMEDIATE;
-            } else if (med_B < 0.3){
+            } else if (med_A < 0.3 || med_B < 0.3){
                 temp_state = WanderState.WALL_AHEAD;
-            } else if (dist_var < 0.005 && Math.abs(med_L - 0.15) < 0.01){
+            } else if ((dist_var < 0.005 && Math.abs(med_L - 0.15) < 0.01) &&
+                    (wander_state == WanderState.WALL_ADJACENT_L || wander_state == WanderState.ALIGNED)){
                 temp_state = WanderState.ALIGNED;
             } else if (med_L < 0.3){
-                temp_state = WanderState.WALL_ADJACENT;
+                temp_state = WanderState.WALL_ADJACENT_L;
+            } else if (med_R < 0.3){
+                temp_state = WanderState.WALL_ADJACENT_R;
             } else {
                 temp_state = WanderState.DEFAULT;
             }
@@ -519,5 +559,64 @@ public class Control {
     
     private void releaseRedBall(){
         //Servo releases all red balls and resets after a delay
+    }
+    
+    private void powerCycle(){
+        boolean power_cycle = false;
+        boolean local_cycle = true;
+        
+        double dist_init = sonar_buffL.get(0);
+        for (Double dist : sonar_buffL){
+            if (dist_init != dist){
+                local_cycle = false;
+            }
+        }
+        if (local_cycle){
+            power_cycle = true;
+        }
+        
+        local_cycle = true;
+        dist_init = sonar_buffR.get(0);
+        for (Double dist : sonar_buffR){
+            if (dist_init != dist){
+                local_cycle = false;
+            }
+        }
+        if (local_cycle){
+            power_cycle = true;
+        }
+        
+        local_cycle = true;
+        dist_init = sonar_buffA.get(0);
+        for (Double dist : sonar_buffA){
+            if (dist_init != dist){
+                local_cycle = false;
+            }
+        }
+        if (local_cycle){
+            power_cycle = true;
+        }
+        
+        local_cycle = true;
+        dist_init = sonar_buffB.get(0);
+        for (Double dist : sonar_buffB){
+            if (dist_init != dist){
+                local_cycle = false;
+            }
+        }
+        if (local_cycle){
+            power_cycle = true;
+        }
+        
+        if (power_cycle){
+            System.out.println("Power cycling...");
+            relay.setValue(true);
+            
+            try{
+                Thread.sleep(20);
+            } catch (Exception exc){
+                exc.printStackTrace();
+            }
+        }
     }
 }

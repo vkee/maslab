@@ -28,7 +28,7 @@ import Core.FilterOp;
 
 public class Vision {
     public static void main(String[] args){
-        final Vision vision = new Vision(1, 320, 240);
+        final Vision vision = new Vision(1, 320, 240, false);
         Thread display_thread = new Thread(new Runnable(){
             public void run(){
                 //JLabel display_pane = createWindow("Display output", vision.WIDTH, vision.HEIGHT);
@@ -58,6 +58,7 @@ public class Vision {
     
     // CONSTANTS
     public final int WIDTH, HEIGHT;
+    private final boolean DISPLAY_ON;
     
     // FIELDS
     private final int camera_number;
@@ -68,13 +69,15 @@ public class Vision {
     public BufferedImage colorized;
     private Ball red_target, green_target;
     private Reactor reactor_target;
+    private JLabel camera_pane, colorize_pane;
     
     // FILTERS
     private final FilterOp blur, colorize, eliminateTop, objRec;
     
-    public Vision(int camera_number, int width, int height){
+    public Vision(int camera_number, int width, int height, boolean display_on){
         this.WIDTH = width;
         this.HEIGHT = height;
+        this.DISPLAY_ON = display_on;
         
         // LOAD LIBARIES
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -123,6 +126,12 @@ public class Vision {
         colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
+        
+        // OPTIONAL DISPLAY
+        if (DISPLAY_ON){
+            camera_pane = createWindow("Camera output", WIDTH, HEIGHT);
+            colorize_pane = createWindow("Colorize output", WIDTH, HEIGHT);
+        }
     }
     
     public void update(){        
@@ -143,20 +152,24 @@ public class Vision {
         filtered = FilterOp.getImage();
         
         processFilteredImage();
+        
+        if (DISPLAY_ON){
+            updateWindow(camera_pane, curr_image);
+            updateWindow(colorize_pane, colorized);
+        }
     }
     
     private void processFilteredImage(){
         red_target = new Ball(false);
         green_target = new Ball(false);
-        int pixel, red, green, blue;
-        double radius;
+        int pixel, red, green;
+        double radius, height;
         for (int x = 0; x < WIDTH; x++){
             for (int y = 0; y < HEIGHT; y++){
                 if (y >= HEIGHT/2){
                     pixel = filtered.getRGB(x, y);
                     red = (pixel >> 16) & 0xFF;
                     green = (pixel >> 8) & 0xFF;
-                    blue = (pixel) & 0xFF;
                     if (red > 0){
                         radius = 50*red/256.0;
                         if (radius > red_target.radius){
@@ -171,11 +184,12 @@ public class Vision {
                     }
                 } else {
                     pixel = colorized.getRGB(x, y);
-                    red = (pixel >> 16) & 0xFF;
                     green = (pixel >> 8) & 0xFF;
-                    blue = (pixel) & 0xFF;
                     if (green > 0){
-                        // FILL IN WITH CODE TO FIND REACTOR CENTER
+                        height = HEIGHT*green/256.0;
+                        if (height > reactor_target.height){
+                            reactor_target = new Reactor(x, y, height);
+                        }
                     }
                 }
             }
@@ -286,19 +300,20 @@ public class Vision {
         public boolean target;
         public int x;
         public int y;
-        public double dimension;
+        public double height;
         
-        public Reactor(int x, int y, double dimension){
+        public Reactor(int x, int y, double height){
             this.target = true;
             this.x = x;
             this.y = y;
-            this.dimension = dimension;
+            this.height = height;
         }
         
         public Reactor(boolean target){
             this.target = false;
             this.x = 0;
             this.y = 0;
+            this.height = 0;
         }
     }
 }
