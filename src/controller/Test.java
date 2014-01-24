@@ -50,8 +50,11 @@ public class Test {
 		double distanceC = sonarC.getDistance();
 		
 		double forward, turn;
-		PID pid_align = new PID(0.15, 0.3, 0.08, 0.01);
-		pid_align.update(sonarL.getDistance(), true);
+		PID pid_align = new PID(0.1, 0.5, 0.08, 0.01);
+		pid_align.update(distanceL, true);
+		
+		PID pid_bottleneck = new PID(0, 0.3, 0.08, 0.01);
+		pid_bottleneck.update(distanceL - distanceR, true);
 		
 		long start_time, end_time;
 		
@@ -66,36 +69,37 @@ public class Test {
 		    distanceB = sonarB.getDistance();
 		    distanceC = sonarC.getDistance();
 		    
-		    //System.out.println("DistanceL: " + distanceL);
-		    //System.out.println("DistanceR: " + distanceR);
-		    //System.out.println("DistanceA: " + distanceA);
-		    //System.out.println("DistanceB: " + distanceB);
-		    //System.out.println("DistanceC: " + distanceC);
+		    System.out.println("DistanceL: " + distanceL);
+		    System.out.println("DistanceR: " + distanceR);
+		    System.out.println("DistanceA: " + distanceA);
+		    System.out.println("DistanceB: " + distanceB);
+		    System.out.println("DistanceC: " + distanceC);
 		    
-		    if (distanceC < 0.2){
-		        System.out.println("WALL AHEAD");
-                turn = 0.12;
-                forward = 0;
-		    } else if (distanceA < 0.18 && distanceB < 0.18){
-		        System.out.println("TURNING");
-                turn = 0.12;
-                forward = 0;
-		    } else if (distanceL < 0.13){
-		        System.out.println("TOO CLOSE ON THE LEFT");
-		        turn = 0.05;
-		        forward = 0.07;
-		    } else if (distanceR < 0.08){
-		        System.out.println("TOO CLOSE ON THE RIGHT");
-		        turn = -0.08;
-		        forward = 0;
-		    } else {
-		        System.out.println("DEFAULT");
-		        turn = pid_align.update(distanceL, false);
-		        forward = 0.08;
-		    }
-		    
-			motorL.setSpeed(-(forward + turn));
-			motorR.setSpeed(forward - turn);
+//		    if (distanceC < 0.2){
+//		        System.out.println("WALL AHEAD");
+//                turn = 0.12;
+//                forward = 0;
+//		    } else if (distanceB < 0.2 || (distanceA < 0.22 && distanceB < 0.22)){
+//		        // Maybe eliminate second condition
+//		        System.out.println("TURNING");
+//                turn = 0.12;
+//                forward = 0;
+//		    } else if (distanceL < 0.13){
+//		        System.out.println("TOO CLOSE ON THE LEFT");
+//		        turn = 0.05;
+//		        forward = 0.07;
+//		    } else if (distanceR < 0.1){
+//		        System.out.println("TOO CLOSE ON THE RIGHT");
+//		        turn = -0.08;
+//		        forward = 0;
+//		    } else {
+//		        System.out.println("DEFAULT");
+//		        turn = Math.max(-0.1, Math.min(0.1, pid_align.update(distanceL, false)));
+//		        forward = 0.08;
+//		    }
+//		    
+//			motorL.setSpeed(-(forward + turn));
+//			motorR.setSpeed(forward - turn);
 			comm.transmit();
 			
 			end_time = System.currentTimeMillis();

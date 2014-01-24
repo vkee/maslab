@@ -130,7 +130,7 @@ public class Vision {
         // OPTIONAL DISPLAY
         if (DISPLAY_ON){
             camera_pane = createWindow("Camera output", WIDTH, HEIGHT);
-            colorize_pane = createWindow("Colorize output", WIDTH, HEIGHT);
+            colorize_pane = createWindow("Filtered output", WIDTH, HEIGHT);
         }
     }
     
@@ -170,13 +170,13 @@ public class Vision {
                     pixel = filtered.getRGB(x, y);
                     red = (pixel >> 16) & 0xFF;
                     green = (pixel >> 8) & 0xFF;
-                    if (red > 0){
+                    if (red > 0 && green == 0){
                         radius = 50*red/256.0;
                         if (radius > red_target.radius){
                             red_target = new Ball(x, y, radius);
                         }
                     }
-                    if (green > 0){
+                    if (green > 0 && red == 0){
                         radius = 50*green/256.0;
                         if (radius > green_target.radius){
                             green_target = new Ball(x, y, radius);
