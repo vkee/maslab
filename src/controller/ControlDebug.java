@@ -64,7 +64,7 @@ public class ControlDebug {
     private State state;
     
     private enum ControlState { DEFAULT, WALL_AHEAD, TURNING, ADJACENT_LEFT,
-        ADJACENT_RIGHT, TARGETING_BALL, APPROACHING_BALL, COLLECTING_BALL };
+        ADJACENT_RIGHT, TARGETING_BALL, APPROACHING_BALL, COLLECTING_BALL, PULL_AWAY };
     
     public ControlDebug(){
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
@@ -115,8 +115,8 @@ public class ControlDebug {
         comm.updateSensorData();
         
         // PIDS
-        pid_align = new PID(0.1, 0.5, 0.08, 0.01);
-        pid_target = new PID(WIDTH/2, 0.2, 0.05, 0.01);
+        pid_align = new PID(0.15, 0.5, 0.08, 0.01);
+        pid_target = new PID(WIDTH/2, 0.5, 0.3, 0);
         //pid_gyro = new PID(0, K_PROP, K_DIFF, K_INT);
         //pid_encoder = new PID(0, K_PROP, K_DIFF, K_INT);
         //pid_target_x = new PID(WIDTH/2, K_PROP, K_DIFF, K_INT);
@@ -161,6 +161,8 @@ public class ControlDebug {
         distanceB = sonarB.getDistance();
         distanceC = sonarC.getDistance();
         
+        long point_1, point_2;
+        
         try {
             Thread.sleep(10);
         } catch (InterruptedException exc) {
@@ -180,6 +182,7 @@ public class ControlDebug {
             distanceB = sonarB.getDistance();
             distanceC = sonarC.getDistance();
             
+            
             // UPDATE VISION
             vision.update();
             
@@ -191,7 +194,7 @@ public class ControlDebug {
             
             // DRIVE MOTORS
             driveMotors();
-
+            
             comm.transmit();
             
             //System.out.println("distanceL: " + sonarL.getDistance());
@@ -205,11 +208,11 @@ public class ControlDebug {
             // END TIME
             end_time = System.currentTimeMillis();
             
-            try {
-                Thread.sleep(100 + end_time - start_time);
-            } catch (InterruptedException exc) {
-                exc.printStackTrace();
-            }
+//            try {
+//                Thread.sleep(20 + end_time - start_time);
+//            } catch (InterruptedException exc) {
+//                exc.printStackTrace();
+//            }
         }
     }
     
@@ -242,16 +245,19 @@ public class ControlDebug {
             forward = 0.08;
         } else if (state.state == ControlState.TARGETING_BALL){
             System.out.println("TARGETING_BALL");
-            turn = Math.max(-0.05, Math.min(0.05, pid_target.update(target_x, false)));
+            turn = -Math.max(-0.1, Math.min(0.1, pid_target.update(target_x, false)/WIDTH));
             forward = 0;
         } else if (state.state == ControlState.APPROACHING_BALL){
             System.out.println("APPROACHING_BALL");
-            turn = Math.max(-0.05, Math.min(0.05, pid_target.update(target_x, false)));
+            turn = -Math.max(-0.05, Math.min(0.05, pid_target.update(target_x, false)/WIDTH));
             forward = 0.08;
         } else if (state.state == ControlState.COLLECTING_BALL) {
             System.out.println("COLLECTING_BALL");
             turn = 0;
             forward = 0.08;
+        } else if (state.state == ControlState.PULL_AWAY){
+            turn = -0.1;
+            forward = -0.15;
         }
     }
 
@@ -269,7 +275,7 @@ public class ControlDebug {
         ControlState temp_state = ControlState.DEFAULT;
         
         if (target_found){
-            if (target_y > 0.75*HEIGHT && (state.state == ControlState.APPROACHING_BALL
+            if (target_y > 0.8*HEIGHT && (state.state == ControlState.APPROACHING_BALL
                     || state.state == ControlState.COLLECTING_BALL)){
                 temp_state = ControlState.COLLECTING_BALL;
             } else if (Math.abs(target_x - WIDTH/2) < 20 && (state.state == ControlState.TARGETING_BALL
@@ -292,12 +298,12 @@ public class ControlDebug {
             }
         }
         
-        if (state.getTime() > 400){
+        if (state.getTime() > 800){
             state.changeState(temp_state);
         }
         
-        if (state.getTime() > 10000){
-            state.changeState(ControlState.DEFAULT);
+        if (state.getTime() > 5000){
+            state.changeState(ControlState.PULL_AWAY);
         }
     }
     

@@ -37,8 +37,8 @@ public class TrackBall {
 	public TrackBall(MapleComm comm, double proportionalC, double derivativeC,
 	        double integralC, org.opencv.core.Point point, int width, int height) {
 		this.comm = comm;
-		motor1 = new Cytron(2, 1);
-		motor2 = new Cytron(7, 6);
+		motor1 = new Cytron(4, 0);
+		motor2 = new Cytron(10, 1);
 		comm.registerDevice(motor1);
 		comm.registerDevice(motor2);
 		comm.initialize();
@@ -74,21 +74,21 @@ public class TrackBall {
 		
 		//double forward1 = Math.min(0.1, pidOutY/height);
 		//double forward = Math.max(-0.1, forward1);
-		double forward = 0;
+		double forward = 0.1;
 		
-//		if (point.y < 30) {
-//			forward = 0;
-//		}
-//		
+		if (point.y < 30) {
+			forward = 0;
+		}
+		
 		if (point.x == 0.0) {
 			turn = 0;
 		}
-		//forward = 0.1;
+		forward = 0.1;
 		
 		System.out.println("for: " + forward);
 		System.out.println("turn: " + turn);
 		
-		motor1.setSpeed(forward+turn);
+		motor1.setSpeed(-(forward+turn));
 		motor2.setSpeed(forward-turn);
 		comm.transmit();
 		//System.out.println(forward);
