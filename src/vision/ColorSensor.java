@@ -13,6 +13,7 @@ import org.opencv.core.Mat;
 import org.opencv.highgui.Highgui;
 import org.opencv.highgui.VideoCapture;
 
+import controller.Hopper;
 import Core.Engine;
 import Core.FilterOp;
 
@@ -22,8 +23,8 @@ public class ColorSensor {
         AtomicInteger green_ball_count = new AtomicInteger(0);
 
         JLabel camera_pane = createWindow("Camera output", 32, 24);
-        
-        ColorSensor color_sensor = new ColorSensor(red_ball_count, green_ball_count);
+        Hopper hopper = new Hopper(24,27,28);
+        ColorSensor color_sensor = new ColorSensor(red_ball_count, green_ball_count, hopper);
         color_sensor.start();
         
         Mat rawImage = new Mat();
@@ -55,7 +56,7 @@ public class ColorSensor {
     public final VideoCapture camera;
     private Thread color_sensor_thread;
 
-    public ColorSensor(final AtomicInteger red_ball_count, final AtomicInteger green_ball_count){
+    public ColorSensor(final AtomicInteger red_ball_count, final AtomicInteger green_ball_count, final Hopper hopper){
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
         camera = new VideoCapture();
@@ -110,10 +111,26 @@ public class ColorSensor {
                     
                     if (delay >= 30 && red > 0){
                         count_red++;
+                        hopper.sorterRed();
+                        try {
+							Thread.sleep(500);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+                        hopper.sorterBlocking();
                     }
                     
                     if (delay >= 30 && green > 0){
                         count_green++;
+                        hopper.sorterGreen();
+                        try {
+							Thread.sleep(500);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+                        hopper.sorterBlocking();
                     }
                     
                     if (count_red >= 3){
