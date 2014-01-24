@@ -197,7 +197,7 @@ public class Vision {
     }
     
     /**
-     * Returns the decoded QR code or "QR code not found if no QR code found"
+     * Returns the decoded QR code or throws an exception if no QR code found
      * @param original
      * @return
      */
