@@ -19,6 +19,7 @@ public class Test {
         Ultrasonic sonarC = new Ultrasonic(34, 33);
         Ultrasonic sonarL = new Ultrasonic(36, 35);
         Ultrasonic sonarR = new Ultrasonic(26, 25);
+        PWMOutput roller = new PWMOutput(3);
         DigitalOutput relay = new DigitalOutput(37);
         
         //Encoder encoderL = new Encoder(5, 7);
@@ -31,6 +32,7 @@ public class Test {
         comm.registerDevice(sonarC);
         comm.registerDevice(sonarL);
         comm.registerDevice(sonarR);
+        comm.registerDevice(roller);
         comm.registerDevice(relay);
         
         //comm.registerDevice(encoderL);
@@ -39,6 +41,7 @@ public class Test {
 		comm.initialize();
 		
 		relay.setValue(false);
+		roller.setValue(1);
 		comm.transmit();
 		
 		comm.updateSensorData();

@@ -4,6 +4,7 @@ import comm.MapleComm;
 import comm.MapleIO;
 import devices.actuators.Cytron;
 import devices.actuators.DigitalOutput;
+import devices.actuators.PWMOutput;
 import devices.sensors.Ultrasonic;
 
 public class ControlMock {
@@ -41,6 +42,7 @@ public class ControlMock {
     private Cytron motorL, motorR;
     private Ultrasonic sonarL, sonarR, sonarA, sonarB, sonarC;
     private DigitalOutput relay;
+    //private PWMOutput roller;
     
     // PIDS
     PID pid_align;
@@ -72,6 +74,8 @@ public class ControlMock {
         sonarL = new Ultrasonic(36, 35);
         sonarR = new Ultrasonic(26, 25);
         
+        //roller = new PWMOutput(3);
+        
         relay = new DigitalOutput(37);
         
         // REGISTER DEVICES AND INITIALIZE
@@ -82,6 +86,7 @@ public class ControlMock {
         comm.registerDevice(sonarR);
         comm.registerDevice(motorL);
         comm.registerDevice(motorR);
+        //comm.registerDevice(roller);
         comm.registerDevice(relay);
         
         System.out.println("Initializing...");
@@ -109,6 +114,7 @@ public class ControlMock {
         
         // INITIALIZE SONARS
         relay.setValue(false);
+        //roller.setValue(1);
         comm.transmit();
         
         comm.updateSensorData();
@@ -191,7 +197,7 @@ public class ControlMock {
         } else if (state.state == ControlState.ADJACENT_LEFT){
             System.out.println("ADJACENT_LEFT");
             turn = 0.05;
-            forward = 0.07;
+            forward = 0.08;
         } else if (state.state == ControlState.ADJACENT_RIGHT){
             System.out.println("ADJACENT_RIGHT");
             turn = -0.08;
@@ -207,8 +213,10 @@ public class ControlMock {
             } else {
                 turn = 0.1;
             }
-            forward = -0.1;
+            forward = -0.08;
         }
+        turn = turn*1.25;
+        forward = forward*1.5;
     }
 
     private void estimateState(){
