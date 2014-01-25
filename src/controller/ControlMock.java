@@ -5,6 +5,7 @@ import comm.MapleIO;
 import devices.actuators.Cytron;
 import devices.actuators.DigitalOutput;
 import devices.actuators.PWMOutput;
+import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
 public class ControlMock {
@@ -30,9 +31,9 @@ public class ControlMock {
     // STATE VALUES
     double distanceL, distanceR, distanceA, distanceB, distanceC;
     long start_time, end_time;
-    double target_x;
-    double target_y;
-    boolean target_found;
+    //double target_x, target_y;
+    //boolean target_found;
+    double prev_encoderL, prev_encoderR;
     
     // MOTOR INPUTS
     private double forward;
@@ -41,12 +42,12 @@ public class ControlMock {
     // SENSORS AND ACTUATORS
     private Cytron motorL, motorR;
     private Ultrasonic sonarL, sonarR, sonarA, sonarB, sonarC;
+    private Encoder encoderL, encoderR;
     private DigitalOutput relay;
     //private PWMOutput roller;
     
     // PIDS
-    PID pid_align;
-    //PID pid_target;
+    PID pid_align, pid_encoder;
     
     // STATES
     private State state;
@@ -74,19 +75,23 @@ public class ControlMock {
         sonarL = new Ultrasonic(36, 35);
         sonarR = new Ultrasonic(26, 25);
         
-        //roller = new PWMOutput(3);
-        
+        encoderL = new Encoder(5, 7);
+        encoderR = new Encoder(6, 8);
         relay = new DigitalOutput(37);
         
         // REGISTER DEVICES AND INITIALIZE
+        comm.registerDevice(sonarL);
+        comm.registerDevice(sonarR);
         comm.registerDevice(sonarA);
         comm.registerDevice(sonarB);
         comm.registerDevice(sonarC);
-        comm.registerDevice(sonarL);
-        comm.registerDevice(sonarR);
+        
         comm.registerDevice(motorL);
         comm.registerDevice(motorR);
-        //comm.registerDevice(roller);
+        
+        comm.registerDevice(encoderL);
+        comm.registerDevice(encoderR);
+        
         comm.registerDevice(relay);
         
         System.out.println("Initializing...");
@@ -98,12 +103,18 @@ public class ControlMock {
         pid_align = new PID(0.15, 0.5, 0.08, 0.01);  
         pid_align.update(sonarL.getDistance(), true);
         
-        // DISTANCES
+        pid_encoder = new PID(1, 0.5, 0.08, 0.01);
+        pid_encoder.update(0.5, true);
+        
+        // VALUES
         distanceL = sonarL.getDistance();
         distanceR = sonarR.getDistance();
         distanceA = sonarA.getDistance();
         distanceB = sonarB.getDistance();
         distanceC = sonarC.getDistance();
+        
+        prev_encoderL = 0;
+        prev_encoderR = 0;
         
         // STATE INITIALIZATION
         state = new State(ControlState.DEFAULT);
@@ -144,7 +155,6 @@ public class ControlMock {
             distanceB = sonarB.getDistance();
             distanceC = sonarC.getDistance();
             
-            
             // UPDATE VISION
             //vision.update();
             
@@ -170,7 +180,7 @@ public class ControlMock {
             end_time = System.currentTimeMillis();
             
             try {
-                if (30 - end_time + start_time >= 0){
+                if (40 - end_time + start_time >= 0){
                     Thread.sleep(30 - end_time + start_time);
                 }
             } catch (Exception exc){
