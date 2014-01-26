@@ -3,6 +3,7 @@ package controller;
 import java.util.LinkedList;
 import java.util.List;
 
+import vision.Vision;
 import comm.MapleComm;
 import comm.MapleIO;
 import devices.actuators.Cytron;
@@ -21,7 +22,8 @@ public class ControlMock {
     private MapleComm comm;
     
     // VISION
-    //Vision vision;
+    Thread vision_thread;
+    final Vision vision;
     
     // CONSTANTS
     private final int WIDTH = 320;
@@ -69,7 +71,26 @@ public class ControlMock {
         turn = 0;
         
         // VISION
-        //vision = new Vision(CAMERA_NUM, WIDTH, HEIGHT, DISPLAY_ON);
+        vision = new Vision(CAMERA_NUM, WIDTH, HEIGHT, DISPLAY_ON);
+        
+        vision_thread = new Thread(new Runnable(){
+            public void run(){
+                long start_time, end_time;
+                
+                while (true){
+                    start_time = System.currentTimeMillis();
+                    vision.update();
+                    end_time = System.currentTimeMillis();
+                    try {
+                        if (100 + start_time - end_time > 0){
+                            Thread.sleep(100 + start_time - end_time);
+                        }
+                    } catch (Exception exc){
+                        exc.printStackTrace();
+                    }
+                }
+            }
+        });
         
         // SENSORS AND ACTUATORS        
         motorL = new Cytron(4, 0);
@@ -173,9 +194,6 @@ public class ControlMock {
             distanceA = sonarA.getDistance();
             distanceB = sonarB.getDistance();
             distanceC = sonarC.getDistance();
-            
-            // UPDATE VISION
-            //vision.update();
             
             // UPDATE BUFFERS
             updateSonarBuffers();
