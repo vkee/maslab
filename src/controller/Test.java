@@ -17,13 +17,13 @@ public class Test {
         Ultrasonic sonarA = new Ultrasonic(30, 29);
         Ultrasonic sonarB = new Ultrasonic(32, 31);
         Ultrasonic sonarC = new Ultrasonic(34, 33);
-        Ultrasonic sonarL = new Ultrasonic(36, 35);
+        Ultrasonic sonarL = new Ultrasonic(35, 36);
         Ultrasonic sonarR = new Ultrasonic(26, 25);
-        PWMOutput roller = new PWMOutput(3);
-        DigitalOutput relay = new DigitalOutput(37);
         
-        //Encoder encoderL = new Encoder(5, 7);
-        //Encoder encoderR = new Encoder(6, 8);
+        Encoder encoderL = new Encoder(5, 7);
+        Encoder encoderR = new Encoder(6, 8);
+        
+        DigitalOutput relay = new DigitalOutput(37);
         
 		comm.registerDevice(motorL);
 		comm.registerDevice(motorR);
@@ -32,16 +32,14 @@ public class Test {
         comm.registerDevice(sonarC);
         comm.registerDevice(sonarL);
         comm.registerDevice(sonarR);
-        comm.registerDevice(roller);
         comm.registerDevice(relay);
         
-        //comm.registerDevice(encoderL);
-        //comm.registerDevice(encoderR);
+        comm.registerDevice(encoderL);
+        comm.registerDevice(encoderR);
         
 		comm.initialize();
 		
 		relay.setValue(false);
-		roller.setValue(1);
 		comm.transmit();
 		
 		comm.updateSensorData();
@@ -52,19 +50,8 @@ public class Test {
 		double distanceB = sonarB.getDistance();
 		double distanceC = sonarC.getDistance();
 		
-		double forward, turn;
-		PID pid_align = new PID(0.1, 0.5, 0.08, 0.01);
-		pid_align.update(distanceL, true);
-		
-		PID pid_bottleneck = new PID(0, 0.3, 0.08, 0.01);
-		pid_bottleneck.update(distanceL - distanceR, true);
-		
-		long start_time, end_time;
-		
 		while (true) {
 		    comm.updateSensorData();
-		    
-		    start_time = System.currentTimeMillis();
             
 		    distanceL = sonarL.getDistance();
 		    distanceR = sonarR.getDistance();
@@ -78,37 +65,10 @@ public class Test {
 		    System.out.println("DistanceB: " + distanceB);
 		    System.out.println("DistanceC: " + distanceC);
 		    
-//		    if (distanceC < 0.2){
-//		        System.out.println("WALL AHEAD");
-//                turn = 0.12;
-//                forward = 0;
-//		    } else if (distanceB < 0.2 || (distanceA < 0.22 && distanceB < 0.22)){
-//		        // Maybe eliminate second condition
-//		        System.out.println("TURNING");
-//                turn = 0.12;
-//                forward = 0;
-//		    } else if (distanceL < 0.13){
-//		        System.out.println("TOO CLOSE ON THE LEFT");
-//		        turn = 0.05;
-//		        forward = 0.07;
-//		    } else if (distanceR < 0.1){
-//		        System.out.println("TOO CLOSE ON THE RIGHT");
-//		        turn = -0.08;
-//		        forward = 0;
-//		    } else {
-//		        System.out.println("DEFAULT");
-//		        turn = Math.max(-0.1, Math.min(0.1, pid_align.update(distanceL, false)));
-//		        forward = 0.08;
-//		    }
-//		    
-//			motorL.setSpeed(-(forward + turn));
-//			motorR.setSpeed(forward - turn);
 			comm.transmit();
 			
-			end_time = System.currentTimeMillis();
-			
 			try {
-                Thread.sleep(100 + start_time - end_time);
+                Thread.sleep(200);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

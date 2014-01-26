@@ -1,5 +1,7 @@
 package controller;
 
+import java.util.List;
+
 import comm.MapleComm;
 import comm.MapleIO;
 import devices.actuators.Cytron;
@@ -33,7 +35,10 @@ public class ControlMock {
     long start_time, end_time;
     //double target_x, target_y;
     //boolean target_found;
-    double prev_encoderL, prev_encoderR;
+    double K_encoder;
+    
+    // BUFFERS
+    List<Double> buffL, buffR, buffA, buffB, buffC;
     
     // MOTOR INPUTS
     private double forward;
@@ -53,7 +58,7 @@ public class ControlMock {
     private State state;
     
     private enum ControlState { DEFAULT, WALL_AHEAD, TURNING, ADJACENT_LEFT,
-        ADJACENT_RIGHT, TARGETING_BALL, APPROACHING_BALL, COLLECTING_BALL, PULL_AWAY };
+        ADJACENT_RIGHT, PULL_AWAY };
     
     public ControlMock(){
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
@@ -72,7 +77,7 @@ public class ControlMock {
         sonarA = new Ultrasonic(30, 29);
         sonarB = new Ultrasonic(32, 31);
         sonarC = new Ultrasonic(34, 33);
-        sonarL = new Ultrasonic(36, 35);
+        sonarL = new Ultrasonic(35, 36);
         sonarR = new Ultrasonic(26, 25);
         
         encoderL = new Encoder(5, 7);
@@ -100,11 +105,11 @@ public class ControlMock {
         comm.updateSensorData();
         
         // PIDS
-        pid_align = new PID(0.15, 0.5, 0.08, 0.01);  
+        pid_align = new PID(0.1, 0.5, 0.08, 0.01);  
         pid_align.update(sonarL.getDistance(), true);
         
-        pid_encoder = new PID(1, 0.5, 0.08, 0.01);
-        pid_encoder.update(0.5, true);
+        pid_encoder = new PID(7, 0.2, 0.08, 0.01);
+        pid_encoder.update(7, true);
         
         // VALUES
         distanceL = sonarL.getDistance();
@@ -113,8 +118,15 @@ public class ControlMock {
         distanceB = sonarB.getDistance();
         distanceC = sonarC.getDistance();
         
-        prev_encoderL = 0;
-        prev_encoderR = 0;
+        for (int i = 0; i < BUFF_LENGTH; i++){
+            buffL.add(distanceL);
+            buffR.add(distanceR);
+            buffA.add(distanceA);
+            buffB.add(distanceB);
+            buffC.add(distanceC);
+        }
+        
+        K_encoder = 1;
         
         // STATE INITIALIZATION
         state = new State(ControlState.DEFAULT);
@@ -125,7 +137,6 @@ public class ControlMock {
         
         // INITIALIZE SONARS
         relay.setValue(false);
-        //roller.setValue(1);
         comm.transmit();
         
         comm.updateSensorData();
@@ -158,30 +169,25 @@ public class ControlMock {
             // UPDATE VISION
             //vision.update();
             
+            // UPDATE BUFFERS
+            updateSonarBuffers();
+            
             // ESTIMATE STATE
             estimateState();
             
-            // CALCULATE MOTOR INPUTS
-            updateMotorInputs();
+            // UPDATE MOTORS
+            updateMotors();
             
-            // DRIVE MOTORS
-            driveMotors();
-            
+            print();
             comm.transmit();
-            
-            //System.out.println("distanceL: " + sonarL.getDistance());
-            //System.out.println("distanceR: " + sonarR.getDistance());
-            //System.out.println("distanceA: " + sonarA.getDistance());
-            //System.out.println("distanceB: " + sonarB.getDistance());
-            //System.out.println("distanceC: " + sonarC.getDistance());
-            //System.out.println("forward: " + forward);
-            //System.out.println("turn: " + turn);
             
             end_time = System.currentTimeMillis();
             
             try {
                 if (40 - end_time + start_time >= 0){
-                    Thread.sleep(30 - end_time + start_time);
+                    Thread.sleep(40 - end_time + start_time);
+                } else {
+                    System.out.println("TIME OVERFLOW: " + (end_time - start_time));
                 }
             } catch (Exception exc){
                 exc.printStackTrace();
@@ -189,49 +195,54 @@ public class ControlMock {
         }
     }
     
-    private void driveMotors(){
-        motorL.setSpeed(-(forward + turn));
-        motorR.setSpeed(forward - turn);
-    }
-    
-    private void updateMotorInputs(){
+    private void updateMotors(){
+        double temp_turn = 0;
+        double temp_forward = 0.1;
+        
         if (state.state == ControlState.WALL_AHEAD){
             System.out.println("WALL AHEAD");
-            turn = 0.12;
-            forward = 0;
+            temp_turn = 0.12;
+            temp_forward = 0;
         } else if (state.state == ControlState.TURNING){
-            // Maybe eliminate second condition
             System.out.println("TURNING");
-            turn = 0.12;
-            forward = 0;
+            temp_turn = 0.12;
+            temp_forward = 0;
         } else if (state.state == ControlState.ADJACENT_LEFT){
             System.out.println("ADJACENT_LEFT");
-            turn = 0.05;
-            forward = 0.08;
+            temp_turn = 0.05;
+            temp_forward = 0.08;
         } else if (state.state == ControlState.ADJACENT_RIGHT){
             System.out.println("ADJACENT_RIGHT");
-            turn = -0.08;
-            forward = 0;
+            temp_turn = -0.08;
+            temp_forward = 0;
         } else if (state.state == ControlState.DEFAULT){
             System.out.println("DEFAULT");
-            turn = Math.max(-0.1, Math.min(0.1, pid_align.update(distanceL, false)));
-            forward = 0.08;
+            temp_turn = Math.max(-0.1, Math.min(0.1, pid_align.update(distanceL, false)));
+            temp_forward = 0.08;
         } else if (state.state == ControlState.PULL_AWAY){
             System.out.println("PULL_AWAY");
             if (distanceR > distanceL){
-                turn = -0.1;
+                temp_turn = -0.1;
             } else {
-                turn = 0.1;
+                temp_turn = 0.1;
             }
-            forward = -0.08;
+            temp_forward = -0.08;
         }
-        turn = turn*1.25;
-        forward = forward*1.5;
+
+        double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
+        K_encoder = Math.max(pid_encoder.update(abs_speed, false), 0.5);
+        
+        turn = K_encoder*temp_turn;
+        forward = K_encoder*temp_forward;
+        
+        motorL.setSpeed(-(forward + turn));
+        motorR.setSpeed(forward - turn);
     }
 
     private void estimateState(){
         ControlState temp_state = ControlState.DEFAULT;
         
+        // TUNE CONDITIONS
         if (distanceC < 0.2){
             temp_state = ControlState.WALL_AHEAD;
         } else if (distanceB < 0.2 || (distanceA < 0.22 && distanceB < 0.22)){
@@ -244,13 +255,96 @@ public class ControlMock {
             temp_state = ControlState.DEFAULT;
         }
 
+        // TUNE CUTOFFS
         if ((state.getTime() > 400 && state.state != ControlState.PULL_AWAY) ||
                 (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY)){
             state.changeState(temp_state);
         }
 
-        if (state.getTime() > 5000){
+        // TUNE CUTOFF
+        if (state.getTime() > 20000){
             state.changeState(ControlState.PULL_AWAY);
+        }
+    }
+    
+    private void print(){
+        System.out.println("distanceL: " + sonarL.getDistance());
+        System.out.println("distanceR: " + sonarR.getDistance());
+        System.out.println("distanceA: " + sonarA.getDistance());
+        System.out.println("distanceB: " + sonarB.getDistance());
+        System.out.println("distanceC: " + sonarC.getDistance());
+        //System.out.println("forward: " + forward);
+        //System.out.println("turn: " + turn);
+    }
+    
+    private void updateSonarBuffers(){
+        boolean const_values = true;
+        double init = buffL.get(0);
+        for (Double val : buffL){
+            if (Math.abs(val - init) > 0.00001){
+                const_values = false;
+            }
+        }
+        if (!const_values){
+            init = buffR.get(0);
+            for (Double val : buffR){
+                if (Math.abs(val - init) > 0.00001){
+                    const_values = false;
+                }
+            }
+        }
+        if (!const_values){
+            init = buffA.get(0);
+            for (Double val : buffA){
+                if (Math.abs(val - init) > 0.00001){
+                    const_values = false;
+                }
+            }
+        }
+        if (!const_values){
+            init = buffL.get(0);
+            for (Double val : buffB){
+                if (Math.abs(val - init) > 0.00001){
+                    const_values = false;
+                }
+            }
+        }
+        if (!const_values){
+            init = buffL.get(0);
+            for (Double val : buffC){
+                if (Math.abs(val - init) > 0.00001){
+                    const_values = false;
+                }
+            }
+        }
+        
+        buffL.remove(0);
+        buffL.add(distanceL);
+        buffR.remove(0);
+        buffR.add(distanceR);
+        buffA.remove(0);
+        buffA.add(distanceA);
+        buffB.remove(0);
+        buffB.add(distanceB);
+        buffC.remove(0);
+        buffC.add(distanceC);
+        
+        if (const_values){
+            System.out.println("RESETTING RELAY");
+            relay.setValue(true);
+            try {
+                Thread.sleep(50);
+            } catch (Exception exc){
+                exc.printStackTrace();
+            }
+            
+            relay.setValue(false);
+            
+            try {
+                Thread.sleep(500);
+            } catch (Exception exc){
+                exc.printStackTrace();
+            }
         }
     }
     
