@@ -10,7 +10,7 @@ void main() {
 	// BALL DETECTION RED
 	int r = 1;
 	int miss = 0;	
-	while ( r < 50 ) {
+	while ( r < 50 && y > horizon) {
 		miss = 0;
 		float start = sin(r+x*y)*3.14;
 		for ( float a = start; a < start+6.28; a+=0.5 ) {
@@ -24,14 +24,14 @@ void main() {
 		}
 		r++;
 	}
-	if ( miss>=8 && r>=4 && y > 0.5) {
+	if ( miss>=8 && r>=4) {
 		gl_FragColor = vec4(0,0,r/50.0,1);
 	}
 		
 	// BALL DETECTION GREEN
 	r = 1;
 	miss = 0;	
-	while ( r < 50 ) {
+	while ( r < 50 && y > horizon ) {
 		miss = 0;
 		float start = sin(r+x*y)*3.14;
 		for ( float a = start; a < start+6.28; a+=0.5 ) {
@@ -45,7 +45,7 @@ void main() {
 		}
 		r++;
 	}
-	if ( miss>=8 && r>=4 && y > 0.5)
+	if ( miss>=8 && r>=4)
 		gl_FragColor = vec4(0,r/50.0,0,1);
 	
 	// WALL DETECTION
