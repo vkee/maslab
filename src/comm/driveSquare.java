@@ -14,10 +14,10 @@ public class driveSquare {
 	public driveSquare() {
 		MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
 //		Encoder encoder1 = new Encoder(5, 6);
-		Encoder encoder2 = new Encoder(7, 8);
+		Encoder encoder2 = new Encoder(6, 8);
 		Gyroscope gyro = new Gyroscope(1, 9);
-		Cytron motor1 = new Cytron(0, 1);
-		Cytron motor2 = new Cytron(2, 3);
+		Cytron motor1 = new Cytron(4, 0);
+		Cytron motor2 = new Cytron(10, 1);
 //		Ultrasonic sonar1 = new Ultrasonic(26,25);
 //		Ultrasonic sonar2 = new Ultrasonic(30,29);
 //		Ultrasonic sonar3 = new Ultrasonic(32,31);

@@ -3,6 +3,7 @@ package controller;
 import java.util.LinkedList;
 import java.util.List;
 
+import Core.Engine;
 import vision.Vision;
 import comm.MapleComm;
 import comm.MapleIO;
@@ -12,9 +13,9 @@ import devices.actuators.PWMOutput;
 import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
-public class ControlMock {
+public class RobotControl {
     public static void main(String[] args){      
-        ControlMock robot = new ControlMock();
+        RobotControl robot = new RobotControl();
         robot.loop();
     }
     
@@ -22,8 +23,8 @@ public class ControlMock {
     private MapleComm comm;
     
     // VISION
-    //Thread vision_thread;
-    //final Vision vision;
+    Thread vision_thread;
+    final Vision vision;
     
     // CONSTANTS
     private final int WIDTH = 320;
@@ -55,15 +56,15 @@ public class ControlMock {
     //private PWMOutput roller;
     
     // PIDS
-    PID pid_align, pid_encoder;
+    PID pid_align, pid_speedwf, pid_speedbc;
     
     // STATES
     private State state;
     
     private enum ControlState { DEFAULT, WALL_AHEAD, TURNING, ADJACENT_LEFT,
-        ADJACENT_RIGHT, PULL_AWAY };
+        ADJACENT_RIGHT, TARGETING_BALL, APPROACHING_BALL, COLLECTING_BALL, PULL_AWAY };
     
-    public ControlMock(){
+    public RobotControl(){
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         
         // MOTOR INPUTS
@@ -71,26 +72,28 @@ public class ControlMock {
         turn = 0;
         
         // VISION
-//        vision = new Vision(CAMERA_NUM, WIDTH, HEIGHT, DISPLAY_ON);
-//        
-//        vision_thread = new Thread(new Runnable(){
-//            public void run(){
-//                long start_time, end_time;
-//                
-//                while (true){
-//                    start_time = System.currentTimeMillis();
-//                    vision.update();
-//                    end_time = System.currentTimeMillis();
-//                    try {
-//                        if (100 + start_time - end_time > 0){
-//                            Thread.sleep(100 + start_time - end_time);
-//                        }
-//                    } catch (Exception exc){
-//                        exc.printStackTrace();
-//                    }
-//                }
-//            }
-//        });
+        vision = new Vision(CAMERA_NUM, WIDTH, HEIGHT, DISPLAY_ON);
+        
+        vision_thread = new Thread(new Runnable(){
+            public void run(){
+                Engine.initGL(WIDTH, HEIGHT);
+                
+                long start_time, end_time;
+                
+                while (true){
+                    start_time = System.currentTimeMillis();
+                    vision.update();
+                    end_time = System.currentTimeMillis();
+                    try {
+                        if (75 + start_time - end_time > 0){
+                            Thread.sleep(75 + start_time - end_time);
+                        }
+                    } catch (Exception exc){
+                        exc.printStackTrace();
+                    }
+                }
+            }
+        });
         
         // SENSORS AND ACTUATORS        
         motorL = new Cytron(4, 0);
@@ -130,8 +133,11 @@ public class ControlMock {
         pid_align = new PID(0.15, 0.5, 0.08, 0.01);  
         pid_align.update(sonarL.getDistance(), true);
         
-        pid_encoder = new PID(10, 0.2, 0.08, 0.01);
-        pid_encoder.update(10, true);
+        pid_speedwf = new PID(10, 0.2, 0.08, 0.01);
+        pid_speedwf.update(10, true);
+        
+        pid_speedbc = new PID(5, 0.2, 0.08, 0.01);
+        pid_speedbc.update(5, true);
         
         // BUFFERS
         buffL = new LinkedList<Double>();
@@ -165,7 +171,7 @@ public class ControlMock {
         System.out.println("Beginning to follow wall...");
         
         // START VISION
-        //vision_thread.start();
+        vision_thread.start();
         
         // INITIALIZE SONARS
         relay.setValue(false);
@@ -259,7 +265,7 @@ public class ControlMock {
         }
 
         double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
-        K_encoder = Math.max(pid_encoder.update(abs_speed, false), 0.5);
+        K_encoder = Math.max(pid_speedwf.update(abs_speed, false), 0.5);
         
         turn = K_encoder*temp_turn;
         forward = K_encoder*temp_forward;
@@ -375,7 +381,7 @@ public class ControlMock {
             comm.transmit();
             
             try {
-                Thread.sleep(500);
+                Thread.sleep(250);
             } catch (Exception exc){
                 exc.printStackTrace();
             }

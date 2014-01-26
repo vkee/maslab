@@ -6,6 +6,7 @@ import devices.actuators.Cytron;
 import devices.actuators.DigitalOutput;
 import devices.actuators.PWMOutput;
 import devices.sensors.Encoder;
+import devices.sensors.Gyroscope;
 import devices.sensors.Ultrasonic;
 
 public class Test {
@@ -23,6 +24,8 @@ public class Test {
         Encoder encoderL = new Encoder(5, 7);
         Encoder encoderR = new Encoder(6, 8);
         
+        Gyroscope gyro = new Gyroscope(1, 9);
+        
         DigitalOutput relay = new DigitalOutput(37);
         
 		comm.registerDevice(motorL);
@@ -32,6 +35,7 @@ public class Test {
         comm.registerDevice(sonarC);
         comm.registerDevice(sonarL);
         comm.registerDevice(sonarR);
+        comm.registerDevice(gyro);
         comm.registerDevice(relay);
         
         comm.registerDevice(encoderL);
@@ -41,14 +45,25 @@ public class Test {
 		
 		relay.setValue(false);
 		comm.transmit();
-		
+
 		comm.updateSensorData();
+
+		double time = System.currentTimeMillis();
+		double prevTime = System.currentTimeMillis();
+		double gyroError = 0;
+		while (System.currentTimeMillis() - time < 5000) {
+		    comm.updateSensorData();
+		    gyroError += gyro.getOmega() * (System.currentTimeMillis() - prevTime)/5000;
+		    prevTime = System.currentTimeMillis();
+		}
 		
 		double distanceL = sonarL.getDistance();
 		double distanceR = sonarR.getDistance();
 		double distanceA = sonarA.getDistance();
 		double distanceB = sonarB.getDistance();
 		double distanceC = sonarC.getDistance();
+		
+		double angle;
 		
 		while (true) {
 		    comm.updateSensorData();
@@ -65,10 +80,16 @@ public class Test {
 		    System.out.println("DistanceB: " + distanceB);
 		    System.out.println("DistanceC: " + distanceC);
 		    
+		    motorL.setSpeed(-0.1);
+		    motorR.setSpeed(-0.1);
+		    
+		    angle = gyro.getOmega() - gyroError;
+		    System.out.println(angle);
+		    
 			comm.transmit();
 			
 			try {
-                Thread.sleep(200);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

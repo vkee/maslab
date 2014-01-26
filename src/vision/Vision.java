@@ -237,6 +237,16 @@ public class Vision {
         }
     }
     
+    public double getNextBallRadius() throws RuntimeException{
+        if (!green_target.target && !red_target.target){
+            throw new RuntimeException("No ball to target");
+        } else if (green_target.radius > red_target.radius){
+            return green_target.radius;
+        } else {
+            return red_target.radius;
+        }
+    }
+    
     public int getNextReactorX() throws RuntimeException {
         if (!reactor_target.target){
             throw new RuntimeException("No reactor to target");
