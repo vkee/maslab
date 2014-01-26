@@ -1,5 +1,6 @@
 package controller;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import comm.MapleComm;
@@ -25,7 +26,7 @@ public class ControlMock {
     // CONSTANTS
     private final int WIDTH = 320;
     private final int HEIGHT = 240;
-    private final int BUFF_LENGTH = 6;
+    private final int BUFF_LENGTH = 10;
     private final int CAMERA_NUM = 1;
     private final int CHANGE_THRES = 2;
     private final boolean DISPLAY_ON = true;
@@ -105,11 +106,18 @@ public class ControlMock {
         comm.updateSensorData();
         
         // PIDS
-        pid_align = new PID(0.1, 0.5, 0.08, 0.01);  
+        pid_align = new PID(0.15, 0.5, 0.08, 0.01);  
         pid_align.update(sonarL.getDistance(), true);
         
-        pid_encoder = new PID(7, 0.2, 0.08, 0.01);
-        pid_encoder.update(7, true);
+        pid_encoder = new PID(10, 0.2, 0.08, 0.01);
+        pid_encoder.update(10, true);
+        
+        // BUFFERS
+        buffL = new LinkedList<Double>();
+        buffR = new LinkedList<Double>();
+        buffA = new LinkedList<Double>();
+        buffB = new LinkedList<Double>();
+        buffC = new LinkedList<Double>();
         
         // VALUES
         distanceL = sonarL.getDistance();
@@ -245,7 +253,7 @@ public class ControlMock {
         // TUNE CONDITIONS
         if (distanceC < 0.2){
             temp_state = ControlState.WALL_AHEAD;
-        } else if (distanceB < 0.2 || (distanceA < 0.22 && distanceB < 0.22)){
+        } else if (distanceB < 0.15 || (distanceA < 0.2 && distanceB < 0.2)){
             temp_state = ControlState.TURNING;
         } else if (distanceL < 0.13){
             temp_state = ControlState.ADJACENT_LEFT;
@@ -257,12 +265,12 @@ public class ControlMock {
 
         // TUNE CUTOFFS
         if ((state.getTime() > 400 && state.state != ControlState.PULL_AWAY) ||
-                (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY)){
+                (state.getTime() > 2000 && state.state == ControlState.PULL_AWAY)){
             state.changeState(temp_state);
         }
 
         // TUNE CUTOFF
-        if (state.getTime() > 20000){
+        if (state.getTime() > 8000){
             state.changeState(ControlState.PULL_AWAY);
         }
     }
@@ -281,14 +289,14 @@ public class ControlMock {
         boolean const_values = true;
         double init = buffL.get(0);
         for (Double val : buffL){
-            if (Math.abs(val - init) > 0.00001){
+            if (Math.abs(val - init) > 0.0000000001){
                 const_values = false;
             }
         }
         if (!const_values){
             init = buffR.get(0);
             for (Double val : buffR){
-                if (Math.abs(val - init) > 0.00001){
+                if (Math.abs(val - init) > 0.0000000001){
                     const_values = false;
                 }
             }
@@ -296,7 +304,7 @@ public class ControlMock {
         if (!const_values){
             init = buffA.get(0);
             for (Double val : buffA){
-                if (Math.abs(val - init) > 0.00001){
+                if (Math.abs(val - init) > 0.0000000001){
                     const_values = false;
                 }
             }
@@ -304,7 +312,7 @@ public class ControlMock {
         if (!const_values){
             init = buffL.get(0);
             for (Double val : buffB){
-                if (Math.abs(val - init) > 0.00001){
+                if (Math.abs(val - init) > 0.0000000001){
                     const_values = false;
                 }
             }
@@ -312,7 +320,7 @@ public class ControlMock {
         if (!const_values){
             init = buffL.get(0);
             for (Double val : buffC){
-                if (Math.abs(val - init) > 0.00001){
+                if (Math.abs(val - init) > 0.000000001){
                     const_values = false;
                 }
             }
@@ -332,13 +340,18 @@ public class ControlMock {
         if (const_values){
             System.out.println("RESETTING RELAY");
             relay.setValue(true);
+            motorL.setSpeed(0);
+            motorR.setSpeed(0);
             try {
                 Thread.sleep(50);
             } catch (Exception exc){
                 exc.printStackTrace();
             }
+            comm.transmit();
             
             relay.setValue(false);
+            
+            comm.transmit();
             
             try {
                 Thread.sleep(500);
