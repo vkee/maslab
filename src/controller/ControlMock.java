@@ -164,6 +164,9 @@ public class ControlMock {
     private void loop(){ 
         System.out.println("Beginning to follow wall...");
         
+        // START VISION
+        vision_thread.start();
+        
         // INITIALIZE SONARS
         relay.setValue(false);
         comm.transmit();
