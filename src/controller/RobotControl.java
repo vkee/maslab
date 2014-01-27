@@ -362,8 +362,9 @@ public class RobotControl {
         }
         
         // TUNE CUTOFFS
-        if ((state.getTime() > 400 && state.state != ControlState.PULL_AWAY) ||
-                (state.getTime() > 2000 && state.state == ControlState.PULL_AWAY)){
+        if (((state.getTime() > 400 && state.state != ControlState.PULL_AWAY)
+                || (state.getTime() > 2000 && state.state == ControlState.PULL_AWAY))
+                && !(state.getTime() < 800 && state.state == ControlState.COLLECTING_BALL)){
             state.changeState(temp_state);
         }
 
