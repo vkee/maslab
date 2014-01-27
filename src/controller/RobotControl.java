@@ -11,6 +11,7 @@ import devices.actuators.Cytron;
 import devices.actuators.DigitalOutput;
 import devices.actuators.PWMOutput;
 import devices.sensors.Encoder;
+import devices.sensors.Gyroscope;
 import devices.sensors.Ultrasonic;
 
 public class RobotControl {
@@ -36,10 +37,11 @@ public class RobotControl {
     
     // STATE VALUES
     double distanceL, distanceR, distanceA, distanceB, distanceC;
+    double omega;
     long start_time, end_time;
-    //double target_x, target_y;
-    //boolean target_found;
+    double target_x, target_y, target_radius;
     double K_encoder;
+    int target_found;
     
     // BUFFERS
     List<Double> buffL, buffR, buffA, buffB, buffC;
@@ -53,10 +55,12 @@ public class RobotControl {
     private Ultrasonic sonarL, sonarR, sonarA, sonarB, sonarC;
     private Encoder encoderL, encoderR;
     private DigitalOutput relay;
+    private Gyroscope gyro;
     //private PWMOutput roller;
     
     // PIDS
     PID pid_align, pid_speedwf, pid_speedbc;
+    PID pid_target_x, pid_target_y;
     
     // STATES
     private State state;
@@ -105,6 +109,8 @@ public class RobotControl {
         sonarL = new Ultrasonic(35, 36);
         sonarR = new Ultrasonic(26, 25);
         
+        gyro = new Gyroscope(1, 9);
+        
         encoderL = new Encoder(5, 7);
         encoderR = new Encoder(6, 8);
         relay = new DigitalOutput(37);
@@ -136,8 +142,14 @@ public class RobotControl {
         pid_speedwf = new PID(10, 0.2, 0.08, 0.01);
         pid_speedwf.update(10, true);
         
-        pid_speedbc = new PID(5, 0.2, 0.08, 0.01);
-        pid_speedbc.update(5, true);
+        pid_speedbc = new PID(6, 0.2, 0.08, 0.01);
+        pid_speedbc.update(6, true);
+        
+        pid_target_x = new PID(0, 0.5, 0.3, 0);
+        pid_target_x.update(0, true);
+        
+        pid_target_y = new PID(0.95*240, 0.4, 0.3, 0);
+        pid_target_y.update(0.95*240, true);
         
         // BUFFERS
         buffL = new LinkedList<Double>();
@@ -162,6 +174,13 @@ public class RobotControl {
         }
         
         K_encoder = 1;
+        
+        target_x = 0;
+        target_y = 0;
+        target_radius = 0;
+        target_found = 0;
+        
+        omega = 0;
         
         // STATE INITIALIZATION
         state = new State(ControlState.DEFAULT);
@@ -197,12 +216,14 @@ public class RobotControl {
             
             start_time = System.currentTimeMillis();
             
-            // UPDATE DISTANCES
+            // UPDATE VALUES
             distanceL = sonarL.getDistance();
             distanceR = sonarR.getDistance();
             distanceA = sonarA.getDistance();
             distanceB = sonarB.getDistance();
             distanceC = sonarC.getDistance();
+            
+            omega = gyro.getOmega();
             
             // UPDATE BUFFERS
             updateSonarBuffers();
@@ -262,10 +283,38 @@ public class RobotControl {
                 temp_turn = 0.1;
             }
             temp_forward = -0.08;
+        } else if (state.state == ControlState.TARGETING_BALL){
+            System.out.println("TARGETING_BALL");
+            if (target_radius == 0){
+                if (omega >= 0){
+                    turn = -0.12;
+                } else {
+                    turn = 0.12;
+                }
+                forward = 0;
+            } else {
+                turn = -pid_target_x.update(target_x - 160, false)/320;
+                forward = 0;
+            }
+        } else if (state.state == ControlState.APPROACHING_BALL){
+            System.out.println("APPROACHING_BALL");
+            turn = pid_target_x.update(target_x - 160, false)/320;
+            forward = pid_target_y.update(target_y, false)/240;
+        } else if (state.state == ControlState.COLLECTING_BALL){
+            System.out.println("COLLECTING_BALL");
+            turn = 0;
+            forward = 0.1;
         }
-
+        
         double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
-        K_encoder = Math.max(pid_speedwf.update(abs_speed, false), 0.5);
+        
+        if (state.state == ControlState.TARGETING_BALL ||
+                state.state == ControlState.APPROACHING_BALL || 
+                state.state == ControlState.COLLECTING_BALL){ 
+            K_encoder = Math.max(pid_speedbc.update(abs_speed, false), 0.5);
+        } else {
+            K_encoder = Math.max(pid_speedwf.update(abs_speed, false), 0.5);
+        }
         
         turn = K_encoder*temp_turn;
         forward = K_encoder*temp_forward;
@@ -277,19 +326,41 @@ public class RobotControl {
     private void estimateState(){
         ControlState temp_state = ControlState.DEFAULT;
         
-        // TUNE CONDITIONS
-        if (distanceC < 0.2){
-            temp_state = ControlState.WALL_AHEAD;
-        } else if (distanceB < 0.15 || (distanceA < 0.2 && distanceB < 0.2)){
-            temp_state = ControlState.TURNING;
-        } else if (distanceL < 0.13){
-            temp_state = ControlState.ADJACENT_LEFT;
-        } else if (distanceR < 0.1){
-            temp_state = ControlState.ADJACENT_RIGHT;
-        } else {
-            temp_state = ControlState.DEFAULT;
+        try {
+            target_x = vision.getNextBallX();
+            target_y = vision.getNextBallY();
+            target_radius = vision.getNextBallRadius();
+            target_found = Math.min(target_found + 1, 4);
+        } catch (Exception exc){
+            //target_found = Math.max(target_found - 1, 0);
+            target_found = 0;
         }
-
+        
+        if ((target_found < 2 && (state.state != ControlState.TARGETING_BALL
+                && state.state != ControlState.APPROACHING_BALL && state.state != ControlState.COLLECTING_BALL))
+                || distanceL < 0.1 || distanceR < 0.1 || distanceA < 0.08 || distanceB < 0.08 || distanceC < 0.1){
+            // TUNE CONDITIONS
+            if (distanceC < 0.2){
+                temp_state = ControlState.WALL_AHEAD;
+            } else if (distanceB < 0.15 || (distanceA < 0.2 && distanceB < 0.2)){
+                temp_state = ControlState.TURNING;
+            } else if (distanceL < 0.13){
+                temp_state = ControlState.ADJACENT_LEFT;
+            } else if (distanceR < 0.1){
+                temp_state = ControlState.ADJACENT_RIGHT;
+            } else {
+                temp_state = ControlState.DEFAULT;
+            }
+        } else {
+            if (Math.abs(target_x - 160)/target_radius < 1 && target_y > 180){
+                temp_state = ControlState.COLLECTING_BALL;
+            } else if (Math.abs(target_x - 160)/target_radius < 1 && target_y < 180){
+                temp_state = ControlState.APPROACHING_BALL;
+            } else {
+                temp_state = ControlState.TARGETING_BALL;
+            }
+        }
+        
         // TUNE CUTOFFS
         if ((state.getTime() > 400 && state.state != ControlState.PULL_AWAY) ||
                 (state.getTime() > 2000 && state.state == ControlState.PULL_AWAY)){

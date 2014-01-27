@@ -22,10 +22,6 @@ public class RobotControlWallFollow {
     // MAPLE
     private MapleComm comm;
     
-    // VISION
-    Thread vision_thread;
-    final Vision vision;
-    
     // CONSTANTS
     private final int WIDTH = 320;
     private final int HEIGHT = 240;
@@ -37,8 +33,6 @@ public class RobotControlWallFollow {
     // STATE VALUES
     double distanceL, distanceR, distanceA, distanceB, distanceC;
     long start_time, end_time;
-    //double target_x, target_y;
-    //boolean target_found;
     double K_encoder;
     
     // BUFFERS
@@ -53,7 +47,6 @@ public class RobotControlWallFollow {
     private Ultrasonic sonarL, sonarR, sonarA, sonarB, sonarC;
     private Encoder encoderL, encoderR;
     private DigitalOutput relay;
-    //private PWMOutput roller;
     
     // PIDS
     PID pid_align, pid_speedwf, pid_speedbc;
@@ -70,30 +63,6 @@ public class RobotControlWallFollow {
         // MOTOR INPUTS
         forward = 0;
         turn = 0;
-        
-        // VISION
-        vision = new Vision(CAMERA_NUM, WIDTH, HEIGHT, DISPLAY_ON);
-        
-        vision_thread = new Thread(new Runnable(){
-            public void run(){
-                Engine.initGL(WIDTH, HEIGHT);
-                
-                long start_time, end_time;
-                
-                while (true){
-                    start_time = System.currentTimeMillis();
-                    vision.update();
-                    end_time = System.currentTimeMillis();
-                    try {
-                        if (75 + start_time - end_time > 0){
-                            Thread.sleep(75 + start_time - end_time);
-                        }
-                    } catch (Exception exc){
-                        exc.printStackTrace();
-                    }
-                }
-            }
-        });
         
         // SENSORS AND ACTUATORS        
         motorL = new Cytron(4, 0);
@@ -169,9 +138,6 @@ public class RobotControlWallFollow {
     
     private void loop(){ 
         System.out.println("Beginning to follow wall...");
-        
-        // START VISION
-        vision_thread.start();
         
         // INITIALIZE SONARS
         relay.setValue(false);

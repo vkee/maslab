@@ -1,5 +1,8 @@
 package controller;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import comm.MapleComm;
 import comm.MapleIO;
 import devices.actuators.Cytron;
@@ -35,7 +38,7 @@ public class Test {
         comm.registerDevice(sonarC);
         comm.registerDevice(sonarL);
         comm.registerDevice(sonarR);
-        comm.registerDevice(gyro);
+        //comm.registerDevice(gyro);
         comm.registerDevice(relay);
         
         comm.registerDevice(encoderL);
@@ -62,7 +65,7 @@ public class Test {
 		double distanceA = sonarA.getDistance();
 		double distanceB = sonarB.getDistance();
 		double distanceC = sonarC.getDistance();
-		
+
 		double angle;
 		
 		while (true) {
