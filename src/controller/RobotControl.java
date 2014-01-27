@@ -37,7 +37,7 @@ public class RobotControl {
     
     // STATE VALUES
     double distanceL, distanceR, distanceA, distanceB, distanceC;
-    double omega;
+    //double omega;
     long start_time, end_time;
     double target_x, target_y, target_radius;
     double K_encoder;
@@ -182,7 +182,7 @@ public class RobotControl {
         target_radius = 0;
         target_found = 0;
         
-        omega = 0;
+        //omega = 0;
         
         // STATE INITIALIZATION
         state = new State(ControlState.DEFAULT);
