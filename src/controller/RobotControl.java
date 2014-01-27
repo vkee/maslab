@@ -55,7 +55,7 @@ public class RobotControl {
     private Ultrasonic sonarL, sonarR, sonarA, sonarB, sonarC;
     private Encoder encoderL, encoderR;
     private DigitalOutput relay;
-    private Gyroscope gyro;
+    //private Gyroscope gyro;
     //private PWMOutput roller;
     
     // PIDS
@@ -101,7 +101,7 @@ public class RobotControl {
         
         // SENSORS AND ACTUATORS        
         motorL = new Cytron(4, 0);
-        motorR = new Cytron(10, 1);
+        motorR = new Cytron(3, 1);
         
         sonarA = new Ultrasonic(30, 29);
         sonarB = new Ultrasonic(32, 31);
@@ -109,7 +109,7 @@ public class RobotControl {
         sonarL = new Ultrasonic(35, 36);
         sonarR = new Ultrasonic(26, 25);
         
-        gyro = new Gyroscope(1, 9);
+        //gyro = new Gyroscope(1, 9);
         
         encoderL = new Encoder(5, 7);
         encoderR = new Encoder(6, 8);
@@ -124,6 +124,8 @@ public class RobotControl {
         
         comm.registerDevice(motorL);
         comm.registerDevice(motorR);
+        
+        //comm.registerDevice(gyro);
         
         comm.registerDevice(encoderL);
         comm.registerDevice(encoderR);
@@ -223,7 +225,7 @@ public class RobotControl {
             distanceB = sonarB.getDistance();
             distanceC = sonarC.getDistance();
             
-            omega = gyro.getOmega();
+            //omega = gyro.getOmega();
             
             // UPDATE BUFFERS
             updateSonarBuffers();
@@ -286,7 +288,7 @@ public class RobotControl {
         } else if (state.state == ControlState.TARGETING_BALL){
             System.out.println("TARGETING_BALL");
             if (target_radius == 0){
-                if (omega >= 0){
+                if (turn >= 0){
                     turn = -0.12;
                 } else {
                     turn = 0.12;

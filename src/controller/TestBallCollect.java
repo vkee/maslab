@@ -32,7 +32,7 @@ public class TestBallCollect {
         Encoder encoderL = new Encoder(5, 7);
         Encoder encoderR = new Encoder(6, 8);
         
-        Gyroscope gyro = new Gyroscope(1, 9);
+        //Gyroscope gyro = new Gyroscope(1, 9);
         
         DigitalOutput relay = new DigitalOutput(37);
         
@@ -43,7 +43,7 @@ public class TestBallCollect {
         comm.registerDevice(sonarC);
         comm.registerDevice(sonarL);
         comm.registerDevice(sonarR);
-        comm.registerDevice(gyro);
+        //comm.registerDevice(gyro);
         comm.registerDevice(relay);
         
         comm.registerDevice(encoderL);
@@ -93,6 +93,7 @@ public class TestBallCollect {
         long start_time, end_time;
         double target_x, target_y, target_radius;
         double forward, turn, omega, abs_speed, K_encoder;
+        turn = 0;
         
 		while (true) {
 		    start_time = System.currentTimeMillis();
@@ -116,9 +117,9 @@ public class TestBallCollect {
 		            forward = pid_forward.update(target_y, false)/240;
 		        }
 		    } catch (Exception exc){
-		        omega = gyro.getOmega();
+		        //omega = gyro.getOmega();
 		        System.out.println("LOST TRACK OF BALL");
-		        if (omega >= 0){
+		        if (turn >= 0){
 		            turn = -0.12;
 		        } else {
 		            turn = 0.12;

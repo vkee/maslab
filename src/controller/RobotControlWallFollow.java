@@ -66,7 +66,7 @@ public class RobotControlWallFollow {
         
         // SENSORS AND ACTUATORS        
         motorL = new Cytron(4, 0);
-        motorR = new Cytron(10, 1);
+        motorR = new Cytron(3, 1);
         
         sonarA = new Ultrasonic(30, 29);
         sonarB = new Ultrasonic(32, 31);

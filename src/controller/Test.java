@@ -17,7 +17,7 @@ public class Test {
 	public static void main(String[] args) {
 		MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         Cytron motorL = new Cytron(4, 0);
-        Cytron motorR = new Cytron(10, 1);
+        Cytron motorR = new Cytron(3, 1);
         Ultrasonic sonarA = new Ultrasonic(30, 29);
         Ultrasonic sonarB = new Ultrasonic(32, 31);
         Ultrasonic sonarC = new Ultrasonic(34, 33);
@@ -27,7 +27,7 @@ public class Test {
         Encoder encoderL = new Encoder(5, 7);
         Encoder encoderR = new Encoder(6, 8);
         
-        Gyroscope gyro = new Gyroscope(1, 9);
+        //Gyroscope gyro = new Gyroscope(1, 9);
         
         DigitalOutput relay = new DigitalOutput(37);
         
@@ -51,14 +51,14 @@ public class Test {
 
 		comm.updateSensorData();
 
-		double time = System.currentTimeMillis();
-		double prevTime = System.currentTimeMillis();
-		double gyroError = 0;
-		while (System.currentTimeMillis() - time < 5000) {
-		    comm.updateSensorData();
-		    gyroError += gyro.getOmega() * (System.currentTimeMillis() - prevTime)/5000;
-		    prevTime = System.currentTimeMillis();
-		}
+//		double time = System.currentTimeMillis();
+//		double prevTime = System.currentTimeMillis();
+//		double gyroError = 0;
+//		while (System.currentTimeMillis() - time < 5000) {
+//		    comm.updateSensorData();
+//		    gyroError += gyro.getOmega() * (System.currentTimeMillis() - prevTime)/5000;
+//		    prevTime = System.currentTimeMillis();
+//		}
 		
 		double distanceL = sonarL.getDistance();
 		double distanceR = sonarR.getDistance();
@@ -66,7 +66,7 @@ public class Test {
 		double distanceB = sonarB.getDistance();
 		double distanceC = sonarC.getDistance();
 
-		double angle;
+		//double angle;
 		
 		while (true) {
 		    comm.updateSensorData();
@@ -86,8 +86,8 @@ public class Test {
 		    motorL.setSpeed(-0.1);
 		    motorR.setSpeed(-0.1);
 		    
-		    angle = gyro.getOmega() - gyroError;
-		    System.out.println(angle);
+//		    angle = gyro.getOmega() - gyroError;
+//		    System.out.println(angle);
 		    
 			comm.transmit();
 			
