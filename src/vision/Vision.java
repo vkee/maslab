@@ -31,25 +31,31 @@ public class Vision {
         final Vision vision = new Vision(1, 320, 240, false);
         Thread display_thread = new Thread(new Runnable(){
             public void run(){
-                //JLabel display_pane = createWindow("Display output", vision.WIDTH, vision.HEIGHT);
                 JLabel camera_pane = createWindow("Camera output", vision.WIDTH, vision.HEIGHT);
-                JLabel colorize_pane = createWindow("Colorize output", vision.WIDTH, vision.HEIGHT);
-                int target_x, target_y;
+                JLabel colorize_pane = createWindow("Filtered output", vision.WIDTH, vision.HEIGHT);
+                int ball_target_x, ball_target_y, reactor_target_x, reactor_target_y;
+                double target_height, target_radius;
                 while (true) {
                     vision.update();
-                    //updateWindow(display_pane, vision.curr_image);
+
                     updateWindow(camera_pane, vision.curr_image);
                     updateWindow(colorize_pane, vision.colorized);
-                    try{
-                        target_x = vision.getNextBallX();
-                        target_y = vision.getNextBallY();
-                        //System.out.println("//////////////////////");
-                        //System.out.println("target_x: " + target_x);
-                        //System.out.println("target_y: " + target_y);
-                    } catch (Exception exc){
-                        //System.out.println("//////////////////////");
-                        //System.out.println("No Ball Found");
-                    }
+                    
+                    reactor_target_x = vision.getNextReactorX();
+                    reactor_target_y = vision.getNextReactorY();
+                    target_height = vision.getNextReacterHeight();
+                    
+                    ball_target_x = vision.getNextBallX();
+                    ball_target_y = vision.getNextBallY();
+                    target_radius = vision.getNextBallRadius();
+                    
+                    System.out.println("ball_target_x: " + ball_target_x);
+                    System.out.println("ball_target_y: " + ball_target_y);
+                    System.out.println("target_radius: " + target_radius);
+                    
+                    System.out.println("reactor_target_x: " + reactor_target_x);
+                    System.out.println("reactor_target_y: " + reactor_target_y);
+                    System.out.println("target_height: " + target_height);
                 }
             }
         });
@@ -106,9 +112,9 @@ public class Vision {
         
         // FILTERS
         blur = new FilterOp("blur");
-        colorize = new FilterOp("colorize");
+        colorize = new FilterOp("modColorize");
         eliminateTop = new FilterOp("eliminateTop");
-        objRec = new FilterOp("objectRecognition");
+        objRec = new FilterOp("modObjRec");
         
         // FILTERED IMAGE
         while (!camera.read(rawImage)) {
@@ -162,21 +168,23 @@ public class Vision {
     private void processFilteredImage(){
         red_target = new Ball(false);
         green_target = new Ball(false);
-        int pixel, red, green;
+        reactor_target = new Reactor(false);
+        int pixel, red, green, blue;
         double radius, height;
         for (int x = 0; x < WIDTH; x++){
             for (int y = 0; y < HEIGHT; y++){
-                if (y >= HEIGHT/2){
+                if (y >= 0.52*HEIGHT){
                     pixel = filtered.getRGB(x, y);
                     red = (pixel >> 16) & 0xFF;
                     green = (pixel >> 8) & 0xFF;
-                    if (red > 0 && green == 0){
+                    blue = (pixel) & 0xFF;
+                    if (red > 0 && green == 0 && blue == 0){
                         radius = 50*red/256.0;
                         if (radius > red_target.radius){
                             red_target = new Ball(x, y, radius);
                         }
                     }
-                    if (green > 0 && red == 0){
+                    if (green > 0 && red == 0 && blue == 0){
                         radius = 50*green/256.0;
                         if (radius > green_target.radius){
                             green_target = new Ball(x, y, radius);
@@ -184,10 +192,12 @@ public class Vision {
                     }
                 } else {
                     pixel = colorized.getRGB(x, y);
+                    red = (pixel >> 16) & 0xFF;
                     green = (pixel >> 8) & 0xFF;
-                    if (green > 0){
+                    blue = (pixel) & 0xFF;
+                    if (green > 0 && blue > 0 && red == 0){
                         height = HEIGHT*green/256.0;
-                        if (height > reactor_target.height){
+                        if (height > reactor_target.height && height >= 10){
                             reactor_target = new Reactor(x, y, height);
                         }
                     }
@@ -233,28 +243,24 @@ public class Vision {
         }
     }
     
-    public double getNextBallRadius() throws RuntimeException{
+    public double getNextBallRadius(){
         if (green_target.radius >= red_target.radius){
             return green_target.radius;
         } else {
             return red_target.radius;
         }
     }
-    
+
     public int getNextReactorX() throws RuntimeException {
-        if (!reactor_target.target){
-            throw new RuntimeException("No reactor to target");
-        } else {
-            return reactor_target.x;
-        }
+        return reactor_target.x;
     }
-    
+
     public int getNextReactorY() throws RuntimeException {
-        if (!reactor_target.target){
-            throw new RuntimeException("No reactor to target");
-        } else {
-            return reactor_target.y;
-        }
+        return reactor_target.y;
+    }
+
+    public double getNextReacterHeight(){
+        return reactor_target.height;
     }
     
     private static JLabel createWindow(String name, int width, int height) {    

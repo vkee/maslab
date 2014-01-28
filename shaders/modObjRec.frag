@@ -249,7 +249,7 @@ void main() {
 		} 
 	}
 	
-	//TEAL (PREVIOUSLY GREEN)
+	//TEAL
 	if ( col.z==0 && col.y==1 && col.x==1 && y<horizon ) {
 		while ( colUpper.z==0 && colUpper.y==1 && colUpper.x==1 && yUpper > 0) {
 			yUpper = yUpper - dy;
@@ -324,7 +324,7 @@ void main() {
 				
 			}
 			
-			if ( xLeft+xRight <= 2*x+dx && xLeft+xRight >= 2*x-dx ) {
+			if ( xLeft+xRight <= 2*x+dx && xLeft+xRight >= 2*x-dx) {
 				gl_FragColor = vec4((yLower - yUpper),(yLower - yUpper),0,1);
 			}
 		} 

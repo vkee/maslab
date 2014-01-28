@@ -27,7 +27,7 @@ import devices.sensors.Encoder;
 import devices.sensors.Gyroscope;
 import devices.sensors.Ultrasonic;
 
-public class TestBallCollectAltered {
+public class TestBallCollectForward {
 
 	public static void main(String[] args) {
 		MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
@@ -68,14 +68,14 @@ public class TestBallCollectAltered {
 		
 		final Vision vision = new Vision(1, 320, 240, true);
 		
-        PID pid_speedbc = new PID(4, 0.2, 0.08, 0.01);
-        pid_speedbc.update(4, true);
+        PID pid_far = new PID(9, 0.3, 0.08, 0);
+        pid_far.update(9, true);
         
-        PID pid_ball = new PID(0, 0.5, 0.5, 0);
-        pid_ball.update(0, true);
+        PID pid_mid = new PID(7, 0.2, 0.08, 0);
+        pid_mid.update(7, true);
         
-        PID pid_forward = new PID(240, 0.4, 0.3, 0);
-        pid_forward.update(0, true);
+        PID pid_close = new PID(5, 0.2, 0.08, 0);
+        pid_close.update(5, true);
         
         long start_time, end_time;
         double target_x, target_y, target_radius;
@@ -87,7 +87,7 @@ public class TestBallCollectAltered {
         
         vision.update();
         
-        PID pidX = new PID(width/2, 0.3, -2, 0); // Old KD was -0.4
+        PID pidX = new PID(width/2, 0.3, -0.4, 0);
         PID pidY = new PID(0.95*height, 0.4, -0.2, 0);
         double pidOutX = pidX.update(vision.getNextBallX(), true);
         double pidOutY = pidY.update(vision.getNextBallY(), true);
@@ -115,17 +115,24 @@ public class TestBallCollectAltered {
             
             if (target_y == 0.0 || target_y > 180) {
                 System.out.println("COLLECTING BALL");
-                forward = 0.1;
+                forward = 0.13;
+                abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed());
+                K_encoder = Math.max(pid_close.update(abs_speed, false), 0.5);
+                forward = forward*K_encoder;
                 turn = 0;
+            } else if (target_y > 150 && target_y <= 180){
+                abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed());
+                K_encoder = Math.max(pid_far.update(abs_speed, false), 0.5);
+                forward = forward*K_encoder;
+            } else if (target_y > 120 && target_y <= 150){
+                abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
+                K_encoder = Math.max(pid_mid.update(abs_speed, false), 0.5);
+                forward = forward*K_encoder;
+            } else {
+                abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed());
+                K_encoder = Math.max(pid_close.update(abs_speed, false), 0.5);
+                forward = forward*K_encoder;
             }
-            
-            //abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
-            //K_encoder = Math.max(pid_speedbc.update(abs_speed, false), 0.5);
-            
-            //turn = K_encoder*turn;
-            //forward = K_encoder*forward;
-            
-            forward = 0.9*forward;
             
 	        System.out.println("forward: " + forward);
 	        System.out.println("turn: " + turn);
