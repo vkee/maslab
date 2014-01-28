@@ -247,7 +247,7 @@ public class Control {
             
             // UPDATE STATE VALUES
             time = System.currentTimeMillis();
-            angle += (time - prev_time)*gyro.getOmega();
+            angle += (time - prev_time)*gyro.getAngularSpeed();
             //encoder_diff = encoderL.getTotalAngularDistance() - encoderR.getTotalAngularDistance();
             
             // UPDATE VISION

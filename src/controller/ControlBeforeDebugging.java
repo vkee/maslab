@@ -262,7 +262,7 @@ public class ControlBeforeDebugging {
             
             // UPDATE STATE VALUES
             time = System.currentTimeMillis();
-            angle += (time - prev_time)*gyro.getOmega();
+            angle += (time - prev_time)*gyro.getAngularSpeed();
             encoder_diff = encoder[L].getTotalAngularDistance() - encoder[R].getTotalAngularDistance();
             
             // UPDATE VISION

@@ -1,0 +1,127 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00000000773b9ece, pid=42836, tid=54452
+#
+# JRE version: 7.0_25-b17
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (23.25-b01 mixed mode windows-amd64 compressed oops)
+# Problematic frame:
+# C  [ntdll.dll+0x49ece]  LdrLoadAlternateResourceModule+0x75e
+#
+# Failed to write core dump. Minidumps are not enabled by default on client versions of Windows
+#
+# If you would like to submit a bug report, please visit:
+#   http://bugreport.sun.com/bugreport/crash.jsp
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x0000000009d8e000):  JavaThread "C2 CompilerThread0" daemon [_thread_in_native, id=54452, stack(0x000000000b350000,0x000000000b450000)]
+
+siginfo: ExceptionCode=0xc0000005, reading address 0xfffffffffffffff8
+
+Registers:
+RAX=0x0000000000000000, RBX=0x0000000000420000, RCX=0x00000000000009b7, RDX=0x0000000000000000
+RSP=0x000000000b44b310, RBP=0x0000000000000000, RSI=0x0000000000000000, RDI=0x00004bf50f474bf5
+R8 =0x00000000004240c0, R9 =0x0000000000100000, R10=0x0000000000420158, R11=0x00000000000006fe
+R12=0x0000000077485450, R13=0x00000000000009b7, R14=0x0000000000000002, R15=0x0000000077485401
+RIP=0x00000000773b9ece, EFLAGS=0x0000000000010206
+
+Top of Stack: (sp=0x000000000b44b310)
+0x000000000b44b310:   0000000000000000 000000000beb003d
+0x000000000b44b320:   000000000beb92a0 000000000beb92b0
+0x000000000b44b330:   0000000000420158 00004bf500004bf5
+0x000000000b44b340:   0000000105000401 0000000077485401
+0x000000000b44b350:   0000000000000000 0000000216480005
+0x000000000b44b360:   000000000f470070 0000000000000000
+0x000000000b44b370:   000000000f470080 0000000000000e49
+0x000000000b44b380:   000000000042054d 00020000f7ea92a0
+0x000000000b44b390:   00000000000003ff 00000002000092b0
+0x000000000b44b3a0:   000000010f470000 0000000000000647
+0x000000000b44b3b0:   0000000000000000 000000000000003d
+0x000000000b44b3c0:   000000000bec1290 000000000bec12a0
+0x000000000b44b3d0:   00000000000003ff 00004bf50f474bf5
+0x000000000b44b3e0:   000000000be7048c 000000004bf540c0
+0x000000000b44b3f0:   000000000000007e 000000020e4900fd
+0x000000000b44b400:   4bf5000000000000 0000000000000008 
+
+Instructions: (pc=0x00000000773b9ece)
+0x00000000773b9eae:   40 30 4a 8b 14 d8 48 89 94 24 a8 01 00 00 4c 3b
+0x00000000773b9ebe:   d2 0f 84 0b 99 00 00 45 85 c9 0f 84 e9 5b 01 00
+0x00000000773b9ece:   8b 42 f8 89 84 24 70 03 00 00 44 8b 4b 7c 41 85
+0x00000000773b9ede:   c1 74 0d 33 83 88 00 00 00 89 84 24 70 03 00 00 
+
+
+Register to memory mapping:
+
+RAX=0x0000000000000000 is an unknown value
+RBX=0x0000000000420000 is an unknown value
+RCX=0x00000000000009b7 is an unknown value
+RDX=0x0000000000000000 is an unknown value
+RSP=0x000000000b44b310 is pointing into the stack for thread: 0x0000000009d8e000
+RBP=0x0000000000000000 is an unknown value
+RSI=0x0000000000000000 is an unknown value
+RDI=0x00004bf50f474bf5 is an unknown value
+R8 =0x00000000004240c0 is an unknown value
+R9 =0x0000000000100000 is an unknown value
+R10=0x0000000000420158 is an unknown value
+R11=0x00000000000006fe is an unknown value
+R12=0x0000000077485450 is an unknown value
+R13=0x00000000000009b7 is an unknown value
+R14=0x0000000000000002 is an unknown value
+R15=0x0000000077485401 is an unknown value
+
+
+Stack: [0x000000000b350000,0x000000000b450000],  sp=0x000000000b44b310,  free space=1004k
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+C  [ntdll.dll+0x49ece]  LdrLoadAlternateResourceModule+0x75e
+
+[error occurred during error reporting (printing native stack), id 0xc0000005]
+
+
+Current CompileTask:
+C2:   1726   26             sun.awt.image.ByteInterleavedRaster::getDataElements (132 bytes)
+
+
+---------------  P R O C E S S  ---------------
+
+Java Threads: ( => current thread )
+  0x000000000042d000 JavaThread "DestroyJavaVM" [_thread_blocked, id=41920, stack(0x00000000024d0000,0x00000000025d0000)]
+  0x000000000bc3c000 JavaThread "AWT-EventQueue-0" [_thread_in_vm, id=49864, stack(0x000000000c990000,0x000000000ca90000)]
+  0x000000000bbed800 JavaThread "AWT-Windows" daemon [_thread_in_native, id=53624, stack(0x000000000c270000,0x000000000c370000)]
+  0x000000000bbec800 JavaThread "AWT-Shutdown" [_thread_blocked, id=48316, stack(0x000000000c000000,0x000000000c100000)]
+  0x000000000bbeb800 JavaThread "Java2D Disposer" daemon [_thread_blocked, id=40752, stack(0x000000000b590000,0x000000000b690000)]
+  0x0000000009da9800 JavaThread "Service Thread" daemon [_thread_blocked, id=55068, stack(0x000000000b810000,0x000000000b910000)]
+  0x0000000009da1000 JavaThread "C2 CompilerThread1" daemon [_thread_in_vm, id=52552, stack(0x000000000b700000,0x000000000b800000)]
+=>0x0000000009d8e000 JavaThread "C2 CompilerThread0" daemon [_thread_in_native, id=54452, stack(0x000000000b350000,0x000000000b450000)]
+  0x0000000009d8d800 JavaThread "Attach Listener" daemon [_thread_blocked, id=54396, stack(0x000000000b480000,0x000000000b580000)]
+  0x0000000009d86000 JavaThread "Signal Dispatcher" daemon [_thread_blocked, id=56884, stack(0x000000000ae90000,0x000000000af90000)]
+  0x0000000002219000 JavaThread "Finalizer" daemon [_thread_blocked, id=54524, stack(0x000000000b1a0000,0x000000000b2a0000)]
+  0x0000000002212000 JavaThread "Reference Handler" daemon [_thread_blocked, id=53608, stack(0x000000000afe0000,0x000000000b0e0000)]
+
+Other Threads:
+  0x0000000009d03000 VMThread [stack: 0x000000000ad60000,0x000000000ae60000] [id=41188]
+  0x0000000009db2800 WatcherThread [stack: 0x000000000ba00000,0x000000000bb00000] [id=32560]
+
+VM state:not at safepoint (normal execution)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x000000000042a3f0] CodeCache_lock - owner thread: 0x0000000009da1000
+[0x000000000042bb20] Compile_lock - owner thread: 0x0000000009da1000
+[0x000000000042bc20] MethodCompileQueue_lock - owner thread: 0x0000000009da1000
+
+Heap
+ PSYoungGen      total 26816K, used 9649K [0x00000000e2200000, 0x00000000e3fe0000, 0x0000000100000000)
+  eden space 23040K, 41% used [0x00000000e2200000,0x00000000e2b6c428,0x00000000e3880000)
+  from space 3776K, 0% used [0x00000000e3c30000,0x00000000e3c30000,0x00000000e3fe0000)
+  to   space 3776K, 0% used [0x00000000e3880000,0x00000000e3880000,0x00000000e3c30000)
+ ParOldGen       total 61184K, used 0K [0x00000000a6600000, 0x00000000aa1c0000, 0x00000000e2200000)
+  object space 61184K, 0% used [0x00000000a6600000,0x00000000a6600000,0x00000000aa1c0000)
+ PSPermGen       total 21248K, used 9753K [0x00000000a1400000, 0x00000000a28c0000, 0x00000000a6600000)
+  object space 21248K, 45% used [0x00000000a1400000,0x00000000a1d866c8,0x00000000a28c0000)
+
+Card table byte_map: [0x00000000055d0000,0x00000000058d0000] byte_map_base: 0x00000000050c6000
+
+Polling page: 0x0000000000120000
+
+Code Cache  [0x00000000025d0000, 0x0000000002840000, 0x00000000055d0000)

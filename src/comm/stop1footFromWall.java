@@ -35,7 +35,7 @@ public class stop1footFromWall {
         
         PID pid_turn = new PID(0,0.03,0.0,0.0);
         
-        double turn = Math.max(-0.04, Math.min(0.04,pid_turn.update(gyro.getOmega(), true)));
+        double turn = Math.max(-0.04, Math.min(0.04,pid_turn.update(gyro.getAngularSpeed(), true)));
         
         motor1.setSpeed(forward + turn);
         motor2.setSpeed(forward - turn);
@@ -45,7 +45,7 @@ public class stop1footFromWall {
             comm.updateSensorData();
             System.out.println(sonar.getDistance());
             forward = Math.max(-0.1, Math.min(0.1, -pid_forward.update(sonar.getDistance(), false)));
-            turn = Math.max(-0.04, Math.min(0.04,pid_turn.update(gyro.getOmega(), false)));
+            turn = Math.max(-0.04, Math.min(0.04,pid_turn.update(gyro.getAngularSpeed(), false)));
             
             motor1.setSpeed(forward + turn);
             motor2.setSpeed(forward - turn);
