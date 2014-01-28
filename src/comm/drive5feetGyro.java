@@ -51,9 +51,9 @@ public class drive5feetGyro {
 		if (forw) {		
 			while (encoder.getTotalAngularDistance() < 60/3.875*2) {
 				comm.updateSensorData();
-				angle += (System.currentTimeMillis() - time) * (gyro.getOmega()) / 1000;
+				angle += (System.currentTimeMillis() - time) * (gyro.getAngularSpeed()) / 1000;
 				time = System.currentTimeMillis();
-				System.out.println("omega: " + gyro.getOmega());
+				System.out.println("AngularSpeed: " + gyro.getAngularSpeed());
 				System.out.println("angle: " + angle);
 				turn = Math.max(-0.06, Math.min(0.06, pid.update(angle, false)));
 
@@ -80,9 +80,9 @@ public class drive5feetGyro {
 		else {
 			while (encoder.getTotalAngularDistance() > -5) {
 				comm.updateSensorData();
-				angle += (System.currentTimeMillis() - time) * (gyro.getOmega()) / 1000;
+				angle += (System.currentTimeMillis() - time) * (gyro.getAngularSpeed()) / 1000;
 				time = System.currentTimeMillis();
-				System.out.println("omega: " + gyro.getOmega());
+				System.out.println("AngularSpeed: " + gyro.getAngularSpeed());
 				System.out.println("angle: " + angle);
 				turn = Math.max(-0.06, Math.min(0.06, pid.update(angle, false)));
 
@@ -110,7 +110,7 @@ public class drive5feetGyro {
 //		
 //		while (encoder.getTotalAngularDistance() > 0) {
 //			comm.updateSensorData();
-//			angle += (System.currentTimeMillis() - time) * gyro.getOmega() / 1000;
+//			angle += (System.currentTimeMillis() - time) * gyro.getAngularSpeed() / 1000;
 //			time = System.currentTimeMillis();
 //			//System.out.println(angle);
 //			turn = Math.max(-0.06, Math.min(0.06,pid.update(angle, false)));
