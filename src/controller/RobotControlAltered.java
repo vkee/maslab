@@ -67,11 +67,11 @@ public class RobotControlAltered {
         motorL = new Cytron(4, 0);
         motorR = new Cytron(3, 1);
         
-        sonarA = new Ultrasonic(30, 29);
-        sonarB = new Ultrasonic(35, 36);
-        sonarC = new Ultrasonic(32, 31);
-        sonarD = new Ultrasonic(34, 33);
-        sonarE = new Ultrasonic(26, 25);
+        sonarA = new Ultrasonic(26, 25);
+        sonarB = new Ultrasonic(34, 33);
+        sonarC = new Ultrasonic(35, 36);
+        sonarD = new Ultrasonic(30, 29);
+        sonarE = new Ultrasonic(32, 31);
         
         encoderL = new Encoder(5, 7);
         encoderR = new Encoder(6, 8);
@@ -105,14 +105,14 @@ public class RobotControlAltered {
         distanceC = sonarC.getDistance();
         
         // PIDS
-        pid_dist = new PID(0.3, 0.3, 0.8, 0);  
-        pid_dist.update(computeDistanceEstimate(distanceA, distanceB), true);
+        pid_dist = new PID(0.22, 0.3, 100, 0);  
+        pid_dist.update(computeDistanceEstimate(distanceA, distanceB, 13.33, Math.PI/6), true);
         
         pid_angle = new PID(0, 0.4, 0.2, 0);
-        pid_angle.update(computeAngleError(distanceA, distanceB), true);
+        pid_angle.update(computeAngleError(distanceA, distanceB, 13.33, Math.PI/6), true);
         
-        pid_speedwf = new PID(15, 0.2, 0.08, 0.01);
-        pid_speedwf.update(15, true);
+        pid_speedwf = new PID(10, 0.2, -0.08, 0.01);
+        pid_speedwf.update(0, true);
         
         // BUFFERS
         buffD = new LinkedList<Double>();
@@ -205,7 +205,8 @@ public class RobotControlAltered {
             temp_forward = 0;
         } else if (state.state == ControlState.LEFT_A){
             System.out.println("LEFT_A");
-            temp_turn = pid_dist.update(computeDistanceEstimate(distanceA, distanceB), false);
+            //temp_turn = pid_dist.update(computeDistanceEstimate(distanceA, distanceB, 13.33, Math.PI/6), false);
+            temp_turn = pid_dist.update(Math.min(distanceA, distanceB), false);
 //                    - 0.3*pid_angle.update(computeAngleError(distanceA, distanceB), false);
 //        } else if (state.state == ControlState.LEFT_FAR){
 //            System.out.println("LEFT_FAR");
@@ -242,7 +243,8 @@ public class RobotControlAltered {
     private void estimateState(){
         ControlState temp_state = ControlState.LEFT_A;
         
-        if (computeDistanceEstimate(distanceD, distanceE) < 0.3 || distanceC < 0.25){
+        //if (computeDistanceEstimate(distanceD, distanceE, 32.08, Math.PI/6) < 0.3 || distanceC < 0.25){
+        if (Math.min(distanceD, distanceE) < 0.25 || distanceC < 0.2){
             temp_state = ControlState.WALL_AHEAD;
         } else if (distanceA < 2*distanceB && distanceB < 2*distanceA
                 && distanceA < 0.7 && distanceB < 0.7){
@@ -277,8 +279,10 @@ public class RobotControlAltered {
         //System.out.println("distanceA: " + sonarA.getDistance());
         //System.out.println("distanceB: " + sonarB.getDistance());
         //System.out.println("distanceC: " + sonarC.getDistance());
-        System.out.println("forward: " + forward);
-        System.out.println("turn: " + turn);
+        System.out.println("SIDE: " + Math.min(distanceA, distanceB));
+        System.out.println("FRONT: " + Math.min(distanceD, distanceE));
+        //System.out.println("forward: " + forward);
+        //System.out.println("turn: " + turn);
     }
     
     private void updateSonarBuffers(){
@@ -357,33 +361,27 @@ public class RobotControlAltered {
         }
     }
     
-    private double computeDistanceEstimate(double distanceA, double distanceB){
-        final double RADIUS = 0.165;
-        final double ANGLE = 25*Math.PI/180;
-        
-        double distA = RADIUS + distanceA;
-        double distB = RADIUS + distanceB;
+    public static double computeDistanceEstimate(double distanceA, double distanceB, double radius, double angle){        
+        double distA = radius + distanceA;
+        double distB = radius + distanceB;
         
         if (distA < 2*distB && distB < 2*distA){
-            double base = Math.sqrt(distA*distA + distB*distB - 2*Math.cos(ANGLE)*distA*distB);
+            double base = Math.sqrt(distA*distA + distB*distB - 2*Math.cos(angle)*distA*distB);
             double area = distA*distB/4;
-            return 2*area/base - RADIUS;
+            return 2*area/base - radius;
         } else {
-            return Math.min(distA, distB) - RADIUS;
+            return Math.min(distA, distB) - radius;
         }
     }
     
-    private double computeAngleError(double distanceA, double distanceB){
-        final double RADIUS = 0.165;
-        final double ANGLE = 25*Math.PI/180;
-        
-        double distA = RADIUS + distanceA;
-        double distB = RADIUS + distanceB;
+    public static double computeAngleError(double distanceA, double distanceB, double radius, double angle){        
+        double distA = radius + distanceA;
+        double distB = radius + distanceB;
         
         if (distA < 2*distB && distB < 2*distA){
-            double base = Math.sqrt(distA*distA + distB*distB - 2*Math.cos(ANGLE)*distA*distB);
-            double angle = Math.asin(base/(2*distB));
-            return angle - 5*Math.PI/12;
+            double base = Math.sqrt(distA*distA + distB*distB - 2*Math.cos(angle)*distA*distB);
+            double base_angle = Math.asin(base/(2*distB));
+            return base_angle - 5*Math.PI/12;
         } else if (distA > distB){
             return -Math.PI/12;
         } else {

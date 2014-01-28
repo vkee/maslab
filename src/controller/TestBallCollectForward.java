@@ -33,11 +33,11 @@ public class TestBallCollectForward {
 		MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         Cytron motorL = new Cytron(4, 0);
         Cytron motorR = new Cytron(3, 1);
-        Ultrasonic sonarA = new Ultrasonic(30, 29);
-        Ultrasonic sonarB = new Ultrasonic(35, 36);
-        Ultrasonic sonarC = new Ultrasonic(32, 31);
-        Ultrasonic sonarD = new Ultrasonic(34, 33);
-        Ultrasonic sonarE = new Ultrasonic(26, 25);
+        Ultrasonic sonarA = new Ultrasonic(26, 25);
+        Ultrasonic sonarB = new Ultrasonic(34, 33);
+        Ultrasonic sonarC = new Ultrasonic(35, 36);
+        Ultrasonic sonarD = new Ultrasonic(30, 29);
+        Ultrasonic sonarE = new Ultrasonic(32, 31);
         
         Encoder encoderL = new Encoder(5, 7);
         Encoder encoderR = new Encoder(6, 8);
@@ -68,14 +68,14 @@ public class TestBallCollectForward {
 		
 		final Vision vision = new Vision(1, 320, 240, true);
 		
-        PID pid_far = new PID(9, 0.3, 0.08, 0);
-        pid_far.update(9, true);
+        PID pid_far = new PID(10, 0.4, 0.08, 0);
+        pid_far.update(0, true);
         
-        PID pid_mid = new PID(7, 0.2, 0.08, 0);
-        pid_mid.update(7, true);
+        PID pid_mid = new PID(9, 0.4, 0.08, 0);
+        pid_mid.update(0, true);
         
-        PID pid_close = new PID(5, 0.2, 0.08, 0);
-        pid_close.update(5, true);
+        PID pid_close = new PID(8, 0.3, 0.08, 0);
+        pid_close.update(0, true);
         
         long start_time, end_time;
         double target_x, target_y, target_radius;
@@ -105,9 +105,13 @@ public class TestBallCollectForward {
 		    target_y = vision.getNextBallY();
 		    target_radius = vision.getNextBallRadius();
 		    
-		    update_value_x = width/2 + ((target_x - width/2)*12/target_radius);
+		    if (target_radius > 0){
+		        update_value_x = width/2 + ((target_x - width/2)*12/target_radius);
+		    } else {
+		        update_value_x = target_x;
+		    }
 		    
-            pidOutX = pidX.update(target_x, false);
+            pidOutX = pidX.update(update_value_x, false);  // changed to update value rather than target_x
             pidOutY = pidY.update(target_y, false);
 
             turn = Math.max(-0.1, Math.min(0.1, -pidOutX/width));
