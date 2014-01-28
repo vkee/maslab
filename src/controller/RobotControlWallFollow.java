@@ -3,6 +3,7 @@ package controller;
 import java.util.LinkedList;
 import java.util.List;
 
+import Core.Engine;
 import vision.Vision;
 import comm.MapleComm;
 import comm.MapleIO;
@@ -12,18 +13,14 @@ import devices.actuators.PWMOutput;
 import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
-public class ControlMock {
+public class RobotControlWallFollow {
     public static void main(String[] args){      
-        ControlMock robot = new ControlMock();
+        RobotControlWallFollow robot = new RobotControlWallFollow();
         robot.loop();
     }
     
     // MAPLE
     private MapleComm comm;
-    
-    // VISION
-    //Thread vision_thread;
-    //final Vision vision;
     
     // CONSTANTS
     private final int WIDTH = 320;
@@ -36,8 +33,6 @@ public class ControlMock {
     // STATE VALUES
     double distanceL, distanceR, distanceA, distanceB, distanceC;
     long start_time, end_time;
-    //double target_x, target_y;
-    //boolean target_found;
     double K_encoder;
     
     // BUFFERS
@@ -52,49 +47,26 @@ public class ControlMock {
     private Ultrasonic sonarL, sonarR, sonarA, sonarB, sonarC;
     private Encoder encoderL, encoderR;
     private DigitalOutput relay;
-    //private PWMOutput roller;
     
     // PIDS
-    PID pid_align, pid_encoder;
+    PID pid_align, pid_speedwf, pid_speedbc;
     
     // STATES
     private State state;
     
     private enum ControlState { DEFAULT, WALL_AHEAD, TURNING, ADJACENT_LEFT,
-        ADJACENT_RIGHT, PULL_AWAY };
+        ADJACENT_RIGHT, TARGETING_BALL, APPROACHING_BALL, COLLECTING_BALL, PULL_AWAY };
     
-    public ControlMock(){
+    public RobotControlWallFollow(){
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         
         // MOTOR INPUTS
         forward = 0;
         turn = 0;
         
-        // VISION
-//        vision = new Vision(CAMERA_NUM, WIDTH, HEIGHT, DISPLAY_ON);
-//        
-//        vision_thread = new Thread(new Runnable(){
-//            public void run(){
-//                long start_time, end_time;
-//                
-//                while (true){
-//                    start_time = System.currentTimeMillis();
-//                    vision.update();
-//                    end_time = System.currentTimeMillis();
-//                    try {
-//                        if (100 + start_time - end_time > 0){
-//                            Thread.sleep(100 + start_time - end_time);
-//                        }
-//                    } catch (Exception exc){
-//                        exc.printStackTrace();
-//                    }
-//                }
-//            }
-//        });
-        
         // SENSORS AND ACTUATORS        
         motorL = new Cytron(4, 0);
-        motorR = new Cytron(10, 1);
+        motorR = new Cytron(3, 1);
         
         sonarA = new Ultrasonic(30, 29);
         sonarB = new Ultrasonic(32, 31);
@@ -127,11 +99,14 @@ public class ControlMock {
         comm.updateSensorData();
         
         // PIDS
-        pid_align = new PID(0.15, 0.5, 0.08, 0.01);  
+        pid_align = new PID(0.2, 0.3, -0.2, 0);  
         pid_align.update(sonarL.getDistance(), true);
         
-        pid_encoder = new PID(10, 0.2, 0.08, 0.01);
-        pid_encoder.update(10, true);
+        pid_speedwf = new PID(10, 0.2, -0.08, 0.01);
+        pid_speedwf.update(10, true);
+        
+        pid_speedbc = new PID(5, 0.2, -0.08, 0.01);
+        pid_speedbc.update(5, true);
         
         // BUFFERS
         buffL = new LinkedList<Double>();
@@ -163,9 +138,6 @@ public class ControlMock {
     
     private void loop(){ 
         System.out.println("Beginning to follow wall...");
-        
-        // START VISION
-        //vision_thread.start();
         
         // INITIALIZE SONARS
         relay.setValue(false);
@@ -199,7 +171,7 @@ public class ControlMock {
             distanceC = sonarC.getDistance();
             
             // UPDATE BUFFERS
-            updateSonarBuffers();
+            //updateSonarBuffers();
             
             // ESTIMATE STATE
             estimateState();
@@ -232,10 +204,10 @@ public class ControlMock {
             System.out.println("WALL AHEAD");
             temp_turn = 0.12;
             temp_forward = 0;
-        } else if (state.state == ControlState.TURNING){
-            System.out.println("TURNING");
-            temp_turn = 0.12;
-            temp_forward = 0;
+//        } else if (state.state == ControlState.TURNING){
+//            System.out.println("TURNING");
+//            temp_turn = 0.12;
+//            temp_forward = 0;
         } else if (state.state == ControlState.ADJACENT_LEFT){
             System.out.println("ADJACENT_LEFT");
             temp_turn = 0.05;
@@ -246,7 +218,8 @@ public class ControlMock {
             temp_forward = 0;
         } else if (state.state == ControlState.DEFAULT){
             System.out.println("DEFAULT");
-            temp_turn = Math.max(-0.1, Math.min(0.1, pid_align.update(distanceL, false)));
+            temp_turn = Math.max(-0.1, Math.min(0.1, pid_align.update(Math.min(Math.min(distanceL,
+                    0.85*distanceA), 0.85*distanceA), false)));
             temp_forward = 0.08;
         } else if (state.state == ControlState.PULL_AWAY){
             System.out.println("PULL_AWAY");
@@ -259,7 +232,7 @@ public class ControlMock {
         }
 
         double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
-        K_encoder = Math.max(pid_encoder.update(abs_speed, false), 0.5);
+        K_encoder = Math.max(pid_speedwf.update(abs_speed, false), 0.5);
         
         turn = K_encoder*temp_turn;
         forward = K_encoder*temp_forward;
@@ -272,11 +245,11 @@ public class ControlMock {
         ControlState temp_state = ControlState.DEFAULT;
         
         // TUNE CONDITIONS
-        if (distanceC < 0.2){
+        if (distanceC < 0.3){
             temp_state = ControlState.WALL_AHEAD;
-        } else if (distanceB < 0.15 || (distanceA < 0.2 && distanceB < 0.2)){
-            temp_state = ControlState.TURNING;
-        } else if (distanceL < 0.13){
+//        } else if (distanceB < 0.18 || (distanceA < 0.23 && distanceB < 0.23)){
+//            temp_state = ControlState.TURNING;
+        } else if (distanceL < 0.1){
             temp_state = ControlState.ADJACENT_LEFT;
         } else if (distanceR < 0.1){
             temp_state = ControlState.ADJACENT_RIGHT;
@@ -285,7 +258,7 @@ public class ControlMock {
         }
 
         // TUNE CUTOFFS
-        if ((state.getTime() > 400 && state.state != ControlState.PULL_AWAY) ||
+        if ((state.getTime() > 100 && state.state != ControlState.PULL_AWAY) ||
                 (state.getTime() > 2000 && state.state == ControlState.PULL_AWAY)){
             state.changeState(temp_state);
         }
@@ -310,14 +283,14 @@ public class ControlMock {
         boolean const_values = true;
         double init = buffL.get(0);
         for (Double val : buffL){
-            if (Math.abs(val - init) > 0.0000000001){
+            if (Math.abs(val - init) > 0.0000000001 && val > 0.01){
                 const_values = false;
             }
         }
         if (!const_values){
             init = buffR.get(0);
             for (Double val : buffR){
-                if (Math.abs(val - init) > 0.0000000001){
+                if (Math.abs(val - init) > 0.0000000001 && val > 0.01){
                     const_values = false;
                 }
             }
@@ -325,7 +298,7 @@ public class ControlMock {
         if (!const_values){
             init = buffA.get(0);
             for (Double val : buffA){
-                if (Math.abs(val - init) > 0.0000000001){
+                if (Math.abs(val - init) > 0.0000000001 && val > 0.01){
                     const_values = false;
                 }
             }
@@ -333,7 +306,7 @@ public class ControlMock {
         if (!const_values){
             init = buffB.get(0);
             for (Double val : buffB){
-                if (Math.abs(val - init) > 0.0000000001){
+                if (Math.abs(val - init) > 0.0000000001 && val > 0.01){
                     const_values = false;
                 }
             }
@@ -341,7 +314,7 @@ public class ControlMock {
         if (!const_values){
             init = buffC.get(0);
             for (Double val : buffC){
-                if (Math.abs(val - init) > 0.000000001){
+                if (Math.abs(val - init) > 0.000000001 && val > 0.01){
                     const_values = false;
                 }
             }
@@ -375,7 +348,7 @@ public class ControlMock {
             comm.transmit();
             
             try {
-                Thread.sleep(500);
+                Thread.sleep(1000);
             } catch (Exception exc){
                 exc.printStackTrace();
             }

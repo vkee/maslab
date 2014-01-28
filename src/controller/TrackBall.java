@@ -38,7 +38,7 @@ public class TrackBall {
 	        double integralC, org.opencv.core.Point point, int width, int height) {
 		this.comm = comm;
 		motor1 = new Cytron(4, 0);
-		motor2 = new Cytron(10, 1);
+		motor2 = new Cytron(3, 1);
 		comm.registerDevice(motor1);
 		comm.registerDevice(motor2);
 		comm.initialize();
@@ -187,7 +187,7 @@ public class TrackBall {
         }
 	}
 	
-	private static JLabel createWindow(String name, int width, int height) {    
+	public static JLabel createWindow(String name, int width, int height) {    
         JFrame imageFrame = new JFrame(name);
         imageFrame.setSize(width, height);
         imageFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -200,7 +200,7 @@ public class TrackBall {
         return imagePane;
     }
     
-    private static void updateWindow(JLabel imagePane, Mat mat) {
+    public static void updateWindow(JLabel imagePane, Mat mat) {
         int w = (int) (mat.size().width);
         int h = (int) (mat.size().height);
         if (imagePane.getWidth() != w || imagePane.getHeight() != h) {

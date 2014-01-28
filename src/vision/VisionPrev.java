@@ -26,9 +26,9 @@ import com.google.zxing.qrcode.detector.Detector;
 import Core.Engine;
 import Core.FilterOp;
 
-public class Vision {
+public class VisionPrev {
     public static void main(String[] args){
-        final Vision vision = new Vision(1, 320, 240, false);
+        final VisionPrev vision = new VisionPrev(1, 320, 240, false);
         Thread display_thread = new Thread(new Runnable(){
             public void run(){
                 //JLabel display_pane = createWindow("Display output", vision.WIDTH, vision.HEIGHT);
@@ -74,7 +74,7 @@ public class Vision {
     // FILTERS
     private final FilterOp blur, colorize, eliminateTop, objRec;
     
-    public Vision(int camera_number, int width, int height, boolean display_on){
+    public VisionPrev(int camera_number, int width, int height, boolean display_on){
         this.WIDTH = width;
         this.HEIGHT = height;
         this.DISPLAY_ON = display_on;
@@ -122,7 +122,7 @@ public class Vision {
         
         blur.apply(curr_image);           
         colorize.apply();
-        //eliminateTop.apply();
+        eliminateTop.apply();
         colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
@@ -146,7 +146,7 @@ public class Vision {
         
         blur.apply(curr_image);           
         colorize.apply();
-        //eliminateTop.apply();
+        eliminateTop.apply();
         colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
@@ -217,16 +217,20 @@ public class Vision {
 		}
     }
     
-    public int getNextBallX(){
-        if (green_target.radius >= red_target.radius){
+    public int getNextBallX() throws RuntimeException {
+        if (!green_target.target && !red_target.target){
+            throw new RuntimeException("No ball to target");
+        } else if (green_target.radius > red_target.radius){
             return green_target.x;
         } else {
             return red_target.x;
         }
     }
     
-    public int getNextBallY(){
-        if (green_target.radius >= red_target.radius){
+    public int getNextBallY() throws RuntimeException{
+        if (!green_target.target && !red_target.target){
+            throw new RuntimeException("No ball to target");
+        } else if (green_target.radius > red_target.radius){
             return green_target.y;
         } else {
             return red_target.y;
@@ -234,7 +238,9 @@ public class Vision {
     }
     
     public double getNextBallRadius() throws RuntimeException{
-        if (green_target.radius >= red_target.radius){
+        if (!green_target.target && !red_target.target){
+            throw new RuntimeException("No ball to target");
+        } else if (green_target.radius > red_target.radius){
             return green_target.radius;
         } else {
             return red_target.radius;
