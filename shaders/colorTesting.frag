@@ -9,7 +9,7 @@ void main() {
 	vec4 col = texture(txtr,vec2(x,y),0.0);
 	
 	//BLUE BAND
-	if ( col.x>col.y*1.2 && col.x>col.z*1.2) {
+	if ( col.x>col.y*1.7 && col.x>col.z*1.7) {
 		gl_FragColor = col;//vec4(1,0,0,1);
 	}
 	
@@ -25,6 +25,16 @@ void main() {
 	
 	//YELLOW BAND
 	if ( col.y>col.x*1.2 && col.z>col.x*1.2 && col.y<col.z*1.2 && col.z<col.y*1.2) {
-		gl_FragColor = vec4(0,1,1,1);
+		gl_FragColor = col;// vec4(0,1,1,1);
+	}
+	
+	//TEAL BAND
+	if ( col.y>col.z*1.2 && col.x>col.z*1.2 && col.y<col.x*1.2 && col.x<col.y*1.2) {
+		gl_FragColor = col;//vec4(0,1,1,1);
+	}
+	
+	//PURPLE BAND
+	if ( col.z>col.y*1.2 && col.x>col.y*1.2 && col.z<col.x*1.2 && col.x<col.z*1.2) {
+		gl_FragColor = col;//vec4(0,1,1,1);
 	}
 }
