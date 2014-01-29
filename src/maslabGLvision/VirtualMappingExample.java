@@ -8,29 +8,31 @@ import Core.FilterOp;
 
 public class VirtualMappingExample {
 	public static void main( String[] args ) {
-		TestBed tester = new TestBed(320,240);
+		TestBed tester = new TestBed(500,500);
 		
-		Engine.initGL(320,240);
+		Engine.initGL(500,500);
 		FilterOp blur = new FilterOp("blur");
-		FilterOp colorize = new FilterOp("colorize");
+		FilterOp modColorize = new FilterOp("colorize");
 		FilterOp eliminateTop = new FilterOp("eliminateTop");
-		FilterOp objRec = new FilterOp("objectRecognition");
+		FilterOp eliminateBottom = new FilterOp("eliminateBottom");
+		FilterOp modObjRec = new FilterOp("objectRecognition");
 		FilterOp centreRec = new FilterOp("centreRecognition");
 		FilterOp edge = new FilterOp("edge");
 		FilterOp wallDetection = new FilterOp("wallDetection");
 		FilterOp wallFilter = new FilterOp("wallFilter");
 		FilterOp wallFilterRefine = new FilterOp("wallFilterRefine");
 		
-		BufferedImage original = TestBed.loadImage( new File("images\\field.png") );
+		BufferedImage original = TestBed.loadImage( new File("images\\reactor1.jpg") );
 		tester.setImage(original);
 		
 		int frames = 0;
 		long prev = System.currentTimeMillis();
 		while ( true ) {
 			blur.apply(original);
-			colorize.apply();
+			modColorize.apply();
 			eliminateTop.apply();
-			objRec.apply();
+			eliminateBottom.apply();
+			modObjRec.apply();
 			//centreRec.apply();
 //		    wallDetection.apply(original);
 //		    wallFilter.apply();

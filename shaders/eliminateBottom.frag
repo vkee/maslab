@@ -9,33 +9,11 @@ void main() {
 	vec4 col = texture(txtr,vec2(x,y),0.0);
 	float horizon = 0.54;
 	gl_FragColor = col;
-	//TOP
 	
+	//STUFF BELOW TEAL
 	float yTemp = y;
 	vec4 colTemp = texture(txtr,vec2(x,yTemp),0.0);
-	if (y < horizon) {
-		while (true) {
-			if ( !(col.x == colTemp.x && col.y == colTemp.y && col.z == colTemp.z) &&
-				 !(colTemp.x == 0 && colTemp.y == 0 && colTemp.z == 0) && 
-				 !(colTemp.x == 1 && colTemp.y == 1 && colTemp.z == 1) ) {
-				gl_FragColor = vec4(0,0,0,1);
-				break;
-			} else {
-				if ( yTemp < horizon ) {
-					yTemp = yTemp + dy;
-					colTemp = texture(txtr,vec2(x,yTemp),0.0);
-				} else {
-					break;
-				}
-			}
-		}
-	}
-	
-	/*
-	//STUFF BELOW TEAL
-	yTemp = y;
 	float yTempTeal = y;
-	colTemp = texture(txtr,vec2(x,yTemp),0.0);
 	int teal = 0;
 	if ( y > horizon && 
 		((col.x == 0 && col.y == 1 && col.z == 0) || (col.x == 0 && col.y == 0 && col.z == 1)) ) {
@@ -43,13 +21,12 @@ void main() {
 			//check for height of teal strip
 			if ( teal == 1 ) {
 				if ( !(colTemp.x == 1 && colTemp.y == 1 && colTemp.z == 0) ) {
-					teal = 0;
+					break;
 				} else {
-					if ( yTemp > 0 ) {
+					if ( yTempTeal > 0 ) {
 						yTempTeal = yTempTeal - dy;
 						colTemp = texture(txtr,vec2(x,yTempTeal),0.0);
-						gl_FragColor = vec4(1,1,1,1);
-						break;
+						continue;
 					} else {
 						break;
 					}
@@ -57,7 +34,7 @@ void main() {
 			}	
 			
 			//check for distance between teal
-			if ( colTemp.x == 1 && colTemp.y == 1 && colTemp.z == 0 ) {
+			if ( teal == 0 && colTemp.x == 1 && colTemp.y == 1 && colTemp.z == 0 ) {
 				teal = 1;
 				yTempTeal = yTemp;
 			} else {
@@ -69,5 +46,9 @@ void main() {
 				}
 			}
 		}
-	}*/
+		
+		if ( teal == 1 && 4.0*(yTemp-yTempTeal)>y-yTemp ) {
+			gl_FragColor = vec4(1,1,1,1);
+		}
+	}
 }
