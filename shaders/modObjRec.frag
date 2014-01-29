@@ -327,6 +327,44 @@ void main() {
 			if ( xLeft+xRight <= 2*x+dx && xLeft+xRight >= 2*x-dx) {
 				gl_FragColor = vec4((yLower - yUpper),(yLower - yUpper),0,1);
 			}
-		} 
+		}
+		
+		if ( x>0 ) {
+			vec4 colTemp = texture(txtr,vec2(x-dx,y),0.0);
+			vec4 temp_pixel = texture(txtr, vec2(x, y), 0.0);
+			int teal_count = 0;
+			if ( !(colTemp.x == 1 && colTemp.y == 1 && colTemp.z == 0) ) {
+				for (int xdis = 0; xdis < 5; xdis++){
+					for (int ydis = -2; ydis < 3; ydis++){
+						temp_pixel = texture(txtr, vec2(x+xdis*dx,y+ydis*dy),0.0);
+						if (temp_pixel.x == 1 && temp_pixel.y == 1 && temp_pixel.z == 0){
+							teal_count++;
+						}
+					}
+				}
+				if (teal_count >= 18){
+					gl_FragColor = vec4(0.5,0.5,0.5,1);
+				}
+			}
+		}
+		
+		if ( x<1 ) {
+			vec4 colTemp = texture(txtr,vec2(x+dx,y),0.0);
+			vec4 temp_pixel = texture(txtr, vec2(x, y), 0.0);
+			int teal_count = 0;
+			if ( !(colTemp.x == 1 && colTemp.y == 1 && colTemp.z == 0) ) {
+				for (int xdis = 0; xdis < 5; xdis++){
+					for (int ydis = -2; ydis < 3; ydis++){
+						temp_pixel = texture(txtr, vec2(x-xdis*dx,y+ydis*dy),0.0);
+						if (temp_pixel.x == 1 && temp_pixel.y == 1 && temp_pixel.z == 0){
+							teal_count++;
+						}
+					}
+				}
+				if (teal_count >= 18){
+					gl_FragColor = vec4(0.75,0.75,0.75,1);
+				}
+			}
+		}
 	}
 }
