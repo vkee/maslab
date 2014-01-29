@@ -7,7 +7,7 @@ void main() {
 	float dy = 1.0/240.0;
 	
 	vec4 col = texture(txtr,vec2(x,y),0.0);
-	float horizon = 0.54;
+	float horizon = 0.45;
 	gl_FragColor = col;
 	//TOP
 	

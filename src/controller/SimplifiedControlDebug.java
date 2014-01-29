@@ -13,9 +13,9 @@ import devices.actuators.PWMOutput;
 import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
-public class SimplifiedControl {
+public class SimplifiedControlDebug {
     public static void main(String[] args){      
-        SimplifiedControl robot = new SimplifiedControl();
+        SimplifiedControlDebug robot = new SimplifiedControlDebug();
         robot.loop();
     }
     
@@ -62,9 +62,9 @@ public class SimplifiedControl {
     // STATES
     private State state;
     
-    private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, RANDOM_ORIENT, APPROACH, COLLECT };
+    private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, LEFT_FAR, FORWARD, RANDOM_ORIENT, APPROACH, COLLECT };
     
-    public SimplifiedControl(){
+    public SimplifiedControlDebug(){
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         
         // VISION
@@ -267,6 +267,14 @@ public class SimplifiedControl {
                 System.out.println("WALL_FOLLOW: DEFAULT");
                 temp_turn = -0.05;
                 temp_forward = 0.1;
+            } else if (state.state == ControlState.LEFT_FAR){
+                System.out.println("WALL_FOLLOW: LEFT_FAR");
+                temp_turn = -0.15;
+                temp_forward = 0;
+            } else if (state.state == ControlState.FORWARD){
+                System.out.println("WALL_FOLLOW: FORWARD");
+                temp_turn = 0;
+                temp_forward = 0.1;
             }
 
             double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
@@ -299,8 +307,10 @@ public class SimplifiedControl {
         } else if ((state.state == ControlState.COLLECT && state.getTime() >= 1000)
                 || state.state != ControlState.COLLECT || (distanceA < 0.1
                 || distanceB < 0.1 || distanceC < 0.1 || distanceD < 0.1 || distanceE < 0.1)){
-            if (Math.min(distanceD, distanceE) < 0.25 || distanceC < 0.2){
+            if (Math.min(distanceD, distanceE) < 0.2 || distanceC < 0.15){
                 temp_state = ControlState.WALL_AHEAD;
+            } else if (Math.min(distanceA, distanceB) > 0.45){
+                temp_state = ControlState.LEFT_FAR;
             } else if (distanceA < 2*distanceB && distanceB < 2*distanceA
                     && distanceA < 0.7 && distanceB < 0.7){
                 temp_state = ControlState.FOLLOW;
@@ -314,7 +324,8 @@ public class SimplifiedControl {
         }
         
         if (state.getTime() > 100 && state.state != ControlState.PULL_AWAY
-                && state.state != ControlState.RANDOM_ORIENT){
+                && state.state != ControlState.RANDOM_ORIENT && state.state != ControlState.LEFT_FAR
+                && state.state != ControlState.FORWARD){
             state.changeState(temp_state);
         }
 
@@ -327,8 +338,20 @@ public class SimplifiedControl {
             state.changeState(temp_state);
         }
         
+        if (state.getTime() > 800 && state.state == ControlState.LEFT_FAR){
+            state.changeState(ControlState.FORWARD);
+        }
+        
+        if (state.getTime() > 800 && state.state == ControlState.FORWARD){
+            state.changeState(temp_state);
+        }
+        
         if (state.getTime() > 8000){
             state.changeState(ControlState.PULL_AWAY);
+        }
+        
+        if (distanceA < 0.1 || distanceB < 0.1 || distanceC < 0.1 || distanceD < 0.1 || distanceE < 0.1){
+            state.changeState(temp_state);
         }
     }
     

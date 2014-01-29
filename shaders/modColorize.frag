@@ -6,7 +6,7 @@ void main() {
 	float dx = 1.0/320.0;
 	float dy = 1.0/240.0;
 	float horizon = 0.52;
-	float upper_horizon = 0.38;
+	float upper_horizon = 0.25;
 	vec4 col = texture(txtr,vec2(x,y),0.0);
 	
 	//WALL/FLOOR
@@ -49,9 +49,9 @@ void main() {
 	//}
 	
 	//RED BAND
-	if ( col.z>col.x*1.3 && col.z>col.y*1.3 && y < horizon) {
-		gl_FragColor = vec4(0,0,1,1);
-	}
+	//if ( col.z>col.x*1.3 && col.z>col.y*1.3 && y < horizon) {
+	//	gl_FragColor = vec4(0,0,1,1);
+	//}
 	
 	//TEAL BAND
 	if (col.y>col.z*1.5 && col.x>col.z*1.5 && col.y<col.x*1.3 && col.x<col.y*1.3 && y < horizon && y > upper_horizon){

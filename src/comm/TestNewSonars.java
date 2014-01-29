@@ -8,8 +8,10 @@ import comm.MapleIO;
 import devices.actuators.Cytron;
 import devices.actuators.DigitalOutput;
 import devices.actuators.PWMOutput;
+import devices.sensors.DigitalInput;
 import devices.sensors.Encoder;
 import devices.sensors.Gyroscope;
+import devices.sensors.Infrared;
 import devices.sensors.Ultrasonic;
 
 public class TestNewSonars {
@@ -25,8 +27,10 @@ public class TestNewSonars {
         Ultrasonic sonarD = new Ultrasonic(30, 29);
         Ultrasonic sonarE = new Ultrasonic(32, 31);
         
-        DigitalOutput roller = new DigitalOutput(10);
+        DigitalOutput roller = new DigitalOutput(12);
         
+        DigitalInput infrared = new DigitalInput(10);
+
         Encoder encoderL = new Encoder(5, 7);
         Encoder encoderR = new Encoder(6, 8);
         
@@ -41,6 +45,7 @@ public class TestNewSonars {
         comm.registerDevice(sonarE);
         comm.registerDevice(sonarPower);
         //comm.registerDevice(roller);
+        comm.registerDevice(infrared);
 
         comm.registerDevice(encoderL);
         comm.registerDevice(encoderR);
@@ -79,6 +84,8 @@ public class TestNewSonars {
 //          prevTime = System.currentTimeMillis();
 //      }
         
+        boolean ball_present = true;
+        
         double distanceD = sonarD.getDistance();
         double distanceE = sonarE.getDistance();
         double distanceA = sonarA.getDistance();
@@ -89,6 +96,8 @@ public class TestNewSonars {
         
         while (true) {
             comm.updateSensorData();
+            
+            ball_present = infrared.getValue();
             
             distanceD = sonarD.getDistance();
             distanceE = sonarE.getDistance();
@@ -101,6 +110,8 @@ public class TestNewSonars {
             System.out.println("DistanceA: " + distanceA);
             System.out.println("DistanceB: " + distanceB);
             System.out.println("DistanceC: " + distanceC);
+            
+            System.out.println("IR Reading: " + ball_present);
             
             //motorL.setSpeed(-0.1);
             //motorR.setSpeed(0.1);
