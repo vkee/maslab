@@ -70,7 +70,7 @@ public class Vision {
     public BufferedImage colorized;
     private Ball red_target, green_target;
     private int red_count, green_count;
-    private Reactor reactor_target;
+    private Reactor reactor_target, reactor_left, reactor_right;
     private JLabel camera_pane, colorize_pane;
     
     // FILTERS
@@ -105,6 +105,8 @@ public class Vision {
         red_target = new Ball(false);
         green_target = new Ball(false);
         reactor_target = new Reactor(false);
+        reactor_left = new Reactor(false);
+        reactor_right = new Reactor(false);
         
         red_count = 0;
         green_count = 0;
@@ -209,6 +211,18 @@ public class Vision {
                         if (height > reactor_target.height && height >= 10){
                             reactor_target = new Reactor(x, y, height);
                         }
+                    }
+                    
+                    if (red > 120 && green > 120 && blue > 120
+                            && red < 130 && green < 130 && blue < 130
+                            && (reactor_left.x >= x || reactor_left.x == 0)){
+                        reactor_left = new Reactor(x, y, 1);
+                    }
+                    
+                    if (red > 185 && green > 185 && blue > 185
+                            && red < 195 && green < 195 && blue < 195
+                            && (reactor_right.x <= x || reactor_right.x == 0)){
+                        reactor_right = new Reactor(x, y, 1);
                     }
                 }
             }
