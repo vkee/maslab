@@ -84,8 +84,8 @@ public class TestNewSonars {
             System.out.println("DistanceB: " + distanceB);
             System.out.println("DistanceC: " + distanceC);
             
-            motorL.setSpeed(-0.1);
-            motorR.setSpeed(0.1);
+            //motorL.setSpeed(-0.1);
+            //motorR.setSpeed(0.1);
             
 //          angle = gyro.getOmega() - gyroError;
 //          System.out.println(angle);
