@@ -12,10 +12,10 @@ public class VirtualMappingExample {
 		
 		Engine.initGL(500,500);
 		FilterOp blur = new FilterOp("blur");
-		FilterOp modColorize = new FilterOp("colorize");
+		FilterOp modColorize = new FilterOp("modColorize");
 		FilterOp eliminateTop = new FilterOp("eliminateTop");
 		FilterOp eliminateBottom = new FilterOp("eliminateBottom");
-		FilterOp modObjRec = new FilterOp("objectRecognition");
+		FilterOp modObjRec = new FilterOp("modObjRec");
 		FilterOp centreRec = new FilterOp("centreRecognition");
 		FilterOp edge = new FilterOp("edge");
 		FilterOp wallDetection = new FilterOp("wallDetection");
@@ -23,6 +23,7 @@ public class VirtualMappingExample {
 		FilterOp wallFilterRefine = new FilterOp("wallFilterRefine");
 		
 		BufferedImage original = TestBed.loadImage( new File("images\\reactor1.jpg") );
+		//BufferedImage original = TestBed.loadImage( new File("images\\tealband.png") );
 		tester.setImage(original);
 		
 		int frames = 0;
