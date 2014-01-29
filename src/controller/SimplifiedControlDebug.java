@@ -10,6 +10,7 @@ import comm.MapleIO;
 import devices.actuators.Cytron;
 import devices.actuators.DigitalOutput;
 import devices.actuators.PWMOutput;
+import devices.sensors.DigitalInput;
 import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
@@ -40,6 +41,7 @@ public class SimplifiedControlDebug {
     double target_radius;
     double K_encoder;
     double orient_time;
+    long intake_time;
     
     // BUFFERS
     List<Double> buffD, buffE, buffA, buffB, buffC;
@@ -53,7 +55,7 @@ public class SimplifiedControlDebug {
     private Ultrasonic sonarD, sonarE, sonarA, sonarB, sonarC;
     private Encoder encoderL, encoderR;
     private DigitalOutput power_sonars;
-    private DigitalOutput roller;
+    private Cytron ball_intake;
     
     // PIDS
     PID pid_dist, pid_speedwf;
@@ -87,7 +89,7 @@ public class SimplifiedControlDebug {
         encoderL = new Encoder(5, 7);
         encoderR = new Encoder(6, 8);
         power_sonars = new DigitalOutput(37);
-        roller = new DigitalOutput(13);
+        ball_intake = new Cytron(23, 2);
         
         // REGISTER DEVICES AND INITIALIZE
         comm.registerDevice(sonarD);
@@ -98,12 +100,12 @@ public class SimplifiedControlDebug {
         
         comm.registerDevice(motorL);
         comm.registerDevice(motorR);
+        comm.registerDevice(ball_intake);
         
         comm.registerDevice(encoderL);
         comm.registerDevice(encoderR);
         
         comm.registerDevice(power_sonars);
-        comm.registerDevice(roller);
         
         System.out.println("Initializing...");
         comm.initialize();
@@ -118,6 +120,7 @@ public class SimplifiedControlDebug {
         distanceC = sonarC.getDistance();
         
         orient_time = 500 + 1500*Math.random();
+        intake_time = 0;
         
         // PIDS
         pid_dist = new PID(0.22, 0.3, 100, 0);  
@@ -129,7 +132,7 @@ public class SimplifiedControlDebug {
         pid_target = new PID(WIDTH/2, 0.3, -2, 0);
         pid_target.update(WIDTH/2, true);
         
-        pid_approach = new PID(WIDTH/2, 0.3, -2, 0);
+        pid_approach = new PID(WIDTH/2, 0.2, -2, 0);
         pid_approach.update(WIDTH/2, true);
         
         // BUFFERS
@@ -158,7 +161,6 @@ public class SimplifiedControlDebug {
         
         // INITIALIZE SONARS
         power_sonars.setValue(false);
-        roller.setValue(true);
         comm.transmit();
         
         comm.updateSensorData();
@@ -244,7 +246,6 @@ public class SimplifiedControlDebug {
             forward = 0.17;
         } else if (state.state == ControlState.COLLECT){
             System.out.println("BALL_COLLECT: COLLECT");
-            roller.setValue(false);
             turn = 0;
             forward = 0.13;
         } else {
@@ -277,13 +278,13 @@ public class SimplifiedControlDebug {
                 temp_forward = 0.1;
             }
 
-            double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
-            K_encoder = Math.max(pid_speedwf.update(abs_speed, false), 0.5);
+            //double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
+            //K_encoder = Math.max(pid_speedwf.update(abs_speed, false), 0.5);
             
             //turn = K_encoder*temp_turn;
             //forward = K_encoder*temp_forward;
-            turn = 1.7*temp_turn;
-            forward = 1.7*temp_forward;
+            turn = 1.5*temp_turn;
+            forward = 1.5*temp_forward;
         }
         
         motorL.setSpeed(-(forward + turn));
@@ -293,8 +294,9 @@ public class SimplifiedControlDebug {
     private void estimateState(){
         ControlState temp_state = state.state;
         
-        if (state.state == ControlState.COLLECT && state.getTime() >= 1000){
-            roller.setValue(true);
+        if (intake_time > 0 && System.currentTimeMillis() > intake_time + 12000){
+            intake_time = 0;
+            ball_intake.setSpeed(0);
         }
         
         if (state.state == ControlState.APPROACH && !(distanceA < 0.1 || distanceB < 0.1
@@ -323,6 +325,11 @@ public class SimplifiedControlDebug {
             }
         }
         
+        if (temp_state == ControlState.APPROACH && state.state != ControlState.APPROACH){
+            intake_time = System.currentTimeMillis();
+            ball_intake.setSpeed(-0.25);
+        }
+        
         if (state.getTime() > 100 && state.state != ControlState.PULL_AWAY
                 && state.state != ControlState.RANDOM_ORIENT && state.state != ControlState.LEFT_FAR
                 && state.state != ControlState.FORWARD){
@@ -338,11 +345,11 @@ public class SimplifiedControlDebug {
             state.changeState(temp_state);
         }
         
-        if (state.getTime() > 800 && state.state == ControlState.LEFT_FAR){
+        if (state.getTime() > 500 && state.state == ControlState.LEFT_FAR){
             state.changeState(ControlState.FORWARD);
         }
         
-        if (state.getTime() > 800 && state.state == ControlState.FORWARD){
+        if (state.getTime() > 1800 && state.state == ControlState.FORWARD){
             state.changeState(temp_state);
         }
         
@@ -371,14 +378,14 @@ public class SimplifiedControlDebug {
         boolean const_values = true;
         double init = buffD.get(0);
         for (Double val : buffD){
-            if (Math.abs(val - init) > 0.0000000001 && val > 0.01){
+            if (val != init && val > 0.01){
                 const_values = false;
             }
         }
         if (!const_values){
             init = buffE.get(0);
             for (Double val : buffE){
-                if (Math.abs(val - init) > 0.0000000001 && val > 0.01){
+                if (val != init && val > 0.01){
                     const_values = false;
                 }
             }
@@ -386,7 +393,7 @@ public class SimplifiedControlDebug {
         if (!const_values){
             init = buffA.get(0);
             for (Double val : buffA){
-                if (Math.abs(val - init) > 0.0000000001 && val > 0.01){
+                if (val != init && val > 0.01){
                     const_values = false;
                 }
             }
@@ -394,7 +401,7 @@ public class SimplifiedControlDebug {
         if (!const_values){
             init = buffB.get(0);
             for (Double val : buffB){
-                if (Math.abs(val - init) > 0.0000000001 && val > 0.01){
+                if (val != init && val > 0.01){
                     const_values = false;
                 }
             }
@@ -402,7 +409,7 @@ public class SimplifiedControlDebug {
         if (!const_values){
             init = buffC.get(0);
             for (Double val : buffC){
-                if (Math.abs(val - init) > 0.000000001 && val > 0.01){
+                if (val != init && val > 0.01){
                     const_values = false;
                 }
             }
@@ -424,8 +431,10 @@ public class SimplifiedControlDebug {
             power_sonars.setValue(true);
             motorL.setSpeed(0);
             motorR.setSpeed(0);
+            ball_intake.setSpeed(0);
+            
             try {
-                Thread.sleep(50);
+                Thread.sleep(2000);
             } catch (Exception exc){
                 exc.printStackTrace();
             }
@@ -436,7 +445,7 @@ public class SimplifiedControlDebug {
             comm.transmit();
             
             try {
-                Thread.sleep(1000);
+                Thread.sleep(3000);
             } catch (Exception exc){
                 exc.printStackTrace();
             }

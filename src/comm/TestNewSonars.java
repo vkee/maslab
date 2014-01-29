@@ -21,15 +21,13 @@ public class TestNewSonars {
         Cytron motorL = new Cytron(4, 0);
         Cytron motorR = new Cytron(3, 1);
         
+        Cytron ball_intake = new Cytron(23, 2);
+        
         Ultrasonic sonarA = new Ultrasonic(26, 25);
         Ultrasonic sonarB = new Ultrasonic(34, 33);
         Ultrasonic sonarC = new Ultrasonic(35, 36);
         Ultrasonic sonarD = new Ultrasonic(30, 29);
         Ultrasonic sonarE = new Ultrasonic(32, 31);
-        
-        DigitalOutput roller = new DigitalOutput(12);
-        
-        DigitalInput infrared = new DigitalInput(10);
 
         Encoder encoderL = new Encoder(5, 7);
         Encoder encoderR = new Encoder(6, 8);
@@ -38,66 +36,34 @@ public class TestNewSonars {
         
         comm.registerDevice(motorL);
         comm.registerDevice(motorR);
+        comm.registerDevice(ball_intake);
+        
         comm.registerDevice(sonarA);
         comm.registerDevice(sonarB);
         comm.registerDevice(sonarC);
         comm.registerDevice(sonarD);
         comm.registerDevice(sonarE);
         comm.registerDevice(sonarPower);
-        //comm.registerDevice(roller);
-        comm.registerDevice(infrared);
-
+        
         comm.registerDevice(encoderL);
         comm.registerDevice(encoderR);
         
         comm.initialize();
-
-        System.out.println("Now I'm here");
-//        roller.setValue(false);
-//        try {
-//            Thread.sleep(1000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//        roller.setValue(true);
-//        try {
-//            Thread.sleep(1000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
         
         sonarPower.setValue(false);
         
-        System.out.println("Here");
-
-
         comm.transmit();
 
         comm.updateSensorData();
-
-//      double time = System.currentTimeMillis();
-//      double prevTime = System.currentTimeMillis();
-//      double gyroError = 0;
-//      while (System.currentTimeMillis() - time < 5000) {
-//          comm.updateSensorData();
-//          gyroError += gyro.getOmega() * (System.currentTimeMillis() - prevTime)/5000;
-//          prevTime = System.currentTimeMillis();
-//      }
-        
-        boolean ball_present = true;
         
         double distanceD = sonarD.getDistance();
         double distanceE = sonarE.getDistance();
         double distanceA = sonarA.getDistance();
         double distanceB = sonarB.getDistance();
         double distanceC = sonarC.getDistance();
-
-        //double angle;
         
         while (true) {
             comm.updateSensorData();
-            
-            ball_present = infrared.getValue();
             
             distanceD = sonarD.getDistance();
             distanceE = sonarE.getDistance();
@@ -111,13 +77,10 @@ public class TestNewSonars {
             System.out.println("DistanceB: " + distanceB);
             System.out.println("DistanceC: " + distanceC);
             
-            System.out.println("IR Reading: " + ball_present);
-            
             //motorL.setSpeed(-0.1);
             //motorR.setSpeed(0.1);
             
-//          angle = gyro.getOmega() - gyroError;
-//          System.out.println(angle);
+            ball_intake.setSpeed(-0.25);
             
             comm.transmit();
             
