@@ -26,7 +26,7 @@ public class Test {
 		AtomicInteger green_ball_count = new AtomicInteger(0);
 
 		JLabel camera_pane = ColorSensor.createWindow("Camera output", 32, 24);
-		Hopper hopper = new Hopper(24,27,28, 14);
+		Hopper hopper = new Hopper(null,24,27,28, 14);
 		ColorSensor color_sensor = new ColorSensor(red_ball_count, green_ball_count, hopper);
 		color_sensor.start();
 
