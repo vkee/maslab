@@ -43,7 +43,7 @@ public class TestNewSonars {
         comm.registerDevice(sonarE);
         //comm.registerDevice(gyro);
         comm.registerDevice(sonarPower);
-        comm.registerDevice(roller);
+        //comm.registerDevice(roller);
 
         comm.registerDevice(encoderL);
         comm.registerDevice(encoderR);
@@ -51,18 +51,18 @@ public class TestNewSonars {
         comm.initialize();
 
         System.out.println("Now I'm here");
-        roller.setValue(false);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        roller.setValue(true);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        roller.setValue(false);
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//        roller.setValue(true);
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
         
         sonarPower.setValue(false);
         
