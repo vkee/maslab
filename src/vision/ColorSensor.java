@@ -51,7 +51,7 @@ public class ColorSensor {
         }
     }
 
-    private final int CAMERA_NUM = 1;
+    private final int CAMERA_NUM = 3;
 
     public final VideoCapture camera;
     private Thread color_sensor_thread;
@@ -159,7 +159,7 @@ public class ColorSensor {
         color_sensor_thread.start();
     }
     
-    private static JLabel createWindow(String name, int width, int height) {    
+    public static JLabel createWindow(String name, int width, int height) {    
         JFrame imageFrame = new JFrame(name);
         imageFrame.setSize(width, height);
         imageFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -172,7 +172,7 @@ public class ColorSensor {
         return imagePane;
     }
     
-    private static void updateWindow(JLabel imagePane, BufferedImage img) {
+    public static void updateWindow(JLabel imagePane, BufferedImage img) {
         int w = (int) (img.getWidth());
         int h = (int) (img.getHeight());
         if (imagePane.getWidth() != w || imagePane.getHeight() != h) {

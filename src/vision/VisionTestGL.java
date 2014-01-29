@@ -23,7 +23,7 @@ public class VisionTestGL {
 
         // Setup the camera
         VideoCapture camera = new VideoCapture();
-        camera.open(0);
+        camera.open(1);
         
         // Create GUI windows to display camera output and OpenCV output
         Engine.initGL(320,240);
@@ -65,7 +65,7 @@ public class VisionTestGL {
         }
     }
     
-    private static JLabel createWindow(String name, int width, int height) {    
+    public static JLabel createWindow(String name, int width, int height) {    
         JFrame imageFrame = new JFrame(name);
         imageFrame.setSize(width, height);
         imageFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -78,7 +78,7 @@ public class VisionTestGL {
         return imagePane;
     }
     
-    private static void updateWindow(JLabel imagePane, Mat mat) {
+    public static void updateWindow(JLabel imagePane, Mat mat) {
         int w = (int) (mat.size().width);
         int h = (int) (mat.size().height);
         if (imagePane.getWidth() != w || imagePane.getHeight() != h) {
