@@ -30,8 +30,6 @@ public class TestNewSonars {
         Encoder encoderL = new Encoder(5, 7);
         Encoder encoderR = new Encoder(6, 8);
         
-        //Gyroscope gyro = new Gyroscope(1, 9);
-        
         DigitalOutput sonarPower = new DigitalOutput(37); // orig 37
         
         comm.registerDevice(motorL);
@@ -41,7 +39,6 @@ public class TestNewSonars {
         comm.registerDevice(sonarC);
         comm.registerDevice(sonarD);
         comm.registerDevice(sonarE);
-        //comm.registerDevice(gyro);
         comm.registerDevice(sonarPower);
         //comm.registerDevice(roller);
 
