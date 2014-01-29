@@ -74,7 +74,7 @@ public class Vision {
     private JLabel camera_pane, colorize_pane;
     
     // FILTERS
-    private final FilterOp blur, colorize, eliminateTop, objRec;
+    private final FilterOp blur, colorize, eliminateTop, eliminateBottom, objRec;
     
     public Vision(int camera_number, int width, int height, boolean display_on){
         this.WIDTH = width;
@@ -113,6 +113,7 @@ public class Vision {
         blur = new FilterOp("blur");
         colorize = new FilterOp("modColorize");
         eliminateTop = new FilterOp("eliminateTop");
+        eliminateBottom = new FilterOp("eliminateBottom");
         objRec = new FilterOp("modObjRec");
         
         // FILTERED IMAGE
@@ -152,6 +153,7 @@ public class Vision {
         blur.apply(curr_image);           
         colorize.apply();
         eliminateTop.apply();
+        eliminateBottom.apply();
         colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();

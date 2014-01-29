@@ -25,12 +25,14 @@ public class TestNewSonars {
         Ultrasonic sonarD = new Ultrasonic(30, 29);
         Ultrasonic sonarE = new Ultrasonic(32, 31);
         
+        DigitalOutput roller = new DigitalOutput(10);
+        
         Encoder encoderL = new Encoder(5, 7);
         Encoder encoderR = new Encoder(6, 8);
         
         //Gyroscope gyro = new Gyroscope(1, 9);
         
-        DigitalOutput relay = new DigitalOutput(37);
+        DigitalOutput sonarPower = new DigitalOutput(37); // orig 37
         
         comm.registerDevice(motorL);
         comm.registerDevice(motorR);
@@ -40,14 +42,33 @@ public class TestNewSonars {
         comm.registerDevice(sonarD);
         comm.registerDevice(sonarE);
         //comm.registerDevice(gyro);
-        comm.registerDevice(relay);
-        
+        comm.registerDevice(sonarPower);
+        //comm.registerDevice(roller);
+
         comm.registerDevice(encoderL);
         comm.registerDevice(encoderR);
         
         comm.initialize();
+
+        System.out.println("Now I'm here");
+//        roller.setValue(false);
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//        roller.setValue(true);
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
         
-        relay.setValue(false);
+        sonarPower.setValue(false);
+        
+        System.out.println("Here");
+
+
         comm.transmit();
 
         comm.updateSensorData();
