@@ -29,37 +29,32 @@ import Core.FilterOp;
 public class Vision {
     public static void main(String[] args){
         final Vision vision = new Vision(1, 320, 240, false);
-        Thread display_thread = new Thread(new Runnable(){
-            public void run(){
-                JLabel camera_pane = createWindow("Camera output", vision.WIDTH, vision.HEIGHT);
-                JLabel colorize_pane = createWindow("Filtered output", vision.WIDTH, vision.HEIGHT);
-                int ball_target_x, ball_target_y, reactor_target_x, reactor_target_y;
-                double target_height, target_radius;
-                while (true) {
-                    vision.update();
+        JLabel camera_pane = createWindow("Camera output", vision.WIDTH, vision.HEIGHT);
+        JLabel colorize_pane = createWindow("Filtered output", vision.WIDTH, vision.HEIGHT);
+        int ball_target_x, ball_target_y, reactor_target_x, reactor_target_y;
+        double target_height, target_radius;
+        while (true) {
+            vision.update();
 
-                    updateWindow(camera_pane, vision.curr_image);
-                    updateWindow(colorize_pane, vision.colorized);
-                    
-                    reactor_target_x = vision.getNextReactorX();
-                    reactor_target_y = vision.getNextReactorY();
-                    target_height = vision.getNextReacterHeight();
-                    
-                    ball_target_x = vision.getNextBallX();
-                    ball_target_y = vision.getNextBallY();
-                    target_radius = vision.getNextBallRadius();
-                    
-                    System.out.println("ball_target_x: " + ball_target_x);
-                    System.out.println("ball_target_y: " + ball_target_y);
-                    System.out.println("target_radius: " + target_radius);
-                    
-                    System.out.println("reactor_target_x: " + reactor_target_x);
-                    System.out.println("reactor_target_y: " + reactor_target_y);
-                    System.out.println("target_height: " + target_height);
-                }
-            }
-        });
-        display_thread.run();
+            updateWindow(camera_pane, vision.curr_image);
+            updateWindow(colorize_pane, vision.colorized);
+            
+            reactor_target_x = vision.getNextReactorX();
+            reactor_target_y = vision.getNextReactorY();
+            target_height = vision.getNextReacterHeight();
+            
+            ball_target_x = vision.getNextBallX();
+            ball_target_y = vision.getNextBallY();
+            target_radius = vision.getNextBallRadius();
+            
+            System.out.println("ball_target_x: " + ball_target_x);
+            System.out.println("ball_target_y: " + ball_target_y);
+            System.out.println("target_radius: " + target_radius);
+            
+            System.out.println("reactor_target_x: " + reactor_target_x);
+            System.out.println("reactor_target_y: " + reactor_target_y);
+            System.out.println("target_height: " + target_height);
+        }
     }
     
     // CONSTANTS
@@ -74,6 +69,7 @@ public class Vision {
     public BufferedImage curr_image;
     public BufferedImage colorized;
     private Ball red_target, green_target;
+    private int red_count, green_count;
     private Reactor reactor_target;
     private JLabel camera_pane, colorize_pane;
     
@@ -109,6 +105,9 @@ public class Vision {
         red_target = new Ball(false);
         green_target = new Ball(false);
         reactor_target = new Reactor(false);
+        
+        red_count = 0;
+        green_count = 0;
         
         // FILTERS
         blur = new FilterOp("blur");
@@ -152,12 +151,20 @@ public class Vision {
         
         blur.apply(curr_image);           
         colorize.apply();
-        //eliminateTop.apply();
+        eliminateTop.apply();
         colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
         
         processFilteredImage();
+        
+        if (green_target.radius > 0){
+            System.out.println("GREEN TARGET");
+        }
+        
+        if (red_target.radius > 0){
+            System.out.println("RED TARGET");
+        }
         
         if (DISPLAY_ON){
             updateWindow(camera_pane, curr_image);
@@ -166,8 +173,8 @@ public class Vision {
     }
     
     private void processFilteredImage(){
-        red_target = new Ball(false);
-        green_target = new Ball(false);
+        Ball temp_red_target = new Ball(false);
+        Ball temp_green_target = new Ball(false);
         reactor_target = new Reactor(false);
         int pixel, red, green, blue;
         double radius, height;
@@ -180,14 +187,14 @@ public class Vision {
                     blue = (pixel) & 0xFF;
                     if (red > 0 && green == 0 && blue == 0){
                         radius = 50*red/256.0;
-                        if (radius > red_target.radius){
-                            red_target = new Ball(x, y, radius);
+                        if (radius > temp_red_target.radius){
+                            temp_red_target = new Ball(x, y, radius);
                         }
                     }
                     if (green > 0 && red == 0 && blue == 0){
                         radius = 50*green/256.0;
-                        if (radius > green_target.radius){
-                            green_target = new Ball(x, y, radius);
+                        if (radius > temp_green_target.radius){
+                            temp_green_target = new Ball(x, y, radius);
                         }
                     }
                 } else {
@@ -204,6 +211,20 @@ public class Vision {
                 }
             }
         }
+        
+        if (temp_red_target.radius == 0 && red_count < 5){
+            red_count++;
+        } else {
+            red_count = 0;
+            red_target = temp_red_target;
+        }
+        
+        if (temp_green_target.radius == 0 && green_count < 5){
+            green_count++;
+        } else {
+            green_count = 0;
+            green_target = temp_green_target;
+        }
     }
     
     /**
@@ -212,19 +233,19 @@ public class Vision {
      * @return
      */
     public String detectQR(BufferedImage original) throws RuntimeException {
-    	BufferedImageLuminanceSource source = new BufferedImageLuminanceSource(original);
-		HybridBinarizer hb = new HybridBinarizer(source);
-		
-		try {
-			BitMatrix image = hb.getBlackMatrix();
-			Detector detector = new Detector(image);
-			DetectorResult detected = detector.detect();
-			Decoder decoder = new Decoder();
-			DecoderResult decoded = decoder.decode(detected.getBits());
-			return decoded.getText();
-		} catch (NotFoundException | ChecksumException | FormatException e1) {
-		    throw new RuntimeException("QR code not found");
-		}
+        BufferedImageLuminanceSource source = new BufferedImageLuminanceSource(original);
+        HybridBinarizer hb = new HybridBinarizer(source);
+        
+        try {
+            BitMatrix image = hb.getBlackMatrix();
+            Detector detector = new Detector(image);
+            DetectorResult detected = detector.detect();
+            Decoder decoder = new Decoder();
+            DecoderResult decoded = decoder.decode(detected.getBits());
+            return decoded.getText();
+        } catch (NotFoundException | ChecksumException | FormatException e1) {
+            throw new RuntimeException("QR code not found");
+        }
     }
     
     public int getNextBallX(){

@@ -98,7 +98,7 @@ public class ColourTesting {
             bufferedImage = Mat2Image.getImage(rawImage);
             blur.apply(bufferedImage);
             colorize.apply();
-            op.apply();
+            //op.apply();
             //objRec.apply();
             filtered = FilterOp.getImage();
 

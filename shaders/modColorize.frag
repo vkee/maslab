@@ -35,7 +35,7 @@ void main() {
 		gl_FragColor = vec4(0,0,1,1);
 	
 	//GREEN BALL
-	if ( col.y>col.x*1.3 && col.y>col.z*1.3 && y > horizon)
+	if ( col.y>col.x*1.1 && col.y>col.z*1.1 && y > horizon)
 		gl_FragColor = vec4(0,1,0,1);
 	
 	//BLUE BAND

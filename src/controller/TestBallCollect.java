@@ -66,30 +66,30 @@ public class TestBallCollect {
 		
 		comm.updateSensorData();
 		
-		//final Vision vision = new Vision(1, 320, 240, true);
+		final Vision vision = new Vision(1, 320, 240, true);
         
-//        Thread vision_thread = new Thread(new Runnable(){
-//            public void run(){
-//                Engine.initGL(320, 240);
-//                
-//                long start_time, end_time;
-//                
-//                while (true){
-//                    start_time = System.currentTimeMillis();
-//                    vision.update();
-//                    end_time = System.currentTimeMillis();
-//                    try {
-//                        if (75 + start_time - end_time > 0){
-//                            Thread.sleep(75 + start_time - end_time);
-//                        }
-//                    } catch (Exception exc){
-//                        exc.printStackTrace();
-//                    }
-//                }
-//            }
-//        });
-//		
-//        vision_thread.start();
+        Thread vision_thread = new Thread(new Runnable(){
+            public void run(){
+                //Engine.initGL(320, 240);
+                
+                long start_time, end_time;
+                
+                while (true){
+                    start_time = System.currentTimeMillis();
+                    vision.update();
+                    end_time = System.currentTimeMillis();
+                    try {
+                        if (75 + start_time - end_time > 0){
+                            Thread.sleep(75 + start_time - end_time);
+                        }
+                    } catch (Exception exc){
+                        exc.printStackTrace();
+                    }
+                }
+            }
+        });
+		
+        vision_thread.start();
 		
         PID pid_speedbc = new PID(4, 0.2, 0.08, 0.01);
         pid_speedbc.update(4, true);

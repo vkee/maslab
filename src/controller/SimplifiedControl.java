@@ -13,11 +13,14 @@ import devices.actuators.PWMOutput;
 import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
-public class RobotControlAltered {
+public class SimplifiedControl {
     public static void main(String[] args){      
-        RobotControlAltered robot = new RobotControlAltered();
+        SimplifiedControl robot = new SimplifiedControl();
         robot.loop();
     }
+    
+    // VISION
+    final Vision vision;
     
     // MAPLE
     private MapleComm comm;
@@ -33,6 +36,8 @@ public class RobotControlAltered {
     // STATE VALUES
     double distanceD, distanceE, distanceA, distanceB, distanceC;
     long start_time, end_time;
+    int target_x, target_y;
+    double target_radius;
     double K_encoder;
     
     // BUFFERS
@@ -49,15 +54,19 @@ public class RobotControlAltered {
     private DigitalOutput relay;
     
     // PIDS
-    PID pid_dist, pid_angle, pid_speedwf;
+    PID pid_dist, pid_speedwf;
+    PID pid_target, pid_approach;
     
     // STATES
     private State state;
     
-    private enum ControlState { DEFAULT, WALL_AHEAD, LEFT_FAR, LEFT_A, LEFT_B, LEFT_C, PULL_AWAY };
+    private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, APPROACH, COLLECT };
     
-    public RobotControlAltered(){
+    public SimplifiedControl(){
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
+        
+        // VISION
+        vision = new Vision(1, 320, 240, true);
         
         // MOTOR INPUTS
         forward = 0;
@@ -106,13 +115,16 @@ public class RobotControlAltered {
         
         // PIDS
         pid_dist = new PID(0.22, 0.3, 100, 0);  
-        pid_dist.update(computeDistanceEstimate(distanceA, distanceB, 13.33, Math.PI/6), true);
-        
-        pid_angle = new PID(0, 0.4, 0.2, 0);
-        pid_angle.update(computeAngleError(distanceA, distanceB, 13.33, Math.PI/6), true);
+        pid_dist.update(Math.min(distanceA, distanceB), true);
         
         pid_speedwf = new PID(10, 0.2, -0.08, 0.01);
-        pid_speedwf.update(0, true);
+        pid_speedwf.update(10, true);
+        
+        pid_target = new PID(WIDTH/2, 0.3, -2, 0);
+        pid_target.update(WIDTH/2, true);
+        
+        pid_approach = new PID(WIDTH/2, 0.3, -2, 0);
+        pid_approach.update(WIDTH/2, true);
         
         // BUFFERS
         buffD = new LinkedList<Double>();
@@ -132,7 +144,7 @@ public class RobotControlAltered {
         K_encoder = 1;
         
         // STATE INITIALIZATION
-        state = new State(ControlState.LEFT_A);
+        state = new State(ControlState.FOLLOW);
     }
     
     private void loop(){ 
@@ -143,6 +155,12 @@ public class RobotControlAltered {
         comm.transmit();
         
         comm.updateSensorData();
+        
+        // UPDATE VISION
+        vision.update();
+        target_x = vision.getNextBallX();
+        target_y = vision.getNextBallY();
+        target_radius = vision.getNextBallRadius();
         
         // UPDATE DISTANCES
         distanceD = sonarD.getDistance();
@@ -161,6 +179,12 @@ public class RobotControlAltered {
             comm.updateSensorData();
             
             start_time = System.currentTimeMillis();
+            
+            // UPDATE VISION
+            vision.update();
+            target_x = vision.getNextBallX();
+            target_y = vision.getNextBallY();
+            target_radius = vision.getNextBallRadius();
             
             // UPDATE DISTANCES
             distanceD = sonarD.getDistance();
@@ -184,8 +208,8 @@ public class RobotControlAltered {
             end_time = System.currentTimeMillis();
             
             try {
-                if (40 - end_time + start_time >= 0){
-                    Thread.sleep(40 - end_time + start_time);
+                if (60 - end_time + start_time >= 0){
+                    Thread.sleep(60 - end_time + start_time);
                 } else {
                     System.out.println("TIME OVERFLOW: " + (end_time - start_time));
                 }
@@ -198,89 +222,97 @@ public class RobotControlAltered {
     private void updateMotors(){
         double temp_turn = 0;
         double temp_forward = 0.1;
+        double update_value_x;
         
-        if (state.state == ControlState.WALL_AHEAD){
-            System.out.println("WALL AHEAD");
-            temp_turn = 0.12;
-            temp_forward = 0;
-        } else if (state.state == ControlState.LEFT_A){
-            System.out.println("LEFT_A");
-            //temp_turn = pid_dist.update(computeDistanceEstimate(distanceA, distanceB, 13.33, Math.PI/6), false);
-            temp_turn = pid_dist.update(Math.min(distanceA, distanceB), false);
-//                    - 0.3*pid_angle.update(computeAngleError(distanceA, distanceB), false);
-//        } else if (state.state == ControlState.LEFT_FAR){
-//            System.out.println("LEFT_FAR");
-//            temp_turn = -0.12;
-//            temp_forward = 0;
-//        } else if (state.state == ControlState.LEFT_B){
-//            System.out.println("LEFT_B");
-//            temp_turn = 0.12;
-//            temp_forward = 0;
-//        } else if (state.state == ControlState.LEFT_C){
-//            System.out.println("LEFT_C");
-//            temp_turn = 0.12;
-//            temp_forward = 0;
-        } else if (state.state == ControlState.PULL_AWAY){
-            System.out.println("PULL_AWAY");
-            temp_turn = -0.1;
-            temp_forward = -0.08;
-        } else if (state.state == ControlState.DEFAULT){
-            System.out.println("DEFAULT");
-            temp_turn = -0.05;
-            temp_forward = 0.1;
-        }
+        if (state.state == ControlState.APPROACH){
+            System.out.println("BALL_COLLECT: APPROACH");
+            
+            if (target_radius > 0){
+                update_value_x = WIDTH/2 + ((target_x - WIDTH/2)*12/target_radius);
+            } else {
+                update_value_x = target_x;
+            }
+            
+            turn = Math.max(-0.25, Math.min(0.25, -pid_target.update(target_x, false)/WIDTH));
+            forward = 0.17;
+        } else if (state.state == ControlState.COLLECT){
+            System.out.println("BALL_COLLECT: COLLECT");
+            turn = 0;
+            forward = 0.13;
+        } else {
+            if (state.state == ControlState.WALL_AHEAD){
+                System.out.println("WALL_FOLLOW: WALL AHEAD");
+                temp_turn = 0.12;
+                temp_forward = 0;
+            } else if (state.state == ControlState.FOLLOW){
+                System.out.println("WALL_FOLLOW: FOLLOW");
+                temp_turn = pid_dist.update(Math.min(distanceA, distanceB), false);
+            } else if (state.state == ControlState.PULL_AWAY){
+                System.out.println("WALL_FOLLOW: PULL_AWAY");
+                temp_turn = -0.1;
+                temp_forward = -0.08;
+            } else if (state.state == ControlState.DEFAULT){
+                System.out.println("WALL_FOLLOW: DEFAULT");
+                temp_turn = -0.05;
+                temp_forward = 0.1;
+            }
 
-        double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
-        K_encoder = Math.max(pid_speedwf.update(abs_speed, false), 0.5);
-        
-        turn = K_encoder*temp_turn;
-        forward = K_encoder*temp_forward;
+            double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
+            K_encoder = Math.max(pid_speedwf.update(abs_speed, false), 0.5);
+            
+            //turn = K_encoder*temp_turn;
+            //forward = K_encoder*temp_forward;
+            turn = 1.7*temp_turn;
+            forward = 1.7*temp_forward;
+        }
         
         motorL.setSpeed(-(forward + turn));
         motorR.setSpeed(forward - turn);
     }
 
     private void estimateState(){
-        ControlState temp_state = ControlState.LEFT_A;
+        ControlState temp_state = state.state;
         
-        //if (computeDistanceEstimate(distanceD, distanceE, 32.08, Math.PI/6) < 0.3 || distanceC < 0.25){
-        if (Math.min(distanceD, distanceE) < 0.25 || distanceC < 0.2){
-            temp_state = ControlState.WALL_AHEAD;
-        } else if (distanceA < 2*distanceB && distanceB < 2*distanceA
-                && distanceA < 0.7 && distanceB < 0.7){
-            temp_state = ControlState.LEFT_A;
-//        } else if (distanceB < 1.5*distanceC && distanceC < 1.5*distanceB
-//                && distanceB < 0.3 && distanceC < 0.3){
-//            temp_state = ControlState.LEFT_B;
-//        } else if (distanceC < 1.5*distanceD && distanceD < 1.5*distanceC
-//                && distanceC < 0.3 && distanceD < 0.3){
-//            temp_state = ControlState.LEFT_C;
-//        } else if (distanceB >= 2*distanceA && distanceA <= 0.2){
-//            temp_state = ControlState.LEFT_FAR;
-        } else {
-            temp_state = ControlState.DEFAULT;
+        if (state.state == ControlState.APPROACH){
+            if (target_y > 180){
+                temp_state = ControlState.COLLECT;
+            } else {
+                temp_state = ControlState.APPROACH;
+            }
+        } else if ((state.state == ControlState.COLLECT && state.getTime() >= 1000)
+                || state.state != ControlState.COLLECT){
+            if (Math.min(distanceD, distanceE) < 0.25 || distanceC < 0.2){
+                temp_state = ControlState.WALL_AHEAD;
+            } else if (distanceA < 2*distanceB && distanceB < 2*distanceA
+                    && distanceA < 0.7 && distanceB < 0.7){
+                temp_state = ControlState.FOLLOW;
+            } else {
+                temp_state = ControlState.DEFAULT;
+            }
+            
+            if (target_radius != 0){
+                temp_state = ControlState.APPROACH;
+            }
         }
         
-        // TUNE CUTOFFS
         if ((state.getTime() > 100 && state.state != ControlState.PULL_AWAY) ||
                 (state.getTime() > 2000 && state.state == ControlState.PULL_AWAY)){
             state.changeState(temp_state);
         }
 
-        // TUNE CUTOFF
         if (state.getTime() > 8000){
             state.changeState(ControlState.PULL_AWAY);
         }
     }
     
     private void print(){
-        //System.out.println("distanceD: " + sonarD.getDistance());
-        //System.out.println("distanceE: " + sonarE.getDistance());
-        //System.out.println("distanceA: " + sonarA.getDistance());
-        //System.out.println("distanceB: " + sonarB.getDistance());
-        //System.out.println("distanceC: " + sonarC.getDistance());
-        System.out.println("SIDE: " + Math.min(distanceA, distanceB));
-        System.out.println("FRONT: " + Math.min(distanceD, distanceE));
+        System.out.println("distanceD: " + sonarD.getDistance());
+        System.out.println("distanceE: " + sonarE.getDistance());
+        System.out.println("distanceA: " + sonarA.getDistance());
+        System.out.println("distanceB: " + sonarB.getDistance());
+        System.out.println("distanceC: " + sonarC.getDistance());
+        //System.out.println("SIDE: " + Math.min(distanceA, distanceB));
+        //System.out.println("FRONT: " + Math.min(distanceD, distanceE));
         //System.out.println("forward: " + forward);
         //System.out.println("turn: " + turn);
     }
@@ -358,34 +390,6 @@ public class RobotControlAltered {
             } catch (Exception exc){
                 exc.printStackTrace();
             }
-        }
-    }
-    
-    public static double computeDistanceEstimate(double distanceA, double distanceB, double radius, double angle){        
-        double distA = radius + distanceA;
-        double distB = radius + distanceB;
-        
-        if (distA < 2*distB && distB < 2*distA){
-            double base = Math.sqrt(distA*distA + distB*distB - 2*Math.cos(angle)*distA*distB);
-            double area = distA*distB/4;
-            return 2*area/base - radius;
-        } else {
-            return Math.min(distA, distB) - radius;
-        }
-    }
-    
-    public static double computeAngleError(double distanceA, double distanceB, double radius, double angle){        
-        double distA = radius + distanceA;
-        double distB = radius + distanceB;
-        
-        if (distA < 2*distB && distB < 2*distA){
-            double base = Math.sqrt(distA*distA + distB*distB - 2*Math.cos(angle)*distA*distB);
-            double base_angle = Math.asin(base/(2*distB));
-            return base_angle - 5*Math.PI/12;
-        } else if (distA > distB){
-            return -Math.PI/12;
-        } else {
-            return Math.PI/12;
         }
     }
 

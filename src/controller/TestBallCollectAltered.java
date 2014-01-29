@@ -33,11 +33,11 @@ public class TestBallCollectAltered {
 		MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         Cytron motorL = new Cytron(4, 0);
         Cytron motorR = new Cytron(3, 1);
-        Ultrasonic sonarA = new Ultrasonic(30, 29);
-        Ultrasonic sonarB = new Ultrasonic(35, 36);
-        Ultrasonic sonarC = new Ultrasonic(32, 31);
-        Ultrasonic sonarD = new Ultrasonic(34, 33);
-        Ultrasonic sonarE = new Ultrasonic(26, 25);
+        Ultrasonic sonarA = new Ultrasonic(26, 25);
+        Ultrasonic sonarB = new Ultrasonic(34, 33);
+        Ultrasonic sonarC = new Ultrasonic(35, 36);
+        Ultrasonic sonarD = new Ultrasonic(30, 29);
+        Ultrasonic sonarE = new Ultrasonic(32, 31);
         
         Encoder encoderL = new Encoder(5, 7);
         Encoder encoderR = new Encoder(6, 8);
@@ -98,16 +98,20 @@ public class TestBallCollectAltered {
 		    start_time = System.currentTimeMillis();
 
 		    comm.updateSensorData();
-	        
+
 		    vision.update();
-            
+
 		    target_x = vision.getNextBallX();
 		    target_y = vision.getNextBallY();
 		    target_radius = vision.getNextBallRadius();
+
+		    if (target_radius > 0){
+		        update_value_x = width/2 + ((target_x - width/2)*12/target_radius);
+		    } else {
+		        update_value_x = target_x;
+		    }
 		    
-		    update_value_x = width/2 + ((target_x - width/2)*12/target_radius);
-		    
-            pidOutX = pidX.update(target_x, false);
+            pidOutX = pidX.update(target_x, false); // changed to update value rather than target_x
             pidOutY = pidY.update(target_y, false);
 
             turn = Math.max(-0.1, Math.min(0.1, -pidOutX/width));
@@ -125,7 +129,7 @@ public class TestBallCollectAltered {
             //turn = K_encoder*turn;
             //forward = K_encoder*forward;
             
-            forward = 0.9*forward;
+            forward = 1.3*forward;
             
 	        System.out.println("forward: " + forward);
 	        System.out.println("turn: " + turn);

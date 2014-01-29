@@ -18,11 +18,12 @@ public class TestNewSonars {
         MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         Cytron motorL = new Cytron(4, 0);
         Cytron motorR = new Cytron(3, 1);
-        Ultrasonic sonarA = new Ultrasonic(30, 29);
-        Ultrasonic sonarB = new Ultrasonic(35, 36);
-        Ultrasonic sonarC = new Ultrasonic(32, 31);
-        Ultrasonic sonarD = new Ultrasonic(34, 33);
-        Ultrasonic sonarE = new Ultrasonic(26, 25);
+        
+        Ultrasonic sonarA = new Ultrasonic(26, 25);
+        Ultrasonic sonarB = new Ultrasonic(34, 33);
+        Ultrasonic sonarC = new Ultrasonic(35, 36);
+        Ultrasonic sonarD = new Ultrasonic(30, 29);
+        Ultrasonic sonarE = new Ultrasonic(32, 31);
         
         Encoder encoderL = new Encoder(5, 7);
         Encoder encoderR = new Encoder(6, 8);
@@ -84,7 +85,7 @@ public class TestNewSonars {
             System.out.println("DistanceC: " + distanceC);
             
             //motorL.setSpeed(-0.1);
-            //motorR.setSpeed(-0.1);
+            //motorR.setSpeed(0.1);
             
 //          angle = gyro.getOmega() - gyroError;
 //          System.out.println(angle);
