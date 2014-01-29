@@ -39,6 +39,7 @@ public class SimplifiedControl {
     int target_x, target_y;
     double target_radius;
     double K_encoder;
+    double orient_time;
     
     // BUFFERS
     List<Double> buffD, buffE, buffA, buffB, buffC;
@@ -51,7 +52,8 @@ public class SimplifiedControl {
     private Cytron motorL, motorR;
     private Ultrasonic sonarD, sonarE, sonarA, sonarB, sonarC;
     private Encoder encoderL, encoderR;
-    private DigitalOutput relay;
+    private DigitalOutput power_sonars;
+    private DigitalOutput roller;
     
     // PIDS
     PID pid_dist, pid_speedwf;
@@ -60,7 +62,7 @@ public class SimplifiedControl {
     // STATES
     private State state;
     
-    private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, APPROACH, COLLECT };
+    private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, RANDOM_ORIENT, APPROACH, COLLECT };
     
     public SimplifiedControl(){
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
@@ -84,7 +86,8 @@ public class SimplifiedControl {
         
         encoderL = new Encoder(5, 7);
         encoderR = new Encoder(6, 8);
-        relay = new DigitalOutput(37);
+        power_sonars = new DigitalOutput(37);
+        roller = new DigitalOutput(13);
         
         // REGISTER DEVICES AND INITIALIZE
         comm.registerDevice(sonarD);
@@ -99,7 +102,8 @@ public class SimplifiedControl {
         comm.registerDevice(encoderL);
         comm.registerDevice(encoderR);
         
-        comm.registerDevice(relay);
+        comm.registerDevice(power_sonars);
+        comm.registerDevice(roller);
         
         System.out.println("Initializing...");
         comm.initialize();
@@ -112,6 +116,8 @@ public class SimplifiedControl {
         distanceA = sonarA.getDistance();
         distanceB = sonarB.getDistance();
         distanceC = sonarC.getDistance();
+        
+        orient_time = 500 + 1500*Math.random();
         
         // PIDS
         pid_dist = new PID(0.22, 0.3, 100, 0);  
@@ -151,7 +157,8 @@ public class SimplifiedControl {
         System.out.println("Beginning to follow wall...");
         
         // INITIALIZE SONARS
-        relay.setValue(false);
+        power_sonars.setValue(false);
+        roller.setValue(true);
         comm.transmit();
         
         comm.updateSensorData();
@@ -224,7 +231,8 @@ public class SimplifiedControl {
         double temp_forward = 0.1;
         double update_value_x;
         
-        if (state.state == ControlState.APPROACH){
+        if (state.state == ControlState.APPROACH && !(distanceA < 0.1 || distanceB < 0.1
+                || distanceC < 0.1 || distanceD < 0.1 || distanceE < 0.1)){
             System.out.println("BALL_COLLECT: APPROACH");
             
             if (target_radius > 0){
@@ -235,8 +243,10 @@ public class SimplifiedControl {
             
             turn = Math.max(-0.25, Math.min(0.25, -pid_target.update(target_x, false)/WIDTH));
             forward = 0.17;
-        } else if (state.state == ControlState.COLLECT){
+        } else if (state.state == ControlState.COLLECT && !(distanceA < 0.1 || distanceB < 0.1
+                || distanceC < 0.1 || distanceD < 0.1 || distanceE < 0.1)){
             System.out.println("BALL_COLLECT: COLLECT");
+            roller.setValue(false);
             turn = 0;
             forward = 0.13;
         } else {
@@ -249,8 +259,12 @@ public class SimplifiedControl {
                 temp_turn = pid_dist.update(Math.min(distanceA, distanceB), false);
             } else if (state.state == ControlState.PULL_AWAY){
                 System.out.println("WALL_FOLLOW: PULL_AWAY");
-                temp_turn = -0.1;
-                temp_forward = -0.08;
+                temp_turn = 0;
+                temp_forward = -0.15;
+            } else if (state.state == ControlState.RANDOM_ORIENT){
+                System.out.println("WALL_FOLLOW: RANDOM_ORIENT");
+                temp_turn = -0.15;
+                temp_forward = 0;
             } else if (state.state == ControlState.DEFAULT){
                 System.out.println("WALL_FOLLOW: DEFAULT");
                 temp_turn = -0.05;
@@ -272,6 +286,10 @@ public class SimplifiedControl {
 
     private void estimateState(){
         ControlState temp_state = state.state;
+        
+        if (state.state == ControlState.COLLECT && state.getTime() >= 1000){
+            roller.setValue(true);
+        }
         
         if (state.state == ControlState.APPROACH){
             if (target_y > 180){
@@ -295,11 +313,20 @@ public class SimplifiedControl {
             }
         }
         
-        if ((state.getTime() > 100 && state.state != ControlState.PULL_AWAY) ||
-                (state.getTime() > 2000 && state.state == ControlState.PULL_AWAY)){
+        if (state.getTime() > 100 && state.state != ControlState.PULL_AWAY
+                && state.state != ControlState.RANDOM_ORIENT){
             state.changeState(temp_state);
         }
 
+        if (state.getTime() > 1500 && state.state == ControlState.PULL_AWAY){
+            state.changeState(ControlState.RANDOM_ORIENT);
+            orient_time = 500 + 1500*Math.random();
+        }
+        
+        if (state.getTime() > orient_time && state.state == ControlState.RANDOM_ORIENT){
+            state.changeState(temp_state);
+        }
+        
         if (state.getTime() > 8000){
             state.changeState(ControlState.PULL_AWAY);
         }
@@ -371,7 +398,7 @@ public class SimplifiedControl {
         
         if (const_values){
             System.out.println("RESETTING RELAY");
-            relay.setValue(true);
+            power_sonars.setValue(true);
             motorL.setSpeed(0);
             motorR.setSpeed(0);
             try {
@@ -381,7 +408,7 @@ public class SimplifiedControl {
             }
             comm.transmit();
             
-            relay.setValue(false);
+            power_sonars.setValue(false);
             
             comm.transmit();
             
