@@ -61,7 +61,7 @@ public class ReactorAlign {
 
         vision.update();
 
-        PID pid_align = new PID(width/2, 0.5, 0, 0);
+        PID pid_align = new PID(width/2, 0.3, 0, 0);
         PID pid_distance = new PID(0.05, 1.5, -0.2, 0);
         pid_align.update(0, true);
         pid_distance.update(0.05, true);
@@ -80,6 +80,7 @@ public class ReactorAlign {
             System.out.println("DistanceRight: " + distanceRight);
             System.out.println("Distance: " + distance);
             
+            /*
             if (distanceLeft < 0.1 && distanceRight > 0.3 && distanceReactor > 0.2) {
             	forward = -0.1;
             	turn = 0.2;
@@ -91,9 +92,9 @@ public class ReactorAlign {
 //                System.out.println("DistanceReactor: " + distanceReactor);
 //                System.out.println("DistanceLeft: " + distanceLeft);
                 continue;
-            }
+            }*/
             
-            if (distanceLeft + 0.1 < distanceReactor && (distanceLeft + 0.5 < distanceRight || distanceReactor > 0.2) ) {
+            if (distanceLeft + 0.1 < distanceReactor /*&& (distanceLeft + 0.5 < distanceRight || distanceReactor > 0.2)*/ ) {
             	forward = 0.13;
             	turn = 0;
             	motorL.setSpeed(-(forward + turn));
@@ -106,7 +107,7 @@ public class ReactorAlign {
                 continue;
             }
             
-            if (distanceRight + 0.1 < distanceReactor && distanceRight + 0.5 < distanceLeft) {
+            if (distanceRight + 0.1 < distanceReactor /*&& distanceRight + 0.5 < distanceLeft*/ ) {
             	forward = 0.13;
             	turn = 0;
             	motorL.setSpeed(-(forward + turn));
@@ -123,7 +124,7 @@ public class ReactorAlign {
         	turn = Math.min(0.2, Math.max(-0.2, -align));
         	//double forwardPIDout = -pid_distance.update(distance, false);
         	//forward = Math.min(0.15, Math.max(-0.15, forwardPIDout));
-        	if (distanceReactor < 0.05 ) {
+        	if (distance < 0.05 ) {
         		forward = 0;
         		if (turn < 0.05) {
         			motorL.setSpeed(0);
@@ -131,8 +132,8 @@ public class ReactorAlign {
                     comm.transmit();
                     break;
         		}
-        	} else if (distanceReactor < 0.1) {
-        		forward = distanceReactor*1.5;
+        	} else if (distance < 0.1) {
+        		forward = distance*1.5;
         	} else {
         		forward = 0.13;
         	}

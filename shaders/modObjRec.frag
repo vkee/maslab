@@ -263,6 +263,7 @@ void main() {
 		}
 		gl_FragColor = vec4((yLower - yUpper),0,0,1);
 		if ( yUpper+yLower==2*y || yUpper+yLower==2*y+dy || yUpper+yLower==2*y-dy) {
+			gl_FragColor = vec4(0.25,0.25,0.25,1);
 			/*
 			if ( x==0 ) {
 				gl_FragColor = vec4(0.125,0.125,0.125,1);
@@ -348,7 +349,7 @@ void main() {
 				gl_FragColor = vec4((yLower - yUpper),(yLower - yUpper),0,1);
 			}
 		}
-		/*
+		
 		if ( x>0 ) {
 			vec4 colTemp = texture(txtr,vec2(x-dx,y),0.0);
 			vec4 temp_pixel = texture(txtr, vec2(x, y), 0.0);
@@ -385,6 +386,6 @@ void main() {
 					gl_FragColor = vec4(0.75,0.75,0.75,1);
 				}
 			}
-		}*/
+		}
 	}
 }
