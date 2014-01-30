@@ -303,6 +303,14 @@ public class Vision {
         }
     }
 
+    public int getNextBallColor(){
+        if (green_target.radius >= red_target.radius){
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+    
     public int getNextReactorX() throws RuntimeException {
         return reactor_target.x;
     }
