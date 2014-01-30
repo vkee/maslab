@@ -108,12 +108,12 @@ public class Hopper {
 //        hopper.rampHigh();
       hopper.rampLow();
 //      hopper.rampClose();
-      hopper.gateOpen();
-//      hopper.gateClose();
+//      hopper.gateOpen();
+      hopper.gateClose();
         
 //        hopper.sorterRed();
-        hopper.sorterGreen();
-//        hopper.sorterBlocking();
+//        hopper.sorterGreen();
+        hopper.sorterBlocking();
 //        hopper.pacmanOpen();
 //        hopper.pacmanClose();
         

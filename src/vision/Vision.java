@@ -32,7 +32,7 @@ public class Vision {
         JLabel camera_pane = createWindow("Camera output", vision.WIDTH, vision.HEIGHT);
         JLabel colorize_pane = createWindow("Filtered output", vision.WIDTH, vision.HEIGHT);
         int ball_target_x, ball_target_y, reactor_target_x, reactor_target_y;
-        double target_height, target_radius;
+        double target_height, target_radius, wall_distance;
         while (true) {
             vision.update();
 
@@ -47,13 +47,17 @@ public class Vision {
             ball_target_y = vision.getNextBallY();
             target_radius = vision.getNextBallRadius();
             
-            System.out.println("ball_target_x: " + ball_target_x);
-            System.out.println("ball_target_y: " + ball_target_y);
-            System.out.println("target_radius: " + target_radius);
+            wall_distance = vision.getWallDistance();
             
-            System.out.println("reactor_target_x: " + reactor_target_x);
-            System.out.println("reactor_target_y: " + reactor_target_y);
-            System.out.println("target_height: " + target_height);
+//            System.out.println("ball_target_x: " + ball_target_x);
+//            System.out.println("ball_target_y: " + ball_target_y);
+//            System.out.println("target_radius: " + target_radius);
+//            
+//            System.out.println("reactor_target_x: " + reactor_target_x);
+//            System.out.println("reactor_target_y: " + reactor_target_y);
+//            System.out.println("target_height: " + target_height);
+            
+            System.out.println("wall_distance: " + wall_distance);
         }
     }
     
@@ -298,6 +302,21 @@ public class Vision {
 
     public double getNextReacterHeight(){
         return reactor_target.height;
+    }
+    
+    public double getWallDistance(){
+		int center, blue;
+		int widthStrip = 0;
+		for (int y = 0; y < 120; y++) {
+			center = filtered.getRGB(160, y);
+            blue = (center >> 0) & 0xFF;
+            
+            if (blue > 0) {
+            	widthStrip = blue;
+            	//break;
+            }
+		}
+		return (340.0/widthStrip)*2.54/100;
     }
     
     private static JLabel createWindow(String name, int width, int height) {    

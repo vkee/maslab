@@ -168,6 +168,7 @@ void main() {
 		} 
 	}
 	
+	/*
 	//RED
 	if ( col.z==1 && col.y==0 && col.x==0 && y<horizon ) {
 		while ( colUpper.z==1 && colUpper.y==0 && colUpper.x==0 && yUpper > 0) {
@@ -247,7 +248,7 @@ void main() {
 				gl_FragColor = vec4(0,0,(yLower - yUpper),1);
 			} 
 		} 
-	}
+	}*/
 	
 	//TEAL
 	if ( col.z==0 && col.y==1 && col.x==1 && y<horizon ) {
@@ -262,6 +263,25 @@ void main() {
 		}
 		gl_FragColor = vec4((yLower - yUpper),0,0,1);
 		if ( yUpper+yLower==2*y || yUpper+yLower==2*y+dy || yUpper+yLower==2*y-dy) {
+			/*
+			if ( x==0 ) {
+				gl_FragColor = vec4(0.125,0.125,0.125,1);
+			} else {
+				vec4 colTemp = texture(txtr,vec2(x-dx,y),0.0);
+				if ( !(colTemp.x==1 && colTemp.y==1 && colTemp.z==0) ) {
+					gl_FragColor = vec4(0.125,0.125,0.125,1);
+				}
+			}
+			
+			if ( x==1 ) {
+				gl_FragColor = vec4(0.25,0.25,0.25,1);
+			} else {
+				vec4 colTemp = texture(txtr,vec2(x+dx,y),0.0);
+				if ( !(colTemp.x==1 && colTemp.y==1 && colTemp.z==0) ) {
+					gl_FragColor = vec4(0.25,0.25,0.25,1);
+				}
+			}*/
+			
 			while (true) {
 				if ( colLeft2.z==0 && colLeft2.y==1 && colLeft2.x==1 && yLeft2 < 1 && yLeft2 > 0 && xLeft > 0) {
 					yLeft1 = yLeft2 + dy;

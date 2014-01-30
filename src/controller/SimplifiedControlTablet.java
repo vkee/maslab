@@ -3,6 +3,7 @@ package controller;
 import java.util.LinkedList;
 import java.util.List;
 
+import BotClient.BotClient;
 import Core.Engine;
 import vision.Vision;
 import comm.MapleComm;
@@ -20,6 +21,9 @@ public class SimplifiedControlTablet {
         robot.loop();
     }
     
+    // BOT CLIENT
+    BotClient botclient;
+    
     // VISION
     final Vision vision;
     
@@ -36,6 +40,7 @@ public class SimplifiedControlTablet {
     
     // STATE VALUES
     double distanceD, distanceE, distanceA, distanceB, distanceC;
+    double cam_dist;
     long start_time, end_time;
     int target_x, target_y;
     double target_radius;
@@ -68,6 +73,7 @@ public class SimplifiedControlTablet {
     private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, LEFT_FAR, FORWARD, RANDOM_ORIENT, APPROACH, COLLECT };
     
     public SimplifiedControlTablet(){
+		botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         
         // VISION
@@ -120,6 +126,7 @@ public class SimplifiedControlTablet {
         distanceB = sonarB.getDistance();
         distanceC = sonarC.getDistance();
         
+        cam_dist = 0;
         orient_time = 500 + 1500*Math.random();
         intake_time = 0;
         reset_time = System.currentTimeMillis();
@@ -155,10 +162,16 @@ public class SimplifiedControlTablet {
         K_encoder = 1;
         
         // STATE INITIALIZATION
-        state = new State(ControlState.FOLLOW);
+        state = new State(ControlState.DEFAULT);
     }
     
-    private void loop(){ 
+    private void loop(){
+		while( !botclient.gameStarted() ) {}
+    	
+		state.changeState(ControlState.FOLLOW);
+		
+		reset_time = System.currentTimeMillis();
+		
         System.out.println("Beginning to follow wall...");
         
         // INITIALIZE SONARS
@@ -187,6 +200,7 @@ public class SimplifiedControlTablet {
         }
         
         while (true){            
+        //while (botclient.gameStarted()){
             comm.updateSensorData();
             
             start_time = System.currentTimeMillis();
@@ -196,6 +210,7 @@ public class SimplifiedControlTablet {
             target_x = vision.getNextBallX();
             target_y = vision.getNextBallY();
             target_radius = vision.getNextBallRadius();
+            cam_dist = vision.getWallDistance();
             
             // UPDATE DISTANCES
             distanceD = sonarD.getDistance();
@@ -205,7 +220,7 @@ public class SimplifiedControlTablet {
             distanceC = sonarC.getDistance();
             
             // UPDATE BUFFERS
-            updateSonarBuffers();
+            //updateSonarBuffers();
             
             // ESTIMATE STATE
             estimateState();
@@ -228,6 +243,8 @@ public class SimplifiedControlTablet {
                 exc.printStackTrace();
             }
         }
+        
+       // botclient.close();
     }
     
     private void updateMotors(){
@@ -261,7 +278,7 @@ public class SimplifiedControlTablet {
             } else if (state.state == ControlState.PULL_AWAY){
                 System.out.println("WALL_FOLLOW: PULL_AWAY");
                 temp_turn = 0;
-                temp_forward = -0.15;
+                temp_forward = -0.2;
             } else if (state.state == ControlState.RANDOM_ORIENT){
                 System.out.println("WALL_FOLLOW: RANDOM_ORIENT");
                 temp_turn = -0.15;
@@ -302,7 +319,7 @@ public class SimplifiedControlTablet {
         }
         
         if (state.state == ControlState.APPROACH && !(distanceA < 0.1 || distanceB < 0.1
-                || distanceC < 0.1 || distanceD < 0.1 || distanceE < 0.1)){
+                || distanceC < 0.1 || getFrontDistance() < 0.1)){
             if (target_y > 180){
                 temp_state = ControlState.COLLECT;
             } else {
@@ -310,11 +327,11 @@ public class SimplifiedControlTablet {
             }
         } else if ((state.state == ControlState.COLLECT && state.getTime() >= 1000)
                 || state.state != ControlState.COLLECT || (distanceA < 0.1
-                || distanceB < 0.1 || distanceC < 0.1 || distanceD < 0.1 || distanceE < 0.1)){
-            if (Math.min(distanceD, distanceE) < 0.2 || distanceC < 0.15){
+                || distanceB < 0.1 || distanceC < 0.1 || getFrontDistance() < 0.1)){
+            if (getFrontDistance() < 0.25 || distanceC < 0.2){
                 temp_state = ControlState.WALL_AHEAD;
-            } else if (Math.min(distanceA, distanceB) > 0.45){
-                temp_state = ControlState.LEFT_FAR;
+//            } else if (Math.min(distanceA, distanceB) > 0.45){
+//                temp_state = ControlState.LEFT_FAR;
             } else if (distanceA < 2*distanceB && distanceB < 2*distanceA
                     && distanceA < 0.7 && distanceB < 0.7){
                 temp_state = ControlState.FOLLOW;
@@ -332,18 +349,22 @@ public class SimplifiedControlTablet {
             ball_intake.setSpeed(-0.25);
         }
         
-        if (state.getTime() > 100 && state.state != ControlState.PULL_AWAY
-                && state.state != ControlState.RANDOM_ORIENT && state.state != ControlState.LEFT_FAR
-                && state.state != ControlState.FORWARD){
-            state.changeState(temp_state);
-        }
-
         if (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY){
             state.changeState(ControlState.RANDOM_ORIENT);
             orient_time = 500 + 1500*Math.random();
         }
         
         if (state.getTime() > orient_time && state.state == ControlState.RANDOM_ORIENT){
+            state.changeState(temp_state);
+        }
+        
+        if (state.getTime() > 8000){
+            state.changeState(ControlState.PULL_AWAY);
+        } else if (state.getTime() > 100 && state.state != ControlState.PULL_AWAY
+                && state.state != ControlState.RANDOM_ORIENT && state.state != ControlState.LEFT_FAR
+                && state.state != ControlState.FORWARD){
+            state.changeState(temp_state);
+        } else if (distanceA < 0.1 || distanceB < 0.1 || distanceC < 0.1 || distanceD < 0.1 || distanceE < 0.1 || cam_dist < 0.1){
             state.changeState(temp_state);
         }
         
@@ -354,14 +375,17 @@ public class SimplifiedControlTablet {
 //        if (state.getTime() > 1800 && state.state == ControlState.FORWARD){
 //            state.changeState(temp_state);
 //        }
-        
-        if (state.getTime() > 8000){
-            state.changeState(ControlState.PULL_AWAY);
-        }
-        
-        if (distanceA < 0.1 || distanceB < 0.1 || distanceC < 0.1 || distanceD < 0.1 || distanceE < 0.1){
-            state.changeState(temp_state);
-        }
+    }
+    
+    private double getFrontDistance(){
+    	double dist = cam_dist;
+    	if (distanceE < dist && distanceE > 0.6*cam_dist){
+    		dist = distanceE;
+    	}
+    	if (distanceD < dist && distanceD > 0.6*cam_dist){
+    		dist = distanceD;
+    	}
+    	return dist;
     }
     
     private void print(){
