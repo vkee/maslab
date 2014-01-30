@@ -20,6 +20,9 @@ public class ReactorAlign {
         Ultrasonic sonarC = new Ultrasonic(35, 36);
         Ultrasonic sonarD = new Ultrasonic(30, 29);
         Ultrasonic sonarE = new Ultrasonic(32, 31);
+        
+        Encoder encoderL = new Encoder(5, 7);
+        Encoder encoderR = new Encoder(6, 8);
 
         DigitalOutput relay = new DigitalOutput(37);
 
@@ -30,6 +33,8 @@ public class ReactorAlign {
         comm.registerDevice(sonarC);
         comm.registerDevice(sonarD);
         comm.registerDevice(sonarE);
+        comm.registerDevice(encoderL);
+        comm.registerDevice(encoderR);
         comm.registerDevice(relay);
         comm.initialize();
         relay.setValue(false);
@@ -79,6 +84,9 @@ public class ReactorAlign {
             System.out.println("DistanceLeft: " + distanceLeft);
             System.out.println("DistanceRight: " + distanceRight);
             System.out.println("Distance: " + distance);
+            System.out.println("EncoderL: " + (-encoderL.getAngularSpeed()));
+            System.out.println("EncoderR: " + encoderR.getAngularSpeed());
+            
             
             /*
             if (distanceLeft < 0.1 && distanceRight > 0.3 && distanceReactor > 0.2) {
@@ -172,7 +180,30 @@ public class ReactorAlign {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        hopper.rampClose();
+        motorL.setSpeed(0.15);
+        motorR.setSpeed(-0.15);
+        comm.transmit();
+        try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
+        //LOW
+        hopper.rampLow();
+        motorL.setSpeed(0);
+        motorR.setSpeed(0);
+        comm.transmit();
+        hopper.pacmanClose();
+        
+        hopper.pacmanOpen();
+        try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         hopper.pacmanClose();
         hopper.sorterBlocking();
 	}
