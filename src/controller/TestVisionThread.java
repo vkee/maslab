@@ -23,7 +23,7 @@ public class TestVisionThread {
                     
                     reactor_target_x = vision.getNextReactorX();
                     reactor_target_y = vision.getNextReactorY();
-                    target_height = vision.getNextReacterHeight();
+                    target_height = vision.getNextReactorHeight();
                     
                     ball_target_x = vision.getNextBallX();
                     ball_target_y = vision.getNextBallY();

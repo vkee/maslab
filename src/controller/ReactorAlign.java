@@ -53,7 +53,7 @@ public class ReactorAlign {
 
         double distanceLeft = vision.getLeftmostWallDistance();
         double distanceRight = vision.getRightmostWallDistance();
-    	double distanceReactor = vision.getNextReacterDistance();
+    	double distanceReactor = vision.getNextReactorDistance();
         
         double forward, turn;
         hopper.rampClose();
@@ -77,7 +77,7 @@ public class ReactorAlign {
         	distanceD = sonarD.getDistance();
             distanceE = sonarE.getDistance();
         	distance = Math.min(distanceD, distanceE);
-        	distanceReactor = vision.getNextReacterDistance();
+        	distanceReactor = vision.getNextReactorDistance();
         	distanceLeft = vision.getLeftmostWallDistance();
             distanceRight = vision.getRightmostWallDistance();
 //            System.out.println("DistanceReactor: " + distanceReactor);
@@ -88,7 +88,7 @@ public class ReactorAlign {
 //            System.out.println("EncoderR: " + encoderR.getAngularSpeed());
             //System.out.println("Left: " + vision.getLeftmostWallDistance());
             //System.out.println("Reactor: " + vision.getNextReacterDistance());
-            double ratio = (vision.getNextReacterDistance() - vision.getLeftmostWallDistance())/vision.getNextReactorX();
+            double ratio = (vision.getNextReactorDistance() - vision.getLeftmostWallDistance())/vision.getNextReactorX();
             System.out.println("Wall Ratio: " + (1000*ratio));
             
             /*

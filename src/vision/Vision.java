@@ -41,7 +41,7 @@ public class Vision {
             
             reactor_target_x = vision.getNextReactorX();
             reactor_target_y = vision.getNextReactorY();
-            target_height = vision.getNextReacterHeight();
+            target_height = vision.getNextReactorHeight();
             
             ball_target_x = vision.getNextBallX();
             ball_target_y = vision.getNextBallY();
@@ -306,11 +306,11 @@ public class Vision {
         return reactor_target.y;
     }
 
-    public double getNextReacterHeight(){
+    public double getNextReactorHeight(){
         return reactor_target.height;
     }
     
-    public double getNextReacterDistance(){
+    public double getNextReactorDistance(){
         return (340.0/reactor_target.height)*2.54/100;
     }
     
@@ -379,21 +379,6 @@ public class Vision {
 		int widthStrip = 0;
 		for (int y = 0; y < 120; y++) {
 			center = filtered.getRGB(200, y);
-            blue = (center >> 0) & 0xFF;
-            
-            if (blue > 0) {
-            	widthStrip = blue;
-            	//break;
-            }
-		}
-		return (340.0/widthStrip)*2.54/100;
-    }
-    
-    public double getWallDistanceX(int x){
-		int center, blue;
-		int widthStrip = 0;
-		for (int y = 0; y < 120; y++) {
-			center = filtered.getRGB(x, y);
             blue = (center >> 0) & 0xFF;
             
             if (blue > 0) {
