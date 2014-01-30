@@ -59,13 +59,13 @@ public class Vision {
 //            System.out.println("ball_target_y: " + ball_target_y);
 //            System.out.println("target_radius: " + target_radius);
 //            
-            System.out.println("reactor_target_x: " + reactor_target_x);
-            System.out.println("reactor_target_y: " + reactor_target_y);
-            System.out.println("target_distance: " + target_distance);
-            System.out.println("left_ratio: " + left_ratio);
+            //System.out.println("reactor_target_x: " + reactor_target_x);
+            //System.out.println("reactor_target_y: " + reactor_target_y);
+            //System.out.println("target_distance: " + target_distance);
+            //System.out.println("left_ratio: " + left_ratio);
             
 //            System.out.println("wall_distance: " + wall_distance);
-//            System.out.println("DistanceLeft: " + distanceLeft);
+            System.out.println("DistanceLeft: " + distance_left);
 //            System.out.println("DistanceRight: " + distanceRight);
         }
     }
