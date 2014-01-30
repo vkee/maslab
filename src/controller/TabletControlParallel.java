@@ -320,7 +320,7 @@ public class TabletControlParallel {
             } else if (state.state == ControlState.PULL_AWAY){
                 System.out.println("WALL_FOLLOW: PULL_AWAY");
                 temp_turn = 0;
-                temp_forward = -0.2;
+                temp_forward = -0.15;
             } else if (state.state == ControlState.RANDOM_ORIENT){
                 System.out.println("WALL_FOLLOW: RANDOM_ORIENT");
                 temp_turn = -0.15;
@@ -344,7 +344,7 @@ public class TabletControlParallel {
             
             //turn = K_encoder*temp_turn;
             //forward = K_encoder*temp_forward;
-            turn = 1.7*temp_turn;
+            turn = 1.4*temp_turn;
             forward = 1.8*temp_forward;
         }
         
@@ -386,7 +386,7 @@ public class TabletControlParallel {
             }
         }
         
-        if (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY){
+        if (state.getTime() > 500 && state.state == ControlState.PULL_AWAY){
             state.changeState(ControlState.RANDOM_ORIENT);
             orient_time = 500 + 1000*Math.random();
         }
@@ -542,7 +542,7 @@ public class TabletControlParallel {
             ball_intake.setSpeed(0);
             
             try {
-                Thread.sleep(1000);
+                Thread.sleep(2500);
             } catch (Exception exc){
                 exc.printStackTrace();
             }
@@ -553,7 +553,7 @@ public class TabletControlParallel {
             comm.transmit();
             
             try {
-                Thread.sleep(1000);
+                Thread.sleep(2500);
             } catch (Exception exc){
                 exc.printStackTrace();
             }
