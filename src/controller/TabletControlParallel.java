@@ -345,7 +345,7 @@ public class TabletControlParallel {
             //turn = K_encoder*temp_turn;
             //forward = K_encoder*temp_forward;
             turn = 1.7*temp_turn; // -------------------- SET SPEED HERE -----------------------------------
-            forward = 1.7*temp_forward;
+            forward = 1.8*temp_forward;
         }
         
         motorL.setSpeed(-(forward + turn));
