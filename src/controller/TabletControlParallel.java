@@ -375,8 +375,7 @@ public class TabletControlParallel {
                 temp_state = ControlState.WALL_AHEAD;
 //            } else if (Math.min(distanceA, distanceB) > 0.5){
 //                temp_state = ControlState.LEFT_FAR;
-            } else if (distanceA < 2*distanceB && distanceB < 2*distanceA
-                    && distanceA < 0.7 && distanceB < 0.7){
+            } else if (distanceA < 0.5 && distanceB < 0.5){
                 temp_state = ControlState.FOLLOW;
             } else {
                 temp_state = ControlState.DEFAULT;
@@ -437,6 +436,10 @@ public class TabletControlParallel {
     
     private double getFrontNoCamera(){
         return Math.min(distanceD, distanceE);
+    }
+    
+    private double getFrontSimpleCamera(){
+        return Math.min(cam_dist, Math.min(distanceD, distanceE));
     }
     
     private void updateEncoderFlag(){
