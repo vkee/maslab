@@ -20,6 +20,9 @@ public class ReactorAlign {
         Ultrasonic sonarC = new Ultrasonic(35, 36);
         Ultrasonic sonarD = new Ultrasonic(30, 29);
         Ultrasonic sonarE = new Ultrasonic(32, 31);
+        
+        Encoder encoderL = new Encoder(5, 7);
+        Encoder encoderR = new Encoder(6, 8);
 
         DigitalOutput relay = new DigitalOutput(37);
 
@@ -30,6 +33,8 @@ public class ReactorAlign {
         comm.registerDevice(sonarC);
         comm.registerDevice(sonarD);
         comm.registerDevice(sonarE);
+        comm.registerDevice(encoderL);
+        comm.registerDevice(encoderR);
         comm.registerDevice(relay);
         comm.initialize();
         relay.setValue(false);
@@ -75,10 +80,16 @@ public class ReactorAlign {
         	distanceReactor = vision.getNextReacterDistance();
         	distanceLeft = vision.getLeftmostWallDistance();
             distanceRight = vision.getRightmostWallDistance();
-            System.out.println("DistanceReactor: " + distanceReactor);
-            System.out.println("DistanceLeft: " + distanceLeft);
-            System.out.println("DistanceRight: " + distanceRight);
-            System.out.println("Distance: " + distance);
+//            System.out.println("DistanceReactor: " + distanceReactor);
+//            System.out.println("DistanceLeft: " + distanceLeft);
+//            System.out.println("DistanceRight: " + distanceRight);
+//            System.out.println("Distance: " + distance);
+//            System.out.println("EncoderL: " + (-encoderL.getAngularSpeed()));
+//            System.out.println("EncoderR: " + encoderR.getAngularSpeed());
+            //System.out.println("Left: " + vision.getLeftmostWallDistance());
+            //System.out.println("Reactor: " + vision.getNextReacterDistance());
+            double ratio = (vision.getNextReacterDistance() - vision.getLeftmostWallDistance())/vision.getNextReactorX();
+            System.out.println("Wall Ratio: " + (1000*ratio));
             
             /*
             if (distanceLeft < 0.1 && distanceRight > 0.3 && distanceReactor > 0.2) {
@@ -99,7 +110,7 @@ public class ReactorAlign {
             	turn = 0;
             	motorL.setSpeed(-(forward + turn));
                 motorR.setSpeed(forward - turn);
-                comm.transmit();
+                //comm.transmit();
             	System.out.println("forward: " + forward);
                 System.out.println("turn: " + turn);
 //                System.out.println("DistanceReactor: " + distanceReactor);
@@ -112,7 +123,7 @@ public class ReactorAlign {
             	turn = 0;
             	motorL.setSpeed(-(forward + turn));
                 motorR.setSpeed(forward - turn);
-                comm.transmit();
+                //comm.transmit();
                 System.out.println("forward: " + forward);
                 System.out.println("turn: " + turn);
 //                System.out.println("DistanceReactor: " + distanceReactor);
@@ -129,7 +140,7 @@ public class ReactorAlign {
         		if (turn < 0.05) {
         			motorL.setSpeed(0);
                     motorR.setSpeed(0);
-                    comm.transmit();
+                    //comm.transmit();
                     break;
         		}
         	} else if (distance < 0.1) {
@@ -147,7 +158,7 @@ public class ReactorAlign {
 
             motorL.setSpeed(-(forward + turn));
             motorR.setSpeed(forward - turn);
-            comm.transmit();
+            //comm.transmit();
             
 //            try {
 //				Thread.sleep(10);
@@ -172,7 +183,30 @@ public class ReactorAlign {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        hopper.rampClose();
+        motorL.setSpeed(0.15);
+        motorR.setSpeed(-0.15);
+        comm.transmit();
+        try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
+        //LOW
+        hopper.rampLow();
+        motorL.setSpeed(0);
+        motorR.setSpeed(0);
+        comm.transmit();
+        hopper.pacmanClose();
+        
+        hopper.pacmanOpen();
+        try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         hopper.pacmanClose();
         hopper.sorterBlocking();
 	}
