@@ -48,9 +48,12 @@ public class TabletControl {
     double orient_time;
     long intake_time;
     long reset_time;
+    boolean encoder_flag;
+    long encoder_flag_time;
         
     // BUFFERS
     List<Double> buffD, buffE, buffA, buffB, buffC;
+    List<Double> buff_encoder;
     
     // MOTOR INPUTS
     private double forward;
@@ -127,7 +130,7 @@ public class TabletControl {
         distanceC = sonarC.getDistance();
         
         cam_dist = 0;
-        orient_time = 500 + 1500*Math.random();
+        orient_time = 500 + 1000*Math.random();
         intake_time = 0;
         reset_time = System.currentTimeMillis();
               
@@ -150,14 +153,19 @@ public class TabletControl {
         buffA = new LinkedList<Double>();
         buffB = new LinkedList<Double>();
         buffC = new LinkedList<Double>();
+        buff_encoder = new LinkedList<Double>();
         
         for (int i = 0; i < BUFF_LENGTH; i++){
-            buffD.add(distanceD);
-            buffE.add(distanceE);
-            buffA.add(distanceA);
-            buffB.add(distanceB);
-            buffC.add(distanceC);
-        }
+            buffD.add(Math.random()*distanceD);
+            buffE.add(Math.random()*distanceE);
+            buffA.add(Math.random()*distanceA);
+            buffB.add(Math.random()*distanceB);
+            buffC.add(Math.random()*distanceC);
+            buff_encoder.add(Math.random()*2*Math.PI);
+        }    
+        
+        encoder_flag = false;
+        encoder_flag_time = 0;
         
         K_encoder = 1;
         
@@ -166,7 +174,7 @@ public class TabletControl {
     }
     
     private void loop(){
-		while( !botclient.gameStarted() ) {}
+//		while( !botclient.gameStarted() ) {}
     	
 		state.changeState(ControlState.FOLLOW);
 		
@@ -199,8 +207,8 @@ public class TabletControl {
             exc.printStackTrace();
         }
         
-        while (true){            
         //while (botclient.gameStarted()){
+        while (true){
             comm.updateSensorData();
             
             start_time = System.currentTimeMillis();
@@ -221,6 +229,7 @@ public class TabletControl {
             
             // UPDATE BUFFERS
             //updateSonarBuffers();
+            updateEncoderFlag();
             
             // ESTIMATE STATE
             estimateState();
@@ -285,7 +294,7 @@ public class TabletControl {
                 temp_forward = 0;
             } else if (state.state == ControlState.DEFAULT){
                 System.out.println("WALL_FOLLOW: DEFAULT");
-                temp_turn = -0.05;
+                temp_turn = 0;
                 temp_forward = 0.1;
 //            } else if (state.state == ControlState.LEFT_FAR){
 //                System.out.println("WALL_FOLLOW: LEFT_FAR");
@@ -302,8 +311,8 @@ public class TabletControl {
             
             //turn = K_encoder*temp_turn;
             //forward = K_encoder*temp_forward;
-            turn = 1.5*temp_turn;
-            forward = 1.5*temp_forward;
+            turn = 1.6*temp_turn;
+            forward = 1.6*temp_forward;
         }
         
         motorL.setSpeed(-(forward + turn));
@@ -312,6 +321,7 @@ public class TabletControl {
 
     private void estimateState(){
         ControlState temp_state = state.state;
+        ControlState prev_state = state.state;
         
         if (intake_time > 0 && System.currentTimeMillis() > intake_time + 12000){
             intake_time = 0;
@@ -330,10 +340,10 @@ public class TabletControl {
                 || distanceB < 0.1 || distanceC < 0.1 || getFrontDistance() < 0.1)){
             if (getFrontDistance() < 0.25 || distanceC < 0.2){
                 temp_state = ControlState.WALL_AHEAD;
-//            } else if (Math.min(distanceA, distanceB) > 0.45){
+//            } else if (Math.min(distanceA, distanceB) > 0.5){
 //                temp_state = ControlState.LEFT_FAR;
             } else if (distanceA < 2*distanceB && distanceB < 2*distanceA
-                    && distanceA < 0.7 && distanceB < 0.7){
+                    && distanceA < 0.6 && distanceB < 0.6){
                 temp_state = ControlState.FOLLOW;
             } else {
                 temp_state = ControlState.DEFAULT;
@@ -344,28 +354,28 @@ public class TabletControl {
             }
         }
         
-        if (temp_state == ControlState.APPROACH && state.state != ControlState.APPROACH){
-            intake_time = System.currentTimeMillis();
-            ball_intake.setSpeed(-0.25);
-        }
-        
         if (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY){
             state.changeState(ControlState.RANDOM_ORIENT);
-            orient_time = 500 + 1500*Math.random();
+            orient_time = 500 + 1000*Math.random();
         }
         
         if (state.getTime() > orient_time && state.state == ControlState.RANDOM_ORIENT){
             state.changeState(temp_state);
         }
         
-        if (state.getTime() > 8000){
+        if (encoder_flag || state.getTime() > 10000){
             state.changeState(ControlState.PULL_AWAY);
         } else if (state.getTime() > 100 && state.state != ControlState.PULL_AWAY
                 && state.state != ControlState.RANDOM_ORIENT && state.state != ControlState.LEFT_FAR
                 && state.state != ControlState.FORWARD){
             state.changeState(temp_state);
-        } else if (distanceA < 0.1 || distanceB < 0.1 || distanceC < 0.1 || distanceD < 0.1 || distanceE < 0.1 || cam_dist < 0.1){
+        } else if (distanceA < 0.1 || distanceB < 0.1 || distanceC < 0.1 || getFrontDistance() < 0.1){
             state.changeState(temp_state);
+        }
+        
+        if (state.state == ControlState.APPROACH && prev_state != ControlState.APPROACH){
+            intake_time = System.currentTimeMillis();
+            ball_intake.setSpeed(-0.25);
         }
         
 //        if (state.getTime() > 500 && state.state == ControlState.LEFT_FAR){
@@ -378,14 +388,43 @@ public class TabletControl {
     }
     
     private double getFrontDistance(){
-    	double dist = cam_dist;
-    	if (distanceE < dist && distanceE > 0.6*cam_dist){
+    	double dist = 2*cam_dist;
+    	if (distanceE < 4*cam_dist/3.0 && distanceE > 2*cam_dist/3.0){
     		dist = distanceE;
     	}
-    	if (distanceD < dist && distanceD > 0.6*cam_dist){
+    	if (distanceD < dist && distanceD < 4*cam_dist/3.0 && distanceD > 2*cam_dist/3.0){
     		dist = distanceD;
     	}
+    	if (dist > 4*cam_dist/3.0){
+    	    dist = cam_dist;
+    	}
     	return dist;
+    }
+    
+    private void updateEncoderFlag(){
+        double ang_dist = Math.abs(encoderL.getTotalAngularDistance()) + Math.abs(encoderR.getTotalAngularDistance());
+        buff_encoder.remove(0);
+        buff_encoder.add(ang_dist);
+        double init = buff_encoder.get(0);
+        
+        boolean is_const = true;
+        for (Double val : buff_encoder){
+            if (Math.abs(val - init) > Math.PI/2){
+                is_const = false;
+            }
+        }
+        
+        if (is_const){
+            if (encoder_flag_time == 0){
+                encoder_flag_time = System.currentTimeMillis();
+            } else if (System.currentTimeMillis() > encoder_flag_time + 5000){
+                encoder_flag = true;
+            }
+        } else {
+            encoder_flag = false;
+            encoder_flag_time = 0;
+        }
+        
     }
     
     private void print(){
@@ -471,7 +510,7 @@ public class TabletControl {
             comm.transmit();
             
             try {
-                Thread.sleep(2000);
+                Thread.sleep(1000);
             } catch (Exception exc){
                 exc.printStackTrace();
             }
