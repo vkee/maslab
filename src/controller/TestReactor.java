@@ -94,7 +94,7 @@ public class TestReactor {
 
         vision.update();
 
-        PID pidX = new PID(width/2, 0.3, 2, 0);
+        PID pidX = new PID(width/2+20, 0.3, 2, 0);
         double pidOutX = pidX.update(vision.getNextReactorX(), true);
 
         PID pid_align = new PID(0, 0.3, -0.2, 0);

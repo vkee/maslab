@@ -32,7 +32,7 @@ public class Vision {
         JLabel camera_pane = createWindow("Camera output", vision.WIDTH, vision.HEIGHT);
         JLabel colorize_pane = createWindow("Filtered output", vision.WIDTH, vision.HEIGHT);
         int ball_target_x, ball_target_y, reactor_target_x, reactor_target_y;
-        double target_height, target_radius, wall_distance;
+        double target_height, target_radius, wall_distance, distanceLeft, distanceRight;
         while (true) {
             vision.update();
 
@@ -48,6 +48,8 @@ public class Vision {
             target_radius = vision.getNextBallRadius();
             
             wall_distance = vision.getWallDistance();
+            distanceLeft = vision.getLeftmostWallDistance();
+            distanceRight = vision.getRightmostWallDistance();
             
 //            System.out.println("ball_target_x: " + ball_target_x);
 //            System.out.println("ball_target_y: " + ball_target_y);
@@ -58,6 +60,8 @@ public class Vision {
 //            System.out.println("target_height: " + target_height);
             
             System.out.println("wall_distance: " + wall_distance);
+            System.out.println("DistanceLeft: " + distanceLeft);
+            System.out.println("DistanceRight: " + distanceRight);
         }
     }
     
@@ -134,7 +138,7 @@ public class Vision {
         
         blur.apply(curr_image);           
         colorize.apply();
-        //eliminateTop.apply();
+        eliminateTop.apply();
         colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
@@ -160,6 +164,7 @@ public class Vision {
         colorize.apply();
         eliminateTop.apply();
         eliminateBottom.apply();
+        //objRec.apply();
         colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
@@ -206,7 +211,7 @@ public class Vision {
                         }
                     }
                 } else {
-                    pixel = colorized.getRGB(x, y);
+                    pixel = filtered.getRGB(x, y);
                     red = (pixel >> 16) & 0xFF;
                     green = (pixel >> 8) & 0xFF;
                     blue = (pixel) & 0xFF;
@@ -217,6 +222,7 @@ public class Vision {
                         }
                     }
                     
+                    /*
                     if (red > 120 && green > 120 && blue > 120
                             && red < 130 && green < 130 && blue < 130
                             && (reactor_left.x >= x || reactor_left.x == 0)){
@@ -227,7 +233,7 @@ public class Vision {
                             && red < 195 && green < 195 && blue < 195
                             && (reactor_right.x <= x || reactor_right.x == 0)){
                         reactor_right = new Reactor(x, y, 1);
-                    }
+                    }*/
                 }
             }
         }
@@ -304,11 +310,45 @@ public class Vision {
         return reactor_target.height;
     }
     
+    public double getNextReacterDistance(){
+        return (340.0/reactor_target.height)*2.54/100;
+    }
+    
     public double getWallDistance(){
 		int center, blue;
 		int widthStrip = 0;
 		for (int y = 0; y < 120; y++) {
 			center = filtered.getRGB(160, y);
+            blue = (center >> 0) & 0xFF;
+            
+            if (blue > 0) {
+            	widthStrip = blue;
+            	//break;
+            }
+		}
+		return (340.0/widthStrip)*2.54/100;
+    }
+    
+    public double getLeftmostWallDistance(){
+		int center, blue;
+		int widthStrip = 0;
+		for (int y = 0; y < 120; y++) {
+			center = filtered.getRGB(0, y);
+            blue = (center >> 0) & 0xFF;
+            
+            if (blue > 0) {
+            	widthStrip = blue;
+            	//break;
+            }
+		}
+		return (340.0/widthStrip)*2.54/100;
+    }
+    
+    public double getRightmostWallDistance(){
+		int center, blue;
+		int widthStrip = 0;
+		for (int y = 0; y < 120; y++) {
+			center = filtered.getRGB(319, y);
             blue = (center >> 0) & 0xFF;
             
             if (blue > 0) {

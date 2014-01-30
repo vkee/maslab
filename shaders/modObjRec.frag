@@ -348,7 +348,7 @@ void main() {
 				gl_FragColor = vec4((yLower - yUpper),(yLower - yUpper),0,1);
 			}
 		}
-		
+		/*
 		if ( x>0 ) {
 			vec4 colTemp = texture(txtr,vec2(x-dx,y),0.0);
 			vec4 temp_pixel = texture(txtr, vec2(x, y), 0.0);
@@ -385,6 +385,6 @@ void main() {
 					gl_FragColor = vec4(0.75,0.75,0.75,1);
 				}
 			}
-		}
+		}*/
 	}
 }

@@ -11,14 +11,15 @@ public class Hopper {
     Servo3001HB gate;
     Servo6001HB ramp;
     MapleComm comm;
-    double pacmanAngle;
+    double pacmanAngle, gateAngle;
 
     public Hopper(MapleComm comm, int sorterPin, int pacmanPin, int gatePin, int rampPin) {
         sorter = new Servo3001HB(sorterPin);
         pacman = new Servo6001HB(pacmanPin);
         gate = new Servo3001HB(gatePin);
         ramp = new Servo6001HB(rampPin);
-        pacmanAngle = 90;
+        pacmanAngle = 120;
+        gateAngle = 70;
         
         this.comm = comm;
         comm.registerDevice(sorter);
@@ -77,12 +78,36 @@ public class Hopper {
     }
 
     public void gateOpen() {
+    	while (gateAngle < 120) {
+    		gate.setAngle(gateAngle);
+    		comm.transmit();
+    		gateAngle += 5;
+    		try {
+				Thread.sleep(30);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
         gate.setAngle(120);
+        gateAngle = 120;
         comm.transmit();
     }
 
     public void gateClose() {
+    	while (gateAngle > 70) {
+    		gate.setAngle(gateAngle);
+    		comm.transmit();
+    		gateAngle -= 5;
+    		try {
+				Thread.sleep(30);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
         gate.setAngle(70);
+        gateAngle = 70;
         comm.transmit();
     }
 
@@ -105,20 +130,21 @@ public class Hopper {
     	MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         Hopper hopper = new Hopper(comm,24,27,28, 14);
         comm.initialize();
-//        hopper.rampHigh();
-      hopper.rampLow();
+        hopper.rampHigh();
+//      hopper.rampLow();
 //      hopper.rampClose();
-//      hopper.gateOpen();
-      hopper.gateClose();
+      hopper.gateOpen();
+//      hopper.gateClose();
         
-//        hopper.sorterRed();
+        hopper.sorterRed();
 //        hopper.sorterGreen();
-        hopper.sorterBlocking();
+//        hopper.sorterBlocking();
 //        hopper.pacmanOpen();
-//        hopper.pacmanClose();
+        hopper.pacmanClose();
         
         while (true) {
             hopper.pacmanOpen();
+            hopper.gateOpen();
             try {
 				Thread.sleep(2000);
 			} catch (InterruptedException e) {
@@ -126,6 +152,7 @@ public class Hopper {
 				e.printStackTrace();
 			}
             hopper.pacmanClose();
+            hopper.gateClose();
             try {
 				Thread.sleep(2000);
 			} catch (InterruptedException e) {

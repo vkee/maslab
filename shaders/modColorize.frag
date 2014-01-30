@@ -78,6 +78,12 @@ void main() {
 		gl_FragColor = vec4(0,1,1,1);
 	}
 	
+	//PURPLE BAND
+	//TREAT IT AS A BLUE WALL FOR NOW
+	if ( col.z>col.y*1.3 && col.x>col.y*1.3 && col.z<col.x*1.3 && col.x<col.z*1.3) {
+		gl_FragColor = vec4(1,0,0,1);
+	}
+	
 	
 	/*
 	//WHITE
