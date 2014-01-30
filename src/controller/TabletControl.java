@@ -363,6 +363,7 @@ public class TabletControl {
             state.changeState(temp_state);
         }
         
+        // MAKE EXCEPTIONS FOR SCORING STATES
         if (encoder_flag || state.getTime() > 10000){
             state.changeState(ControlState.PULL_AWAY);
         } else if (state.getTime() > 100 && state.state != ControlState.PULL_AWAY
@@ -407,6 +408,7 @@ public class TabletControl {
         buff_encoder.add(ang_dist);
         double init = buff_encoder.get(0);
         
+        // TUNE CONSTANTS (Math.PI/2)
         boolean is_const = true;
         for (Double val : buff_encoder){
             if (Math.abs(val - init) > Math.PI/2){
