@@ -270,7 +270,7 @@ public class TabletControlParallel {
             // UPDATE MOTORS
             updateMotors();
             
-            //print();
+            print();
             comm.transmit();
             
             end_time = System.currentTimeMillis();
@@ -472,6 +472,7 @@ public class TabletControlParallel {
         System.out.println("distanceA: " + sonarA.getDistance());
         System.out.println("distanceB: " + sonarB.getDistance());
         System.out.println("distanceC: " + sonarC.getDistance());
+        System.out.println("Camera: " + cam_dist);
         //System.out.println("SIDE: " + Math.min(distanceA, distanceB));
         //System.out.println("FRONT: " + Math.min(distanceD, distanceE));
         //System.out.println("forward: " + forward);
