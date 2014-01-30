@@ -61,7 +61,7 @@ public class TabletControlParallel {
     double[] vision_vals;
     
     // MAPLE
-    private MapleComm comm;
+    private final MapleComm comm;
     
     // CONSTANTS
     private final int WIDTH = 320;
@@ -88,7 +88,8 @@ public class TabletControlParallel {
     int prev_ball_color;
     int ball_color;
     
-    List<Integer> ball_colors;
+    final List<Integer> ball_colors;
+    Thread ball_sort_thread;
     
     // BUFFERS
     List<Double> buffD, buffE, buffA, buffB, buffC;
@@ -104,6 +105,7 @@ public class TabletControlParallel {
     private Encoder encoderL, encoderR;
     private DigitalOutput power_sonars;
     private Cytron ball_intake;
+    private final Hopper hopper;
     
     // PIDS
     PID pid_dist, pid_speedwf;
@@ -223,6 +225,34 @@ public class TabletControlParallel {
         
         // STATE INITIALIZATION
         state = new State(ControlState.DEFAULT);
+        
+        hopper = new Hopper(comm, 24, 27, 28, 14);
+        Thread ball_sort_thread = new Thread(new Runnable(){
+            public void run(){
+                while (true){
+                    //comm.updateSensorData();
+                    if (hopper.ballQueued()){
+                        if (ball_colors.get(0) == 0){
+                            hopper.fastGreenSort();
+                            ball_colors.remove(0);
+                        } else {
+                            hopper.fastRedSort();
+                            ball_colors.remove(0);
+                        }
+                    }
+                    
+                    try {
+                        if (40 - end_time + start_time >= 0){
+                            Thread.sleep(40 - end_time + start_time);
+                        } else {
+                            System.out.println("TIME OVERFLOW: " + (end_time - start_time));
+                        }
+                    } catch (Exception exc){
+                        exc.printStackTrace();
+                    }
+                }
+            }
+        });
     }
     
     private void loop(){
@@ -262,6 +292,8 @@ public class TabletControlParallel {
         } catch (InterruptedException exc) {
             exc.printStackTrace();
         }
+        
+        ball_sort_thread.start();
         
         //while (botclient.gameStarted()){
         while (true){

@@ -14,14 +14,14 @@ public class Hopper {
 	MapleComm comm;
 	double pacmanAngle, gateAngle;
 	boolean value;
-	static DigitalInput irSensor;
+	DigitalInput irSensor;
 
 	public Hopper(MapleComm comm, int sorterPin, int pacmanPin, int gatePin, int rampPin) {
 		sorter = new Servo3001HB(sorterPin);
 		pacman = new Servo6001HB(pacmanPin);
 		gate = new Servo3001HB(gatePin);
 		ramp = new Servo6001HB(rampPin);
-		DigitalInput irSensor = new DigitalInput(10);
+		irSensor = new DigitalInput(10);
 
 		pacmanAngle = 120;
 		gateAngle = 70;
@@ -34,6 +34,10 @@ public class Hopper {
 		comm.registerDevice(irSensor);
 	}
 
+	public boolean ballQueued(){
+	    return irSensor.getValue();
+	}
+	
 	public void sorterRed() {
 		sorter.setAngle(50);
 		comm.transmit();
