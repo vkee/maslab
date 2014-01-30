@@ -389,6 +389,21 @@ public class Vision {
 		return (340.0/widthStrip)*2.54/100;
     }
     
+    public double getWallDistanceX(int x){
+		int center, blue;
+		int widthStrip = 0;
+		for (int y = 0; y < 120; y++) {
+			center = filtered.getRGB(x, y);
+            blue = (center >> 0) & 0xFF;
+            
+            if (blue > 0) {
+            	widthStrip = blue;
+            	//break;
+            }
+		}
+		return (340.0/widthStrip)*2.54/100;
+    }
+    
     private static JLabel createWindow(String name, int width, int height) {    
         JFrame imageFrame = new JFrame(name);
         imageFrame.setSize(width, height);

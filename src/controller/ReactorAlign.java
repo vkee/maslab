@@ -80,13 +80,16 @@ public class ReactorAlign {
         	distanceReactor = vision.getNextReacterDistance();
         	distanceLeft = vision.getLeftmostWallDistance();
             distanceRight = vision.getRightmostWallDistance();
-            System.out.println("DistanceReactor: " + distanceReactor);
-            System.out.println("DistanceLeft: " + distanceLeft);
-            System.out.println("DistanceRight: " + distanceRight);
-            System.out.println("Distance: " + distance);
-            System.out.println("EncoderL: " + (-encoderL.getAngularSpeed()));
-            System.out.println("EncoderR: " + encoderR.getAngularSpeed());
-            
+//            System.out.println("DistanceReactor: " + distanceReactor);
+//            System.out.println("DistanceLeft: " + distanceLeft);
+//            System.out.println("DistanceRight: " + distanceRight);
+//            System.out.println("Distance: " + distance);
+//            System.out.println("EncoderL: " + (-encoderL.getAngularSpeed()));
+//            System.out.println("EncoderR: " + encoderR.getAngularSpeed());
+            //System.out.println("Left: " + vision.getLeftmostWallDistance());
+            //System.out.println("Reactor: " + vision.getNextReacterDistance());
+            double ratio = (vision.getNextReacterDistance() - vision.getLeftmostWallDistance())/vision.getNextReactorX();
+            System.out.println("Wall Ratio: " + (1000*ratio));
             
             /*
             if (distanceLeft < 0.1 && distanceRight > 0.3 && distanceReactor > 0.2) {
@@ -107,7 +110,7 @@ public class ReactorAlign {
             	turn = 0;
             	motorL.setSpeed(-(forward + turn));
                 motorR.setSpeed(forward - turn);
-                comm.transmit();
+                //comm.transmit();
             	System.out.println("forward: " + forward);
                 System.out.println("turn: " + turn);
 //                System.out.println("DistanceReactor: " + distanceReactor);
@@ -120,7 +123,7 @@ public class ReactorAlign {
             	turn = 0;
             	motorL.setSpeed(-(forward + turn));
                 motorR.setSpeed(forward - turn);
-                comm.transmit();
+                //comm.transmit();
                 System.out.println("forward: " + forward);
                 System.out.println("turn: " + turn);
 //                System.out.println("DistanceReactor: " + distanceReactor);
@@ -137,7 +140,7 @@ public class ReactorAlign {
         		if (turn < 0.05) {
         			motorL.setSpeed(0);
                     motorR.setSpeed(0);
-                    comm.transmit();
+                    //comm.transmit();
                     break;
         		}
         	} else if (distance < 0.1) {
@@ -155,7 +158,7 @@ public class ReactorAlign {
 
             motorL.setSpeed(-(forward + turn));
             motorR.setSpeed(forward - turn);
-            comm.transmit();
+            //comm.transmit();
             
 //            try {
 //				Thread.sleep(10);
