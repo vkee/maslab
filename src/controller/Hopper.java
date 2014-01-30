@@ -32,10 +32,47 @@ public class Hopper {
         sorter.setAngle(50);
         comm.transmit();
     }
+    
+    public void fastRedSort(){
+    	sorter.setAngle(50);
+        try {
+			Thread.sleep(100);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        sorter.setAngle(90);
+        comm.transmit();
+    }
 
     public void sorterGreen() {
         sorter.setAngle(150);
         comm.transmit();
+    }
+    
+    public void fastGreenSort(){
+    	
+    	System.out.println("Start");
+    	sorter.setAngle(150);
+        comm.transmit();
+        
+		try {
+			Thread.sleep(450);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
+        sorter.setAngle(90);
+        System.out.println("Finish");
+        comm.transmit();
+        
+		try {
+			Thread.sleep(500);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     public void sorterBlocking() {
@@ -130,35 +167,40 @@ public class Hopper {
     	MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         Hopper hopper = new Hopper(comm,24,27,28, 14);
         comm.initialize();
-        hopper.rampHigh();
-//      hopper.rampLow();
-//      hopper.rampClose();
-      hopper.gateOpen();
-//      hopper.gateClose();
-        
-        hopper.sorterRed();
-//        hopper.sorterGreen();
-//        hopper.sorterBlocking();
-//        hopper.pacmanOpen();
-        hopper.pacmanClose();
+//        hopper.rampHigh();
+////      hopper.rampLow();
+////      hopper.rampClose();
+//      hopper.gateOpen();
+////      hopper.gateClose();
+//        
+//        hopper.sorterRed();
+////        hopper.sorterGreen();
+////        hopper.sorterBlocking();
+////        hopper.pacmanOpen();
+//        hopper.pacmanClose();
         
         while (true) {
-            hopper.pacmanOpen();
-            hopper.gateOpen();
+        	
+        	hopper.fastGreenSort();
+        	
+//            hopper.pacmanOpen();
+//            hopper.gateOpen();
             try {
-				Thread.sleep(2000);
+				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-            hopper.pacmanClose();
-            hopper.gateClose();
-            try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+//            hopper.pacmanClose();
+//            hopper.gateClose();
+//            try {
+//				Thread.sleep(2000);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+        	
+        	
         }
     }
 
