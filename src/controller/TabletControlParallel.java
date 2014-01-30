@@ -229,23 +229,39 @@ public class TabletControlParallel {
         hopper = new Hopper(comm, 24, 27, 28, 14);
         Thread ball_sort_thread = new Thread(new Runnable(){
             public void run(){
+            	long ball_start_time, ball_end_time;
                 while (true){
+                	ball_start_time = System.currentTimeMillis();
+                	
+                	System.out.println("BALL LIST LENGTH: " + ball_colors.size());
+                	if (ball_colors.size() != 0){
+                		if (ball_colors.get(0) == 0){
+                    		System.out.println("GREEN BALL READY");
+                		} else {
+                			System.out.println("RED BALL READY");
+                		}
+                	}
+                	
                     //comm.updateSensorData();
                     if (hopper.ballQueued()){
-                        if (ball_colors.get(0) == 0){
-                            hopper.fastGreenSort();
-                            ball_colors.remove(0);
-                        } else {
-                            hopper.fastRedSort();
-                            ball_colors.remove(0);
-                        }
+                    	if (ball_colors.size() != 0){
+                            if (ball_colors.get(0) == 0){
+                                hopper.fastGreenSort();
+                                ball_colors.remove(0);
+                            } else {
+                                hopper.fastRedSort();
+                                ball_colors.remove(0);
+                            }
+                    	}
                     }
                     
+                    ball_end_time = System.currentTimeMillis();
+                    
                     try {
-                        if (40 - end_time + start_time >= 0){
-                            Thread.sleep(40 - end_time + start_time);
+                        if (40 - ball_end_time + ball_start_time >= 0){
+                            Thread.sleep(40 - ball_end_time + ball_start_time);
                         } else {
-                            System.out.println("TIME OVERFLOW: " + (end_time - start_time));
+                            System.out.println("TIME OVERFLOW: " + (ball_end_time - ball_start_time));
                         }
                     } catch (Exception exc){
                         exc.printStackTrace();
