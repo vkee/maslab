@@ -3,6 +3,7 @@ package controller;
 import java.util.LinkedList;
 import java.util.List;
 
+import BotClient.BotClient;
 import Core.Engine;
 import vision.Vision;
 import comm.MapleComm;
@@ -14,11 +15,14 @@ import devices.sensors.DigitalInput;
 import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
-public class SimplifiedControlDebug {
+public class TabletControl {
     public static void main(String[] args){      
-        SimplifiedControlDebug robot = new SimplifiedControlDebug();
+        TabletControl robot = new TabletControl();
         robot.loop();
     }
+    
+    // BOT CLIENT
+    BotClient botclient;
     
     // VISION
     final Vision vision;
@@ -36,13 +40,15 @@ public class SimplifiedControlDebug {
     
     // STATE VALUES
     double distanceD, distanceE, distanceA, distanceB, distanceC;
+    double cam_dist;
     long start_time, end_time;
     int target_x, target_y;
     double target_radius;
     double K_encoder;
     double orient_time;
     long intake_time;
-    
+    long reset_time;
+        
     // BUFFERS
     List<Double> buffD, buffE, buffA, buffB, buffC;
     
@@ -66,7 +72,8 @@ public class SimplifiedControlDebug {
     
     private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, LEFT_FAR, FORWARD, RANDOM_ORIENT, APPROACH, COLLECT };
     
-    public SimplifiedControlDebug(){
+    public TabletControl(){
+		botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         
         // VISION
@@ -119,11 +126,13 @@ public class SimplifiedControlDebug {
         distanceB = sonarB.getDistance();
         distanceC = sonarC.getDistance();
         
+        cam_dist = 0;
         orient_time = 500 + 1500*Math.random();
         intake_time = 0;
-        
+        reset_time = System.currentTimeMillis();
+              
         // PIDS
-        pid_dist = new PID(0.22, 0.3, 100, 0);  
+        pid_dist = new PID(0.25, 0.3, 100, 0);  
         pid_dist.update(Math.min(distanceA, distanceB), true);
         
         pid_speedwf = new PID(10, 0.2, -0.08, 0.01);
@@ -143,20 +152,26 @@ public class SimplifiedControlDebug {
         buffC = new LinkedList<Double>();
         
         for (int i = 0; i < BUFF_LENGTH; i++){
-            buffD.add(Math.random()*distanceD);
-            buffE.add(Math.random()*distanceE);
-            buffA.add(Math.random()*distanceA);
-            buffB.add(Math.random()*distanceB);
-            buffC.add(Math.random()*distanceC);
+            buffD.add(distanceD);
+            buffE.add(distanceE);
+            buffA.add(distanceA);
+            buffB.add(distanceB);
+            buffC.add(distanceC);
         }
         
         K_encoder = 1;
         
         // STATE INITIALIZATION
-        state = new State(ControlState.FOLLOW);
+        state = new State(ControlState.DEFAULT);
     }
     
-    private void loop(){ 
+    private void loop(){
+		while( !botclient.gameStarted() ) {}
+    	
+		state.changeState(ControlState.FOLLOW);
+		
+		reset_time = System.currentTimeMillis();
+		
         System.out.println("Beginning to follow wall...");
         
         // INITIALIZE SONARS
@@ -185,6 +200,7 @@ public class SimplifiedControlDebug {
         }
         
         while (true){            
+        //while (botclient.gameStarted()){
             comm.updateSensorData();
             
             start_time = System.currentTimeMillis();
@@ -194,6 +210,7 @@ public class SimplifiedControlDebug {
             target_x = vision.getNextBallX();
             target_y = vision.getNextBallY();
             target_radius = vision.getNextBallRadius();
+            cam_dist = vision.getWallDistance();
             
             // UPDATE DISTANCES
             distanceD = sonarD.getDistance();
@@ -203,7 +220,7 @@ public class SimplifiedControlDebug {
             distanceC = sonarC.getDistance();
             
             // UPDATE BUFFERS
-            updateSonarBuffers();
+            //updateSonarBuffers();
             
             // ESTIMATE STATE
             estimateState();
@@ -211,14 +228,14 @@ public class SimplifiedControlDebug {
             // UPDATE MOTORS
             updateMotors();
             
-            print();
+            //print();
             comm.transmit();
             
             end_time = System.currentTimeMillis();
             
             try {
-                if (60 - end_time + start_time >= 0){
-                    Thread.sleep(60 - end_time + start_time);
+                if (40 - end_time + start_time >= 0){
+                    Thread.sleep(40 - end_time + start_time);
                 } else {
                     System.out.println("TIME OVERFLOW: " + (end_time - start_time));
                 }
@@ -226,6 +243,8 @@ public class SimplifiedControlDebug {
                 exc.printStackTrace();
             }
         }
+        
+       // botclient.close();
     }
     
     private void updateMotors(){
@@ -259,7 +278,7 @@ public class SimplifiedControlDebug {
             } else if (state.state == ControlState.PULL_AWAY){
                 System.out.println("WALL_FOLLOW: PULL_AWAY");
                 temp_turn = 0;
-                temp_forward = -0.15;
+                temp_forward = -0.2;
             } else if (state.state == ControlState.RANDOM_ORIENT){
                 System.out.println("WALL_FOLLOW: RANDOM_ORIENT");
                 temp_turn = -0.15;
@@ -268,14 +287,14 @@ public class SimplifiedControlDebug {
                 System.out.println("WALL_FOLLOW: DEFAULT");
                 temp_turn = -0.05;
                 temp_forward = 0.1;
-            } else if (state.state == ControlState.LEFT_FAR){
-                System.out.println("WALL_FOLLOW: LEFT_FAR");
-                temp_turn = -0.15;
-                temp_forward = 0;
-            } else if (state.state == ControlState.FORWARD){
-                System.out.println("WALL_FOLLOW: FORWARD");
-                temp_turn = 0;
-                temp_forward = 0.1;
+//            } else if (state.state == ControlState.LEFT_FAR){
+//                System.out.println("WALL_FOLLOW: LEFT_FAR");
+//                temp_turn = -0.15;
+//                temp_forward = 0;
+//            } else if (state.state == ControlState.FORWARD){
+//                System.out.println("WALL_FOLLOW: FORWARD");
+//                temp_turn = 0;
+//                temp_forward = 0.1;
             }
 
             //double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
@@ -300,7 +319,7 @@ public class SimplifiedControlDebug {
         }
         
         if (state.state == ControlState.APPROACH && !(distanceA < 0.1 || distanceB < 0.1
-                || distanceC < 0.1 || distanceD < 0.1 || distanceE < 0.1)){
+                || distanceC < 0.1 || getFrontDistance() < 0.1)){
             if (target_y > 180){
                 temp_state = ControlState.COLLECT;
             } else {
@@ -308,11 +327,11 @@ public class SimplifiedControlDebug {
             }
         } else if ((state.state == ControlState.COLLECT && state.getTime() >= 1000)
                 || state.state != ControlState.COLLECT || (distanceA < 0.1
-                || distanceB < 0.1 || distanceC < 0.1 || distanceD < 0.1 || distanceE < 0.1)){
-            if (Math.min(distanceD, distanceE) < 0.2 || distanceC < 0.15){
+                || distanceB < 0.1 || distanceC < 0.1 || getFrontDistance() < 0.1)){
+            if (getFrontDistance() < 0.25 || distanceC < 0.2){
                 temp_state = ControlState.WALL_AHEAD;
-            } else if (Math.min(distanceA, distanceB) > 0.45){
-                temp_state = ControlState.LEFT_FAR;
+//            } else if (Math.min(distanceA, distanceB) > 0.45){
+//                temp_state = ControlState.LEFT_FAR;
             } else if (distanceA < 2*distanceB && distanceB < 2*distanceA
                     && distanceA < 0.7 && distanceB < 0.7){
                 temp_state = ControlState.FOLLOW;
@@ -330,12 +349,6 @@ public class SimplifiedControlDebug {
             ball_intake.setSpeed(-0.25);
         }
         
-        if (state.getTime() > 100 && state.state != ControlState.PULL_AWAY
-                && state.state != ControlState.RANDOM_ORIENT && state.state != ControlState.LEFT_FAR
-                && state.state != ControlState.FORWARD){
-            state.changeState(temp_state);
-        }
-
         if (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY){
             state.changeState(ControlState.RANDOM_ORIENT);
             orient_time = 500 + 1500*Math.random();
@@ -345,21 +358,34 @@ public class SimplifiedControlDebug {
             state.changeState(temp_state);
         }
         
-        if (state.getTime() > 500 && state.state == ControlState.LEFT_FAR){
-            state.changeState(ControlState.FORWARD);
-        }
-        
-        if (state.getTime() > 1800 && state.state == ControlState.FORWARD){
-            state.changeState(temp_state);
-        }
-        
         if (state.getTime() > 8000){
             state.changeState(ControlState.PULL_AWAY);
-        }
-        
-        if (distanceA < 0.1 || distanceB < 0.1 || distanceC < 0.1 || distanceD < 0.1 || distanceE < 0.1){
+        } else if (state.getTime() > 100 && state.state != ControlState.PULL_AWAY
+                && state.state != ControlState.RANDOM_ORIENT && state.state != ControlState.LEFT_FAR
+                && state.state != ControlState.FORWARD){
+            state.changeState(temp_state);
+        } else if (distanceA < 0.1 || distanceB < 0.1 || distanceC < 0.1 || distanceD < 0.1 || distanceE < 0.1 || cam_dist < 0.1){
             state.changeState(temp_state);
         }
+        
+//        if (state.getTime() > 500 && state.state == ControlState.LEFT_FAR){
+//            state.changeState(ControlState.FORWARD);
+//        }
+//        
+//        if (state.getTime() > 1800 && state.state == ControlState.FORWARD){
+//            state.changeState(temp_state);
+//        }
+    }
+    
+    private double getFrontDistance(){
+    	double dist = cam_dist;
+    	if (distanceE < dist && distanceE > 0.6*cam_dist){
+    		dist = distanceE;
+    	}
+    	if (distanceD < dist && distanceD > 0.6*cam_dist){
+    		dist = distanceD;
+    	}
+    	return dist;
     }
     
     private void print(){
@@ -426,7 +452,7 @@ public class SimplifiedControlDebug {
         buffC.remove(0);
         buffC.add(distanceC);
         
-        if (const_values){
+        if (const_values && System.currentTimeMillis() > reset_time + 15000){
             System.out.println("RESETTING RELAY");
             power_sonars.setValue(true);
             motorL.setSpeed(0);
@@ -434,7 +460,7 @@ public class SimplifiedControlDebug {
             ball_intake.setSpeed(0);
             
             try {
-                Thread.sleep(2000);
+                Thread.sleep(1000);
             } catch (Exception exc){
                 exc.printStackTrace();
             }
@@ -445,10 +471,12 @@ public class SimplifiedControlDebug {
             comm.transmit();
             
             try {
-                Thread.sleep(3000);
+                Thread.sleep(2000);
             } catch (Exception exc){
                 exc.printStackTrace();
             }
+            
+            reset_time = System.currentTimeMillis();
         }
     }
 
