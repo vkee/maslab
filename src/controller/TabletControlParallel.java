@@ -18,8 +18,8 @@ import devices.sensors.Ultrasonic;
 public class TabletControlParallel {
     public static void main(String[] args){   
         final Vision vision = new Vision(1, 320, 240, true);
-        final double[] vision_vals = new double[5];
-        for (int i = 0; i < 4; i++){
+        final double[] vision_vals = new double[6];
+        for (int i = 0; i < 6; i++){
         	vision_vals[i] = 0;
         }
         Thread run_thread = new Thread(new Runnable(){
@@ -39,6 +39,7 @@ public class TabletControlParallel {
                 vision_vals[2] = vision.getNextBallRadius();
                 vision_vals[3] = vision.getWallDistance();
                 vision_vals[4] = vision.getLeftmostWallDistance();
+                vision_vals[5] = vision.getNextBallColor();
             }
             end_time = System.currentTimeMillis();
             try {
@@ -84,7 +85,11 @@ public class TabletControlParallel {
     long encoder_flag_time;
     boolean validA, validB, validC, validD, validE;
     long ball_absent_time;
-        
+    int prev_ball_color;
+    int ball_color;
+    
+    List<Integer> ball_colors;
+    
     // BUFFERS
     List<Double> buffD, buffE, buffA, buffB, buffC;
     List<Double> buff_encoder;
@@ -176,6 +181,10 @@ public class TabletControlParallel {
         validE = true;
         
         ball_absent_time = 0;
+        prev_ball_color = 0;
+        ball_color = 0;
+        
+        ball_colors = new LinkedList<Integer>();
         
         // PIDS
         pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
@@ -236,6 +245,9 @@ public class TabletControlParallel {
             target_x = (int) vision_vals[0];
             target_y = (int) vision_vals[1];
             target_radius = vision_vals[2];
+            cam_dist = vision_vals[3];
+            left_dist = vision_vals[4];
+            ball_color = (int) vision_vals[5];
         }
         
         // UPDATE DISTANCES
@@ -257,6 +269,8 @@ public class TabletControlParallel {
             
             start_time = System.currentTimeMillis();
             
+            prev_ball_color = ball_color;
+            
             // UPDATE VISION
             synchronized (vision_vals){
                 target_x = (int) vision_vals[0];
@@ -264,6 +278,7 @@ public class TabletControlParallel {
                 target_radius = vision_vals[2];
                 cam_dist = vision_vals[3];
                 left_dist = vision_vals[4];
+                ball_color = (int) vision_vals[5];
             }
             
             // UPDATE DISTANCES
@@ -429,6 +444,12 @@ public class TabletControlParallel {
         if (state.state == ControlState.APPROACH && prev_state != ControlState.APPROACH){
             intake_time = System.currentTimeMillis();
             ball_intake.setSpeed(-0.25);
+            ball_colors.add(ball_color);
+        }
+        
+        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) &&
+                (prev_ball_color != ball_color)){
+            ball_colors.add(ball_color);
         }
         
 //        if (state.getTime() > 500 && state.state == ControlState.LEFT_FAR){
