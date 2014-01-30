@@ -18,7 +18,7 @@ import devices.sensors.Ultrasonic;
 public class TabletControlParallel {
     public static void main(String[] args){   
         final Vision vision = new Vision(1, 320, 240, true);
-        final double[] vision_vals = new double[4];
+        final double[] vision_vals = new double[5];
         for (int i = 0; i < 4; i++){
         	vision_vals[i] = 0;
         }
@@ -83,6 +83,7 @@ public class TabletControlParallel {
     boolean encoder_flag;
     long encoder_flag_time;
     boolean validA, validB, validC, validD, validE;
+    long ball_absent_time;
         
     // BUFFERS
     List<Double> buffD, buffE, buffA, buffB, buffC;
@@ -164,7 +165,7 @@ public class TabletControlParallel {
         
         cam_dist = 0;
         left_dist = 0;
-        orient_time = 500 + 1000*Math.random();
+        orient_time = 1500 + 1000*Math.random();
         intake_time = 0;
         reset_time = System.currentTimeMillis();
         
@@ -174,6 +175,8 @@ public class TabletControlParallel {
         validD = true;
         validE = true;
         
+        ball_absent_time = 0;
+        
         // PIDS
         pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
         pid_dist.update(Math.min(distanceA, distanceB), true);
@@ -181,7 +184,7 @@ public class TabletControlParallel {
         pid_speedwf = new PID(10, 0.2, -0.08, 0.01);
         pid_speedwf.update(10, true);
         
-        pid_target = new PID(WIDTH/2, 0.3, 2, 0); // PID for ball targetting turn on displacement from center
+        pid_target = new PID(WIDTH/2, 0.2, 2, 0); // PID for ball targeting turn on displacement from center
         pid_target.update(WIDTH/2, true);
         
         pid_approach = new PID(WIDTH/2, 0.2, -2, 0);
@@ -280,7 +283,7 @@ public class TabletControlParallel {
             // UPDATE MOTORS
             updateMotors();
             
-            print();
+            //print();
             comm.transmit();
             
             end_time = System.currentTimeMillis();
@@ -354,7 +357,7 @@ public class TabletControlParallel {
             
             //turn = K_encoder*temp_turn;
             //forward = K_encoder*temp_forward;
-            turn = 1.4*temp_turn;
+            turn = 1.6*temp_turn;
             forward = 1.8*temp_forward;
         }
         
@@ -366,13 +369,20 @@ public class TabletControlParallel {
         ControlState temp_state = state.state;
         ControlState prev_state = state.state;
         
+        if (target_radius == 0 && ball_absent_time == 0){
+        	ball_absent_time = System.currentTimeMillis();
+        } else if (target_radius != 0){
+        	ball_absent_time = 0;
+        }
+        
         if (intake_time > 0 && System.currentTimeMillis() > intake_time + 12000){
             intake_time = 0;
             ball_intake.setSpeed(0);
         }
         
         if (state.state == ControlState.APPROACH && !(getTurnStateEstimate() < 0.1
-        		|| getAlignStateEstimate() < 0.1)){
+        		|| getAlignStateEstimate() < 0.1) && !(ball_absent_time > 0
+        				&& System.currentTimeMillis() - ball_absent_time > 300)){
             if (target_y > 180){
                 temp_state = ControlState.COLLECT;
             } else {
@@ -396,9 +406,9 @@ public class TabletControlParallel {
             }
         }
         
-        if (state.getTime() > 500 && state.state == ControlState.PULL_AWAY){
+        if (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY){
             state.changeState(ControlState.RANDOM_ORIENT);
-            orient_time = 500 + 1000*Math.random();
+            orient_time = 1500 + 1000*Math.random();
         }
         
         if (state.getTime() > orient_time && state.state == ControlState.RANDOM_ORIENT){
@@ -428,20 +438,6 @@ public class TabletControlParallel {
 //        if (state.getTime() > 1800 && state.state == ControlState.FORWARD){
 //            state.changeState(temp_state);
 //        }
-    }
-    
-    private double getFrontDistance(){
-    	double dist = 2*cam_dist;
-    	if (distanceE < dist && distanceE > 0.5*cam_dist){
-    		dist = distanceE;
-    	}
-    	if (distanceD < dist && distanceD > 0.5*cam_dist){
-    		dist = distanceD;
-    	}
-    	if (dist == 2*cam_dist){
-    	    dist = cam_dist;
-    	}
-    	return dist;
     }
     
     private double getTurnStateEstimate(){
@@ -474,6 +470,7 @@ public class TabletControlParallel {
     
     private void updateEncoderFlag(){
         double ang_dist = Math.abs(encoderL.getTotalAngularDistance()) + Math.abs(encoderR.getTotalAngularDistance());
+        System.out.println("Angular Distance: " + ang_dist);
         buff_encoder.remove(0);
         buff_encoder.add(ang_dist);
         double init = buff_encoder.get(0);
@@ -557,6 +554,22 @@ public class TabletControlParallel {
             }
         }
         validE = !const_values;
+        
+        if (!validA){
+        	System.out.println("LOST SONAR A");
+        }
+        if (!validB){
+        	System.out.println("LOST SONAR B");
+        }
+        if (!validC){
+        	System.out.println("LOST SONAR C");
+        }
+        if (!validD){
+        	System.out.println("LOST SONAR D");
+        }
+        if (!validE){
+        	System.out.println("LOST SONAR E");
+        }
         
         buffD.remove(0);
         buffD.add(distanceD);
