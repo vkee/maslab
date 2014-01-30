@@ -276,8 +276,8 @@ public class TabletControlParallel {
             end_time = System.currentTimeMillis();
             
             try {
-                if (30 - end_time + start_time >= 0){
-                    Thread.sleep(30 - end_time + start_time);
+                if (40 - end_time + start_time >= 0){
+                    Thread.sleep(40 - end_time + start_time);
                 } else {
                     System.out.println("TIME OVERFLOW: " + (end_time - start_time));
                 }
@@ -327,7 +327,7 @@ public class TabletControlParallel {
                 temp_forward = 0;
             } else if (state.state == ControlState.DEFAULT){
                 System.out.println("WALL_FOLLOW: DEFAULT");
-                temp_turn = 0;
+                temp_turn = -0.05;
                 temp_forward = 0.1;
 //            } else if (state.state == ControlState.LEFT_FAR){
 //                System.out.println("WALL_FOLLOW: LEFT_FAR");
@@ -344,7 +344,7 @@ public class TabletControlParallel {
             
             //turn = K_encoder*temp_turn;
             //forward = K_encoder*temp_forward;
-            turn = 1.7*temp_turn; // -------------------- SET SPEED HERE -----------------------------------
+            turn = 1.7*temp_turn;
             forward = 1.8*temp_forward;
         }
         
@@ -376,7 +376,7 @@ public class TabletControlParallel {
 //            } else if (Math.min(distanceA, distanceB) > 0.5){
 //                temp_state = ControlState.LEFT_FAR;
             } else if (distanceA < 2*distanceB && distanceB < 2*distanceA
-                    && distanceA < 0.6 && distanceB < 0.6){
+                    && distanceA < 0.7 && distanceB < 0.7){
                 temp_state = ControlState.FOLLOW;
             } else {
                 temp_state = ControlState.DEFAULT;
@@ -423,16 +423,20 @@ public class TabletControlParallel {
     
     private double getFrontDistance(){
     	double dist = 2*cam_dist;
-    	if (distanceE < 4*cam_dist/3.0 && distanceE > 2*cam_dist/3.0){
+    	if (distanceE < dist && distanceE > 0.5*cam_dist){
     		dist = distanceE;
     	}
-    	if (distanceD < dist && distanceD < 4*cam_dist/3.0 && distanceD > 2*cam_dist/3.0){
+    	if (distanceD < dist && distanceD > 0.5*cam_dist){
     		dist = distanceD;
     	}
-    	if (dist > 4*cam_dist/3.0){
+    	if (dist == 2*cam_dist){
     	    dist = cam_dist;
     	}
     	return dist;
+    }
+    
+    private double getFrontNoCamera(){
+        return Math.min(distanceD, distanceE);
     }
     
     private void updateEncoderFlag(){
