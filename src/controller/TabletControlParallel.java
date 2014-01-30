@@ -166,13 +166,13 @@ public class TabletControlParallel {
         reset_time = System.currentTimeMillis();
               
         // PIDS
-        pid_dist = new PID(0.25, 0.3, 100, 0);  
+        pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
         pid_dist.update(Math.min(distanceA, distanceB), true);
         
         pid_speedwf = new PID(10, 0.2, -0.08, 0.01);
         pid_speedwf.update(10, true);
         
-        pid_target = new PID(WIDTH/2, 0.3, -2, 0);
+        pid_target = new PID(WIDTH/2, 0.3, 2, 0); // PID for ball targetting turn on displacement from center
         pid_target.update(WIDTH/2, true);
         
         pid_approach = new PID(WIDTH/2, 0.2, -2, 0);
@@ -261,7 +261,7 @@ public class TabletControlParallel {
             distanceC = sonarC.getDistance();
             
             // UPDATE BUFFERS
-            //updateSonarBuffers();
+            updateSonarBuffers();
             updateEncoderFlag();
             
             // ESTIMATE STATE
@@ -344,8 +344,8 @@ public class TabletControlParallel {
             
             //turn = K_encoder*temp_turn;
             //forward = K_encoder*temp_forward;
-            turn = 1.6*temp_turn;
-            forward = 1.6*temp_forward;
+            turn = 1.7*temp_turn; // -------------------- SET SPEED HERE -----------------------------------
+            forward = 1.7*temp_forward;
         }
         
         motorL.setSpeed(-(forward + turn));
@@ -397,7 +397,7 @@ public class TabletControlParallel {
         }
         
         // MAKE EXCEPTIONS FOR SCORING STATES
-        if (encoder_flag || state.getTime() > 10000){
+        if (encoder_flag || state.getTime() > 8000){
             state.changeState(ControlState.PULL_AWAY);
         } else if (state.getTime() > 100 && state.state != ControlState.PULL_AWAY
                 && state.state != ControlState.RANDOM_ORIENT && state.state != ControlState.LEFT_FAR
