@@ -18,9 +18,13 @@ import devices.sensors.Ultrasonic;
 public class TabletControlParallel {
     public static void main(String[] args){   
         final Vision vision = new Vision(1, 320, 240, true);
+        final double[] vision_vals = new double[4];
+        for (int i = 0; i < 4; i++){
+        	vision_vals[i] = 0;
+        }
         Thread run_thread = new Thread(new Runnable(){
             public void run(){
-                TabletControlParallel robot = new TabletControlParallel(vision);
+                TabletControlParallel robot = new TabletControlParallel(vision_vals);
                 robot.loop();
             }
         });
@@ -28,8 +32,12 @@ public class TabletControlParallel {
         long start_time, end_time;
         while (true){
             start_time = System.currentTimeMillis();
-            synchronized (vision){
-                vision.update();
+            vision.update();
+            synchronized (vision_vals){
+            	vision_vals[0] = vision.getNextBallX();
+                vision_vals[1] = vision.getNextBallY();
+                vision_vals[2] = vision.getNextBallRadius();
+                vision_vals[3] = vision.getWallDistance();
             }
             end_time = System.currentTimeMillis();
             try {
@@ -48,7 +56,7 @@ public class TabletControlParallel {
     BotClient botclient;
     
     // VISION
-    final Vision vision;
+    double[] vision_vals;
     
     // MAPLE
     private MapleComm comm;
@@ -98,12 +106,12 @@ public class TabletControlParallel {
     
     private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, LEFT_FAR, FORWARD, RANDOM_ORIENT, APPROACH, COLLECT };
     
-    public TabletControlParallel(Vision vision){
+    public TabletControlParallel(double[] vision_vals){
 		botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         
         // VISION
-        this.vision = vision;
+        this.vision_vals = vision_vals;
         
         // MOTOR INPUTS
         forward = 0;
@@ -212,10 +220,10 @@ public class TabletControlParallel {
         comm.updateSensorData();
         
         // UPDATE VISION
-        synchronized (vision){
-            target_x = vision.getNextBallX();
-            target_y = vision.getNextBallY();
-            target_radius = vision.getNextBallRadius();
+        synchronized (vision_vals){
+            target_x = (int) vision_vals[0];
+            target_y = (int) vision_vals[1];
+            target_radius = vision_vals[2];
         }
         
         // UPDATE DISTANCES
@@ -238,11 +246,11 @@ public class TabletControlParallel {
             start_time = System.currentTimeMillis();
             
             // UPDATE VISION
-            synchronized (vision){
-                target_x = vision.getNextBallX();
-                target_y = vision.getNextBallY();
-                target_radius = vision.getNextBallRadius();
-                cam_dist = vision.getWallDistance();
+            synchronized (vision_vals){
+                target_x = (int) vision_vals[0];
+                target_y = (int) vision_vals[1];
+                target_radius = vision_vals[2];
+                cam_dist = vision_vals[3];
             }
             
             // UPDATE DISTANCES

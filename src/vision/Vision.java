@@ -168,9 +168,8 @@ public class Vision {
         
         blur.apply(curr_image);           
         colorize.apply();
-        //eliminateTop.apply();
+        eliminateTop.apply();
         eliminateBottom.apply();
-        //objRec.apply();
         colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
