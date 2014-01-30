@@ -1,5 +1,8 @@
 package controller;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import vision.Vision;
 import comm.MapleComm;
 import comm.MapleIO;
@@ -57,6 +60,18 @@ public class ReactorAlignControl {
         
         final Vision vision = new Vision(1, 320, 240, true);
 
+        List<Double> left_ratios = new LinkedList<Double>();
+        
+        for (int i = 0; i < 10; i++){
+            left_ratios.add(5.0);
+        }
+        
+        List<Double> right_ratios = new LinkedList<Double>();
+        
+        for (int i = 0; i < 10; i++){
+            right_ratios.add(5.0);
+        }
+        
         vision.update();
         
         TestState state = new TestState(ReactorState.REACTOR_APPROACH);
@@ -87,6 +102,8 @@ public class ReactorAlignControl {
         hopper.pacmanClose();
         hopper.sorterBlocking();
 
+        boolean left_far, right_far;
+        
         while (true) {
             comm.updateSensorData();
             
@@ -97,24 +114,51 @@ public class ReactorAlignControl {
             distanceE = sonarE.getDistance();
             
             // COMPUTE DISTANCE
-            distance = 2*cam_dist;
-            if (distanceE < 4*cam_dist/3.0 && distanceE > 2*cam_dist/3.0){
-                distance = distanceE;
-            }
-            if (distanceD < distance && distanceD < 4*cam_dist/3.0 && distanceD > 2*cam_dist/3.0){
-                distance = distanceD;
-            }
-            if (distance > 4*cam_dist/3.0){
-                distance = cam_dist;
-            }
+//            distance = 2*cam_dist;
+//            if (distanceE < 4*cam_dist/3.0 && distanceE > 2*cam_dist/3.0){
+//                distance = distanceE;
+//            }
+//            if (distanceD < distance && distanceD < 4*cam_dist/3.0 && distanceD > 2*cam_dist/3.0){
+//                distance = distanceD;
+//            }
+//            if (distance > 4*cam_dist/3.0){
+//                distance = cam_dist;
+//            }
+            distance = Math.min(distanceD, distanceE);
             
             distance_reactor = vision.getNextReactorDistance();
             distance_left = vision.getLeftmostWallDistance();
             distance_right = vision.getRightmostWallDistance();
             target_x = vision.getNextReactorX();
             
-            left_ratio = (distance_reactor - distance_left)/target_x;
-            right_ratio = (distance_reactor - distance_right)/(320 - target_x);
+            if (target_x != 0){
+                left_ratio = 1000*(distance_reactor - distance_left)/target_x;
+                right_ratio = 1000*(distance_reactor - distance_right)/(320 - target_x);
+            } else {
+                left_ratio = 1;
+                right_ratio = 1;
+            }
+            
+            left_ratios.add(left_ratio);
+            left_ratios.remove(0);
+            left_far = true;
+            for (Double val : left_ratios){
+                if (val < 1.3){
+                    left_far = false;
+                }
+            }
+            
+            right_ratios.add(right_ratio);
+            right_ratios.remove(0);
+            right_far = true;
+            for (Double val : right_ratios){
+                if (val < 1.3){
+                    right_far = false;
+                }
+            }
+            
+            System.out.println("target_x: " + target_x);
+            System.out.println("left_ratio: " + left_ratio);
             
 //            System.out.println("DistanceReactor: " + distanceReactor);
 //            System.out.println("DistanceLeft: " + distanceLeft);
@@ -127,9 +171,9 @@ public class ReactorAlignControl {
 //            double ratio = (vision.getNextReactorDistance() - vision.getLeftmostWallDistance())/vision.getNextReactorX();
 //            System.out.println("Wall Ratio: " + (1000*ratio));
             
-            if ((distance_left < distance_right && left_ratio > 2) || state.state == ReactorState.REACTOR_FAR_LEFT){
+            if ((distance_left < distance_right && left_far) || state.state == ReactorState.REACTOR_FAR_LEFT){
                 state.changeState(ReactorState.REACTOR_FAR_LEFT);
-            } else if ((distance_right < distance_left && right_ratio > 2) || state.state == ReactorState.REACTOR_FAR_RIGHT){
+            } else if ((distance_right < distance_left && right_far) || state.state == ReactorState.REACTOR_FAR_RIGHT){
                 state.changeState(ReactorState.REACTOR_FAR_RIGHT);
             } else if (target_x != 0 && distance < 0.05){
                 state.changeState(ReactorState.REACTOR_ALIGNED);
@@ -139,50 +183,53 @@ public class ReactorAlignControl {
                 state.changeState(ReactorState.REACTOR_APPROACH);
             } else {
                 System.out.println("REACTOR NOT IN SIGHT");
-                break;
             }
             
-            if (state.state == ReactorState.REACTOR_FAR_LEFT && state.getTime() > 4000){
+            if (state.state == ReactorState.REACTOR_FAR_LEFT && state.getTime() > 4500){
                 state.changeState(ReactorState.REACTOR_APPROACH);
             }
             
-            if (state.state == ReactorState.REACTOR_FAR_RIGHT && state.getTime() > 4000){
+            if (state.state == ReactorState.REACTOR_FAR_RIGHT && state.getTime() > 4500){
                 state.changeState(ReactorState.REACTOR_APPROACH);
             }
             
             if (state.state == ReactorState.REACTOR_FAR_LEFT){
                 System.out.println("REACTOR_FAR_LEFT");
-                if (state.getTime() < 500){
-                    turn = 0.12;
+                if (state.getTime() < 2000){
+                    turn = 0.15;
                     forward = 0;
-                } else if (state.getTime() < 2000){
+                } else if (state.getTime() < 4000){
                     turn = 0;
                     forward = 0.15;
                 } else {
-                    turn = -0.12;
+                    turn = -0.15;
                     forward = 0;
                 }
             } else if (state.state == ReactorState.REACTOR_FAR_RIGHT){
                 System.out.println("REACTOR_FAR_RIGHT");
-                if (state.getTime() < 500){
-                    turn = -0.12;
+                if (state.getTime() < 2000){
+                    turn = -0.15;
                     forward = 0;
-                } else if (state.getTime() < 2000){
+                } else if (state.getTime() < 4000){
                     turn = 0;
                     forward = 0.15;
                 } else {
-                    turn = 0.12;
+                    turn = 0.15;
                     forward = 0;
                 }
             } else if (state.state == ReactorState.REACTOR_APPROACH){
+                System.out.println("REACTOR_APPROACH");
                 double align = pid_align.update(vision.getNextReactorX(), false)/width;
                 turn = Math.min(0.2, Math.max(-0.2, -align));
                 forward = 0.13;
             } else if (state.state == ReactorState.REACTOR_IMMEDIATE){
-                double align = pid_align.update(vision.getNextReactorX(), false)/width;
-                turn = Math.min(0.2, Math.max(-0.2, -align));
+                System.out.println("REACTOR_IMMEDIATE");
+                //double align = pid_align.update(vision.getNextReactorX(), false)/width;
+                //turn = Math.min(0.2, Math.max(-0.2, -align));
+                turn = 0;
                 forward = distance*1.5;
             } else if (state.state == ReactorState.REACTOR_ALIGNED){
+                System.out.println("REACTOR_ALIGNED");
                 double align = pid_align.update(vision.getNextReactorX(), false)/width;
                 turn = Math.min(0.2, Math.max(-0.2, -align));
                 forward = 0;
@@ -200,6 +247,23 @@ public class ReactorAlignControl {
             motorL.setSpeed(-(forward + turn));
             motorR.setSpeed(forward - turn);
             comm.transmit();
+        }
+        
+        motorL.setSpeed(-0.2);
+        motorR.setSpeed(0.2);
+        comm.transmit();
+        try {
+            Thread.sleep(500);
+        } catch (Exception exc){
+            exc.printStackTrace();
+        }
+        motorL.setSpeed(0);
+        motorR.setSpeed(0);
+        comm.transmit();
+        try {
+            Thread.sleep(500);
+        } catch (Exception exc){
+            exc.printStackTrace();
         }
         
         hopper.sorterGreen();

@@ -110,7 +110,7 @@ public class ReactorAlign {
             	turn = 0;
             	motorL.setSpeed(-(forward + turn));
                 motorR.setSpeed(forward - turn);
-                //comm.transmit();
+                comm.transmit();
             	System.out.println("forward: " + forward);
                 System.out.println("turn: " + turn);
 //                System.out.println("DistanceReactor: " + distanceReactor);
@@ -123,7 +123,7 @@ public class ReactorAlign {
             	turn = 0;
             	motorL.setSpeed(-(forward + turn));
                 motorR.setSpeed(forward - turn);
-                //comm.transmit();
+                comm.transmit();
                 System.out.println("forward: " + forward);
                 System.out.println("turn: " + turn);
 //                System.out.println("DistanceReactor: " + distanceReactor);
@@ -140,7 +140,7 @@ public class ReactorAlign {
         		if (turn < 0.05) {
         			motorL.setSpeed(0);
                     motorR.setSpeed(0);
-                    //comm.transmit();
+                    comm.transmit();
                     break;
         		}
         	} else if (distance < 0.1) {
@@ -158,7 +158,7 @@ public class ReactorAlign {
 
             motorL.setSpeed(-(forward + turn));
             motorR.setSpeed(forward - turn);
-            //comm.transmit();
+            comm.transmit();
             
 //            try {
 //				Thread.sleep(10);

@@ -32,7 +32,8 @@ public class Vision {
         JLabel camera_pane = createWindow("Camera output", vision.WIDTH, vision.HEIGHT);
         JLabel colorize_pane = createWindow("Filtered output", vision.WIDTH, vision.HEIGHT);
         int ball_target_x, ball_target_y, reactor_target_x, reactor_target_y;
-        double target_height, target_radius, wall_distance, distanceLeft, distanceRight;
+        double target_distance, target_radius, wall_distance, distance_left, distance_right;
+        double left_ratio, right_ratio;
         while (true) {
             vision.update();
 
@@ -41,27 +42,31 @@ public class Vision {
             
             reactor_target_x = vision.getNextReactorX();
             reactor_target_y = vision.getNextReactorY();
-            target_height = vision.getNextReactorHeight();
+            target_distance = vision.getNextReactorDistance();
             
             ball_target_x = vision.getNextBallX();
             ball_target_y = vision.getNextBallY();
             target_radius = vision.getNextBallRadius();
             
             wall_distance = vision.getWallDistance();
-            distanceLeft = vision.getLeftmostWallDistance();
-            distanceRight = vision.getRightmostWallDistance();
+            distance_left = vision.getLeftmostWallDistance();
+            distance_right = vision.getRightmostWallDistance();
+            
+            left_ratio = 1000*(target_distance - distance_left)/reactor_target_x;
+            right_ratio = 1000*(target_distance - distance_right)/(320 - reactor_target_x);
             
 //            System.out.println("ball_target_x: " + ball_target_x);
 //            System.out.println("ball_target_y: " + ball_target_y);
 //            System.out.println("target_radius: " + target_radius);
 //            
-//            System.out.println("reactor_target_x: " + reactor_target_x);
-//            System.out.println("reactor_target_y: " + reactor_target_y);
-//            System.out.println("target_height: " + target_height);
+            System.out.println("reactor_target_x: " + reactor_target_x);
+            System.out.println("reactor_target_y: " + reactor_target_y);
+            System.out.println("target_distance: " + target_distance);
+            System.out.println("left_ratio: " + left_ratio);
             
-            System.out.println("wall_distance: " + wall_distance);
-            System.out.println("DistanceLeft: " + distanceLeft);
-            System.out.println("DistanceRight: " + distanceRight);
+//            System.out.println("wall_distance: " + wall_distance);
+//            System.out.println("DistanceLeft: " + distanceLeft);
+//            System.out.println("DistanceRight: " + distanceRight);
         }
     }
     
@@ -139,6 +144,7 @@ public class Vision {
         blur.apply(curr_image);           
         colorize.apply();
         eliminateTop.apply();
+        eliminateBottom.apply();
         colorized = FilterOp.getImage();
         objRec.apply();
         filtered = FilterOp.getImage();
@@ -162,7 +168,7 @@ public class Vision {
         
         blur.apply(curr_image);           
         colorize.apply();
-        eliminateTop.apply();
+        //eliminateTop.apply();
         eliminateBottom.apply();
         //objRec.apply();
         colorized = FilterOp.getImage();
