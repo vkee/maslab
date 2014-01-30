@@ -38,6 +38,7 @@ public class TabletControlParallel {
                 vision_vals[1] = vision.getNextBallY();
                 vision_vals[2] = vision.getNextBallRadius();
                 vision_vals[3] = vision.getWallDistance();
+                vision_vals[4] = vision.getLeftmostWallDistance();
             }
             end_time = System.currentTimeMillis();
             try {
@@ -71,7 +72,7 @@ public class TabletControlParallel {
     
     // STATE VALUES
     double distanceD, distanceE, distanceA, distanceB, distanceC;
-    double cam_dist;
+    double cam_dist, left_dist;
     long start_time, end_time;
     int target_x, target_y;
     double target_radius;
@@ -81,6 +82,7 @@ public class TabletControlParallel {
     long reset_time;
     boolean encoder_flag;
     long encoder_flag_time;
+    boolean validA, validB, validC, validD, validE;
         
     // BUFFERS
     List<Double> buffD, buffE, buffA, buffB, buffC;
@@ -161,10 +163,17 @@ public class TabletControlParallel {
         distanceC = sonarC.getDistance();
         
         cam_dist = 0;
+        left_dist = 0;
         orient_time = 500 + 1000*Math.random();
         intake_time = 0;
         reset_time = System.currentTimeMillis();
-              
+        
+        validA = true;
+        validB = true;
+        validC = true;
+        validD = true;
+        validE = true;
+        
         // PIDS
         pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
         pid_dist.update(Math.min(distanceA, distanceB), true);
@@ -251,6 +260,7 @@ public class TabletControlParallel {
                 target_y = (int) vision_vals[1];
                 target_radius = vision_vals[2];
                 cam_dist = vision_vals[3];
+                left_dist = vision_vals[4];
             }
             
             // UPDATE DISTANCES
@@ -261,7 +271,7 @@ public class TabletControlParallel {
             distanceC = sonarC.getDistance();
             
             // UPDATE BUFFERS
-            updateSonarBuffers();
+            updateSonarBuffers(false);
             updateEncoderFlag();
             
             // ESTIMATE STATE
@@ -316,7 +326,7 @@ public class TabletControlParallel {
                 temp_forward = 0;
             } else if (state.state == ControlState.FOLLOW){
                 System.out.println("WALL_FOLLOW: FOLLOW");
-                temp_turn = pid_dist.update(Math.min(distanceA, distanceB), false);
+                temp_turn = pid_dist.update(getAlignStateEstimate(), false);
             } else if (state.state == ControlState.PULL_AWAY){
                 System.out.println("WALL_FOLLOW: PULL_AWAY");
                 temp_turn = 0;
@@ -361,21 +371,21 @@ public class TabletControlParallel {
             ball_intake.setSpeed(0);
         }
         
-        if (state.state == ControlState.APPROACH && !(distanceA < 0.1 || distanceB < 0.1
-                || distanceC < 0.1 || getFrontDistance() < 0.1)){
+        if (state.state == ControlState.APPROACH && !(getTurnStateEstimate() < 0.1
+        		|| getAlignStateEstimate() < 0.1)){
             if (target_y > 180){
                 temp_state = ControlState.COLLECT;
             } else {
                 temp_state = ControlState.APPROACH;
             }
         } else if ((state.state == ControlState.COLLECT && state.getTime() >= 1000)
-                || state.state != ControlState.COLLECT || (distanceA < 0.1
-                || distanceB < 0.1 || distanceC < 0.1 || getFrontDistance() < 0.1)){
-            if (getFrontDistance() < 0.25 || distanceC < 0.2){
+                || state.state != ControlState.COLLECT || (getTurnStateEstimate() < 0.1
+                		|| getAlignStateEstimate() < 0.1)){
+            if (getTurnStateEstimate() < 0.25){
                 temp_state = ControlState.WALL_AHEAD;
 //            } else if (Math.min(distanceA, distanceB) > 0.5){
 //                temp_state = ControlState.LEFT_FAR;
-            } else if (distanceA < 0.5 && distanceB < 0.5){
+            } else if (getAlignStateEstimate() < 0.5){
                 temp_state = ControlState.FOLLOW;
             } else {
                 temp_state = ControlState.DEFAULT;
@@ -402,7 +412,7 @@ public class TabletControlParallel {
                 && state.state != ControlState.RANDOM_ORIENT && state.state != ControlState.LEFT_FAR
                 && state.state != ControlState.FORWARD){
             state.changeState(temp_state);
-        } else if (distanceA < 0.1 || distanceB < 0.1 || distanceC < 0.1 || getFrontDistance() < 0.1){
+        } else if (getTurnStateEstimate() < 0.1 || getAlignStateEstimate() < 0.1){
             state.changeState(temp_state);
         }
         
@@ -434,12 +444,32 @@ public class TabletControlParallel {
     	return dist;
     }
     
-    private double getFrontNoCamera(){
-        return Math.min(distanceD, distanceE);
+    private double getTurnStateEstimate(){
+    	double dist = Math.min(cam_dist, left_dist);
+    	if (validC){
+    		dist = Math.min(dist, distanceC);
+    	}
+    	if (validD){
+    		dist = Math.min(dist, distanceD);
+    	}
+    	if (validE){
+    		dist = Math.min(dist, distanceE);
+    	}
+    	return dist;
     }
     
-    private double getFrontSimpleCamera(){
-        return Math.min(cam_dist, Math.min(distanceD, distanceE));
+    private double getAlignStateEstimate(){
+    	double dist = 0.75*left_dist;
+    	if (validA){
+    		dist = Math.min(dist, distanceA);
+    	}
+    	if (validB){
+    		dist = Math.min(dist, distanceB);
+    	}
+    	if (validC){
+    		dist = Math.min(dist, distanceC/1.2);
+    	}
+    	return dist;
     }
     
     private void updateEncoderFlag(){
@@ -482,46 +512,51 @@ public class TabletControlParallel {
         //System.out.println("turn: " + turn);
     }
     
-    private void updateSonarBuffers(){
+    private void updateSonarBuffers(boolean reset_relay){
         boolean const_values = true;
-        double init = buffD.get(0);
-        for (Double val : buffD){
-            if (val != init && val > 0.01){
+        double init = buffA.get(0);
+        for (Double val : buffA){
+            if (Math.abs(init - val) > 0.0000001 && val > 0.01){
                 const_values = false;
             }
         }
-        if (!const_values){
-            init = buffE.get(0);
-            for (Double val : buffE){
-                if (val != init && val > 0.01){
-                    const_values = false;
-                }
+        validA = !const_values;
+        
+        const_values = true;
+        init = buffB.get(0);
+        for (Double val : buffB){
+            if (Math.abs(init - val) > 0.0000001 && val > 0.01){
+                const_values = false;
             }
         }
-        if (!const_values){
-            init = buffA.get(0);
-            for (Double val : buffA){
-                if (val != init && val > 0.01){
-                    const_values = false;
-                }
+        validB = !const_values;
+        
+        const_values = true;
+        init = buffC.get(0);
+        for (Double val : buffC){
+            if (Math.abs(init - val) > 0.0000001 && val > 0.01){
+                const_values = false;
             }
         }
-        if (!const_values){
-            init = buffB.get(0);
-            for (Double val : buffB){
-                if (val != init && val > 0.01){
-                    const_values = false;
-                }
+        validC = !const_values;
+        
+        const_values = true;
+        init = buffD.get(0);
+        for (Double val : buffD){
+            if (Math.abs(init - val) > 0.0000001 && val > 0.01){
+                const_values = false;
             }
         }
-        if (!const_values){
-            init = buffC.get(0);
-            for (Double val : buffC){
-                if (val != init && val > 0.01){
-                    const_values = false;
-                }
+        validD = !const_values;
+        
+        const_values = true;
+        init = buffE.get(0);
+        for (Double val : buffE){
+            if (Math.abs(init - val) > 0.0000001 && val > 0.01){
+                const_values = false;
             }
         }
+        validE = !const_values;
         
         buffD.remove(0);
         buffD.add(distanceD);
@@ -534,31 +569,34 @@ public class TabletControlParallel {
         buffC.remove(0);
         buffC.add(distanceC);
         
-        if (const_values && System.currentTimeMillis() > reset_time + 15000){
-            System.out.println("RESETTING RELAY");
-            power_sonars.setValue(true);
-            motorL.setSpeed(0);
-            motorR.setSpeed(0);
-            ball_intake.setSpeed(0);
-            
-            try {
-                Thread.sleep(2500);
-            } catch (Exception exc){
-                exc.printStackTrace();
-            }
-            comm.transmit();
-            
-            power_sonars.setValue(false);
-            
-            comm.transmit();
-            
-            try {
-                Thread.sleep(2500);
-            } catch (Exception exc){
-                exc.printStackTrace();
-            }
-            
-            reset_time = System.currentTimeMillis();
+        if (reset_relay){
+        	if ((!validA || !validB || !validC || !validD || !validE)
+        			&& System.currentTimeMillis() > reset_time + 15000){
+        		System.out.println("RESETTING RELAY");
+        		power_sonars.setValue(true);
+        		motorL.setSpeed(0);
+        		motorR.setSpeed(0);
+        		ball_intake.setSpeed(0);
+
+        		try {
+        			Thread.sleep(2500);
+        		} catch (Exception exc){
+        			exc.printStackTrace();
+        		}
+        		comm.transmit();
+
+        		power_sonars.setValue(false);
+
+        		comm.transmit();
+
+        		try {
+        			Thread.sleep(2500);
+        		} catch (Exception exc){
+        			exc.printStackTrace();
+        		}
+
+        		reset_time = System.currentTimeMillis();
+        	}
         }
     }
 
