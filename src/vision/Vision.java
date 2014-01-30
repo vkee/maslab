@@ -222,7 +222,7 @@ public class Vision {
                         }
                     }
                     
-                    /*
+                    
                     if (red > 120 && green > 120 && blue > 120
                             && red < 130 && green < 130 && blue < 130
                             && (reactor_left.x >= x || reactor_left.x == 0)){
@@ -233,7 +233,7 @@ public class Vision {
                             && red < 195 && green < 195 && blue < 195
                             && (reactor_right.x <= x || reactor_right.x == 0)){
                         reactor_right = new Reactor(x, y, 1);
-                    }*/
+                    }
                 }
             }
         }
@@ -344,11 +344,41 @@ public class Vision {
 		return (340.0/widthStrip)*2.54/100;
     }
     
+    public double getLeftWallDistance(){
+		int center, blue;
+		int widthStrip = 0;
+		for (int y = 0; y < 120; y++) {
+			center = filtered.getRGB(120, y);
+            blue = (center >> 0) & 0xFF;
+            
+            if (blue > 0) {
+            	widthStrip = blue;
+            	//break;
+            }
+		}
+		return (340.0/widthStrip)*2.54/100;
+    }
+    
     public double getRightmostWallDistance(){
 		int center, blue;
 		int widthStrip = 0;
 		for (int y = 0; y < 120; y++) {
 			center = filtered.getRGB(319, y);
+            blue = (center >> 0) & 0xFF;
+            
+            if (blue > 0) {
+            	widthStrip = blue;
+            	//break;
+            }
+		}
+		return (340.0/widthStrip)*2.54/100;
+    }
+    
+    public double getRightWallDistance(){
+		int center, blue;
+		int widthStrip = 0;
+		for (int y = 0; y < 120; y++) {
+			center = filtered.getRGB(200, y);
             blue = (center >> 0) & 0xFF;
             
             if (blue > 0) {
