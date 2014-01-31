@@ -15,7 +15,7 @@ import devices.actuators.DigitalOutput;
 import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
-public class RobotController {
+public class RobotControllerAngel {
 	public static void main(String[] args){   
         final Vision vision = new Vision(1, 320, 240, true);
         final double[] vision_vals = new double[10];
@@ -24,7 +24,7 @@ public class RobotController {
         }
         Thread run_thread = new Thread(new Runnable(){
             public void run(){
-                RobotController robot = new RobotController(vision_vals);
+                RobotControllerAngel robot = new RobotControllerAngel(vision_vals);
                 robot.loop();
             }
         });
@@ -74,6 +74,7 @@ public class RobotController {
     private final int WIDTH = 320;
     private final int HEIGHT = 240;
     private final int BUFF_LENGTH = 15;
+    private final int BUFF_LENGTH_CAM = 10;
     private final int CAMERA_NUM = 1;
     private final int CHANGE_THRES = 2;
     private final boolean DISPLAY_ON = true;
@@ -106,6 +107,8 @@ public class RobotController {
     // BUFFERS
     List<Double> buffD, buffE, buffA, buffB, buffC;
     List<Double> buff_encoder;
+    List<Double> leftDist,leftmostDist,reactorDist,wallDist,rightDist;
+    List<Double> leftDistSort,leftmostDistSort,reactorDistSort,wallDistSort,rightDistSort;
     
     // MOTOR INPUTS
     private double forward;
@@ -129,7 +132,7 @@ public class RobotController {
     private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, LEFT_FAR, FORWARD, RANDOM_ORIENT, APPROACH,
         COLLECT, REACTOR_FAR_LEFT, REACTOR_FAR_RIGHT, REACTOR_APPROACH, REACTOR_IMMEDIATE, REACTOR_ALIGNED, PULL_FORWARD };
     
-    public RobotController(double[] vision_vals){
+    public RobotControllerAngel(double[] vision_vals){
 		//botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         
@@ -215,8 +218,8 @@ public class RobotController {
         pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
         pid_dist.update(Math.min(distanceA, distanceB), true);
         
-        pid_speedwf = new PID(10, 0.2, -0.08, 0.01);
-        pid_speedwf.update(10, true);
+        pid_speedwf = new PID(11, 0.2, -0.08, 0.01);
+        pid_speedwf.update(11, true);
         
         pid_target = new PID(WIDTH/2, 0.2, 2, 0); // PID for ball targeting turn on displacement from center
         pid_target.update(WIDTH/2, true);
@@ -231,6 +234,16 @@ public class RobotController {
         buffB = new LinkedList<Double>();
         buffC = new LinkedList<Double>();
         buff_encoder = new LinkedList<Double>();
+        leftDist = new LinkedList<Double>();
+        leftmostDist = new LinkedList<Double>();
+        rightDist = new LinkedList<Double>();
+        reactorDist = new LinkedList<Double>();
+        wallDist = new LinkedList<Double>();
+        leftDistSort = new LinkedList<Double>();
+        leftmostDistSort = new LinkedList<Double>();
+        rightDistSort = new LinkedList<Double>();
+        reactorDistSort = new LinkedList<Double>();
+        wallDistSort = new LinkedList<Double>();
         
         for (int i = 0; i < BUFF_LENGTH; i++){
             buffD.add(Math.random()*distanceD);
@@ -239,6 +252,14 @@ public class RobotController {
             buffB.add(Math.random()*distanceB);
             buffC.add(Math.random()*distanceC);
             buff_encoder.add(Math.random()*2*Math.PI);
+        }    
+        
+        for (int i = 0; i < BUFF_LENGTH_CAM; i++){
+            leftDist.add(left_dist);
+            leftmostDist.add(left_dist_close);
+            rightDist.add(right_dist);
+            reactorDist.add(reactor_dist);
+            wallDist.add(cam_dist);
         }    
         
         encoder_flag = false;
@@ -297,7 +318,7 @@ public class RobotController {
             exc.printStackTrace();
         }
         
-        //ball_sort_thread.start();
+        ball_sort_thread.start();
         
         //while (botclient.gameStarted()){
         while (true){
@@ -521,20 +542,20 @@ public class RobotController {
             //ball_colors.add(ball_color);
         }
         
-//        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) &&
-//                (prev_ball_color != ball_color)){
-//            ball_colors.add(ball_color);
-//        }
+        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) &&
+                (prev_ball_color != ball_color)){
+            ball_colors.add(ball_color);
+        }
         
-//        if (state.state != ControlState.APPROACH && state.state != ControlState.COLLECT
-//                && (prev_state == ControlState.APPROACH || prev_state == ControlState.COLLECT)){
-//            state_seen_ball = false;
-//        }
-//        
-//        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) && target_radius > 10 && !state_seen_ball){
-//            ball_colors.add(ball_color);
-//            state_seen_ball = true;
-//        }
+        if (state.state != ControlState.APPROACH && state.state != ControlState.COLLECT
+                && (prev_state == ControlState.APPROACH || prev_state == ControlState.COLLECT)){
+            state_seen_ball = false;
+        }
+        
+        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) && target_radius > 10 && !state_seen_ball){
+            ball_colors.add(ball_color);
+            state_seen_ball = true;
+        }
 //        if (state.state == ControlState.COLLECT && prev_state != ControlState.COLLECT){
 //            ball_colors.add(ball_color);
 //        }
@@ -636,12 +657,6 @@ public class RobotController {
         System.out.println("distanceA: " + sonarA.getDistance());
         System.out.println("distanceB: " + sonarB.getDistance());
         System.out.println("distanceC: " + sonarC.getDistance());
-        System.out.println("target_radius: " + target_radius);
-//        System.out.println("distanceD: " + sonarD.getDistance());
-//        System.out.println("distanceE: " + sonarE.getDistance());
-//        System.out.println("distanceA: " + sonarA.getDistance());
-//        System.out.println("distanceB: " + sonarB.getDistance());
-//        System.out.println("distanceC: " + sonarC.getDistance());
 //        System.out.println("Camera: " + cam_dist);
 //        System.out.println("Left: " + left_dist);
         //System.out.println("SIDE: " + Math.min(distanceA, distanceB));
@@ -722,6 +737,41 @@ public class RobotController {
         buffB.add(distanceB);
         buffC.remove(0);
         buffC.add(distanceC);
+        leftDist.remove(0);
+        leftDist.add(left_dist);
+        for (double val:leftDist) {
+        	leftDistSort.add(val);
+        }
+        Collections.sort(leftDistSort);
+        left_dist = leftDistSort.get(BUFF_LENGTH_CAM/2);
+        leftmostDist.remove(0);
+        leftmostDist.add(left_dist_close);
+        for (double val:leftmostDist) {
+        	leftmostDistSort.add(val);
+        }
+        Collections.sort(leftmostDistSort);
+        left_dist_close = leftmostDistSort.get(BUFF_LENGTH_CAM/2);
+        reactorDist.remove(0);
+        reactorDist.add(reactor_dist);
+        for (double val:reactorDist) {
+        	reactorDistSort.add(val);
+        }
+        Collections.sort(reactorDistSort);
+        reactor_dist = reactorDistSort.get(BUFF_LENGTH_CAM/2);
+        wallDist.remove(0);
+        wallDist.add(cam_dist);
+        for (double val:wallDist) {
+        	wallDistSort.add(val);
+        }
+        Collections.sort(wallDistSort);
+        cam_dist = wallDistSort.get(BUFF_LENGTH_CAM/2);
+        rightDist.remove(0);
+        rightDist.add(right_dist);
+        for (double val:rightDist) {
+        	rightDistSort.add(val);
+        }
+        Collections.sort(leftDistSort);
+        right_dist = rightDistSort.get(BUFF_LENGTH_CAM/2);
         
         if (reset_relay){
         	if ((!validA || !validB || !validC || !validD || !validE)
