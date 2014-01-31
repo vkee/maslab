@@ -54,7 +54,7 @@ public class MapleComm {
 	/*
 	 * Send commands (e.g. motor velocity) to the Maple
 	 */
-	public synchronized void transmit() {
+	public void transmit() {
 
 		// Combine commands for all actuators that we want to actuate
 		ByteArrayOutputStream data = new ByteArrayOutputStream();
@@ -77,7 +77,7 @@ public class MapleComm {
 	/*
 	 * Wait for, and process, up-to-date sensor data from the Maple
 	 */
-	public synchronized void updateSensorData() {
+	public void updateSensorData() {
 		mapleIO.sendSensorDataRequest();
 		try {
 			Thread.sleep(1);

@@ -74,7 +74,7 @@ public class TabletControlCamBuff {
     // CONSTANTS
     private final int WIDTH = 320;
     private final int HEIGHT = 240;
-    private final int BUFF_LENGTH_CAM = 10;
+    private final int BUFF_LENGTH_CAM = 6;
     private final int BUFF_LENGTH = 15;
     private final int CAMERA_NUM = 1;
     private final int CHANGE_THRES = 2;
@@ -179,8 +179,14 @@ public class TabletControlCamBuff {
         
         System.out.println("Initializing...");
         comm.initialize();
-        
         comm.updateSensorData();
+        
+        hopper.sorterBlocking();
+        hopper.pacmanClose();
+        hopper.gateClose();
+        hopper.rampClose();
+        comm.transmit();
+        
         
         // VALUES
         distanceD = sonarD.getDistance();
@@ -189,11 +195,7 @@ public class TabletControlCamBuff {
         distanceB = sonarB.getDistance();
         distanceC = sonarC.getDistance();
         
-        cam_dist = 0;
-        left_dist = 0;
-        right_dist = 0;
-        left_dist_close = 0;
-        reactor_dist = 0;
+        
         orient_time = 1500 + 1000*Math.random();
         intake_time = 0;
         reset_time = System.currentTimeMillis();
@@ -233,6 +235,16 @@ public class TabletControlCamBuff {
         buffB = new LinkedList<Double>();
         buffC = new LinkedList<Double>();
         buff_encoder = new LinkedList<Double>();
+        leftDist = new LinkedList<Double>();
+        leftmostDist = new LinkedList<Double>();
+        rightDist = new LinkedList<Double>();
+        reactorDist = new LinkedList<Double>();
+        wallDist = new LinkedList<Double>();
+        leftDistSort = new LinkedList<Double>();
+        leftmostDistSort = new LinkedList<Double>();
+        rightDistSort = new LinkedList<Double>();
+        reactorDistSort = new LinkedList<Double>();
+        wallDistSort = new LinkedList<Double>();
         
         for (int i = 0; i < BUFF_LENGTH; i++){
             buffD.add(Math.random()*distanceD);
@@ -243,6 +255,11 @@ public class TabletControlCamBuff {
             buff_encoder.add(Math.random()*2*Math.PI);
         }    
         
+        cam_dist = 0;
+        left_dist = 0;
+        right_dist = 0;
+        left_dist_close = 0;
+        reactor_dist = 0;
         for (int i = 0; i < BUFF_LENGTH_CAM; i++){
             leftDist.add(left_dist);
             leftmostDist.add(left_dist_close);
@@ -294,6 +311,7 @@ public class TabletControlCamBuff {
             right_dist = vision_vals[8];
             left_dist_close = vision_vals[9];
         }
+        updateCamBuffs();
         
         // UPDATE DISTANCES
         distanceD = sonarD.getDistance();
@@ -313,9 +331,7 @@ public class TabletControlCamBuff {
         //while (botclient.gameStarted()){
         while (true){
         	System.out.println("updating");
-        	synchronized (comm){
-                comm.updateSensorData();
-        	}
+            comm.updateSensorData();
             
             start_time = System.currentTimeMillis();
             
@@ -327,6 +343,7 @@ public class TabletControlCamBuff {
                 target_y = (int) vision_vals[1];
                 target_radius = vision_vals[2];
                 cam_dist = vision_vals[3];
+               // System.out.println(cam_dist);
                 left_dist = vision_vals[4];
                 ball_color = (int) vision_vals[5];
                 reactor_x = (int) vision_vals[6];
@@ -334,6 +351,7 @@ public class TabletControlCamBuff {
                 right_dist = vision_vals[8];
                 left_dist_close = vision_vals[9];
             }
+            updateCamBuffs();
             
             // UPDATE DISTANCES
             distanceD = sonarD.getDistance();
@@ -356,9 +374,7 @@ public class TabletControlCamBuff {
             //updateHopper();
             
             print();
-            synchronized (comm){
-                comm.transmit();
-            }
+            comm.transmit();
             
             end_time = System.currentTimeMillis();
             
@@ -427,7 +443,7 @@ public class TabletControlCamBuff {
             }
 
             double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
-            K_encoder = Math.max(pid_speedwf.update(abs_speed, false), 0.5);
+            K_encoder = Math.min(1.6, Math.max(pid_speedwf.update(abs_speed, false), 0.5));
             
             turn = K_encoder*temp_turn;
             forward = K_encoder*temp_forward;
@@ -689,42 +705,6 @@ public class TabletControlCamBuff {
         buffC.remove(0);
         buffC.add(distanceC);
         
-        leftDist.remove(0);
-        leftDist.add(left_dist);
-        for (double val:leftDist) {
-        	leftDistSort.add(val);
-        }
-        Collections.sort(leftDistSort);
-        left_dist = leftDistSort.get(BUFF_LENGTH_CAM/2);
-        leftmostDist.remove(0);
-        leftmostDist.add(left_dist_close);
-        for (double val:leftmostDist) {
-        	leftmostDistSort.add(val);
-        }
-        Collections.sort(leftmostDistSort);
-        left_dist_close = leftmostDistSort.get(BUFF_LENGTH_CAM/2);
-        reactorDist.remove(0);
-        reactorDist.add(reactor_dist);
-        for (double val:reactorDist) {
-        	reactorDistSort.add(val);
-        }
-        Collections.sort(reactorDistSort);
-        reactor_dist = reactorDistSort.get(BUFF_LENGTH_CAM/2);
-        wallDist.remove(0);
-        wallDist.add(cam_dist);
-        for (double val:wallDist) {
-        	wallDistSort.add(val);
-        }
-        Collections.sort(wallDistSort);
-        cam_dist = wallDistSort.get(BUFF_LENGTH_CAM/2);
-        rightDist.remove(0);
-        rightDist.add(right_dist);
-        for (double val:rightDist) {
-        	rightDistSort.add(val);
-        }
-        Collections.sort(leftDistSort);
-        right_dist = rightDistSort.get(BUFF_LENGTH_CAM/2);
-        
         if (reset_relay){
         	if ((!validA || !validB || !validC || !validD || !validE)
         			&& System.currentTimeMillis() > reset_time + 15000){
@@ -756,6 +736,50 @@ public class TabletControlCamBuff {
         }
     }
 
+    private void updateCamBuffs() {
+    	leftDist.remove(0);
+        leftDist.add(left_dist);
+        leftDistSort.clear();
+        for (double val:leftDist) {
+        	leftDistSort.add(val);
+        }
+        Collections.sort(leftDistSort);
+        left_dist = leftDistSort.get(BUFF_LENGTH_CAM/2);
+        leftmostDist.remove(0);
+        leftmostDist.add(left_dist_close);
+        leftmostDistSort.clear();
+        for (double val:leftmostDist) {
+        	leftmostDistSort.add(val);
+        }
+        Collections.sort(leftmostDistSort);
+        left_dist_close = leftmostDistSort.get(BUFF_LENGTH_CAM/2);
+        reactorDist.remove(0);
+        reactorDist.add(reactor_dist);
+        reactorDistSort.clear();
+        for (double val:reactorDist) {
+        	reactorDistSort.add(val);
+        }
+        Collections.sort(reactorDistSort);
+        reactor_dist = reactorDistSort.get(BUFF_LENGTH_CAM/2);
+        wallDist.remove(0);
+        wallDist.add(cam_dist);
+    	wallDistSort.clear();
+        for (double val:wallDist) {
+        	wallDistSort.add(val);
+        }
+        //System.out.println(wallDistSort);
+        Collections.sort(wallDistSort);
+        cam_dist = wallDistSort.get(BUFF_LENGTH_CAM/2);
+        rightDist.remove(0);
+        rightDist.add(right_dist);
+        rightDistSort.clear();
+        for (double val:rightDist) {
+        	rightDistSort.add(val);
+        }
+        Collections.sort(leftDistSort);
+        right_dist = rightDistSort.get(BUFF_LENGTH_CAM/2);
+    }
+    
     private class State {
         private long start_time;
         public ControlState state;
