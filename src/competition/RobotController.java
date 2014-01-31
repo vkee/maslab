@@ -98,6 +98,7 @@ public class RobotController {
     int num_green_balls;
     int reactor_x;
     double reactor_dist;
+    boolean state_seen_ball;
     
     final List<Integer> ball_colors;
     Thread ball_sort_thread;
@@ -207,6 +208,8 @@ public class RobotController {
         num_green_balls = 0;
         reactor_x = 0;
         reactor_dist = 0;
+        
+        state_seen_ball = false;
         
         // PIDS
         pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
@@ -515,7 +518,7 @@ public class RobotController {
         if (state.state == ControlState.APPROACH && prev_state != ControlState.APPROACH && prev_state != ControlState.COLLECT){
             intake_time = System.currentTimeMillis();
             ball_intake.setSpeed(-0.25);
-            ball_colors.add(ball_color);
+            //ball_colors.add(ball_color);
         }
         
         if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) &&
@@ -523,6 +526,14 @@ public class RobotController {
             ball_colors.add(ball_color);
         }
         
+        if (state.state != ControlState.APPROACH && state.state != ControlState.COLLECT
+                && (prev_state == ControlState.APPROACH || prev_state == ControlState.COLLECT)){
+            state_seen_ball = false;
+        }
+        
+        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) && target_radius > 10){
+            ball_colors.add(ball_color);
+        }
 //        if (state.state == ControlState.COLLECT && prev_state != ControlState.COLLECT){
 //            ball_colors.add(ball_color);
 //        }
