@@ -105,6 +105,8 @@ public class NoHopper {
     
     List<Double> left_ratios, right_ratios;
     
+    long begin_time;
+    
     // BUFFERS
     List<Double> buffD, buffE, buffA, buffB, buffC;
     List<Double> buff_encoder;
@@ -222,6 +224,8 @@ public class NoHopper {
             right_ratios.add(5.0);
         }
         
+        begin_time = 0;
+        
         // PIDS
         pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
         pid_dist.update(Math.min(distanceA, distanceB), true);
@@ -308,12 +312,12 @@ public class NoHopper {
             exc.printStackTrace();
         }
         
+        begin_time = System.currentTimeMillis();
+        
         //while (botclient.gameStarted()){
         while (true){
         	System.out.println("updating");
-        	synchronized (comm){
-                comm.updateSensorData();
-        	}
+            comm.updateSensorData();
             
             start_time = System.currentTimeMillis();
             
@@ -354,9 +358,7 @@ public class NoHopper {
             //updateHopper();
             
             print();
-            synchronized (comm){
-                comm.transmit();
-            }
+            comm.transmit();
             
             end_time = System.currentTimeMillis();
             
@@ -570,14 +572,14 @@ public class NoHopper {
             ball_intake.setSpeed(0);
         }
         
-        if (System.currentTimeMillis() > 30000 && reactor_x != 0){
+        if (System.currentTimeMillis() > 30000 + begin_time && reactor_x != 0){
             if (left_dist < right_dist && left_far){
                 state.changeState(ControlState.REACTOR_FAR_LEFT);
             } else if (right_dist < left_dist && right_far){
                 state.changeState(ControlState.REACTOR_FAR_RIGHT);
-            } else if (reactor_x != 0 && getTurnStateEstimate() < 0.05){
+            } else if (reactor_x != 0 && (getTurnStateEstimate() < 0.05 || reactor_dist < 0.1 || encoder_flag)){
                 state.changeState(ControlState.REACTOR_ALIGNED);
-            } else if (reactor_x != 0 && getTurnStateEstimate() < 0.1){
+            } else if (reactor_x != 0 && (getTurnStateEstimate() < 0.1 || reactor_dist < 0.1)){
                 state.changeState(ControlState.REACTOR_IMMEDIATE);
             } else if (reactor_x != 0) {
                 state.changeState(ControlState.REACTOR_APPROACH);
@@ -648,6 +650,10 @@ public class NoHopper {
             state.changeState(ControlState.RANDOM_ORIENT);
             orient_time = 1500 + 1000*Math.random();
         } else if (state.state == ControlState.REACTOR_ALIGNED){
+            state.changeState(ControlState.REACTOR_ALIGNED);
+        }
+        
+        if (state.state == ControlState.REACTOR_APPROACH && state.getTime() > 6000){
             state.changeState(ControlState.REACTOR_ALIGNED);
         }
         
@@ -754,13 +760,14 @@ public class NoHopper {
     }
     
     private void print(){
-        System.out.println("distanceD: " + sonarD.getDistance());
-        System.out.println("distanceE: " + sonarE.getDistance());
-        System.out.println("distanceA: " + sonarA.getDistance());
-        System.out.println("distanceB: " + sonarB.getDistance());
-        System.out.println("distanceC: " + sonarC.getDistance());
-        System.out.println("Camera: " + cam_dist);
-        System.out.println("Left: " + left_dist);
+        System.out.println("TIME: " + System.currentTimeMillis());
+//        System.out.println("distanceD: " + sonarD.getDistance());
+//        System.out.println("distanceE: " + sonarE.getDistance());
+//        System.out.println("distanceA: " + sonarA.getDistance());
+//        System.out.println("distanceB: " + sonarB.getDistance());
+//        System.out.println("distanceC: " + sonarC.getDistance());
+//        System.out.println("Camera: " + cam_dist);
+//        System.out.println("Left: " + left_dist);
         //System.out.println("SIDE: " + Math.min(distanceA, distanceB));
         //System.out.println("FRONT: " + Math.min(distanceD, distanceE));
         //System.out.println("forward: " + forward);
