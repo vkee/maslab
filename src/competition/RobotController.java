@@ -531,8 +531,9 @@ public class RobotController {
             state_seen_ball = false;
         }
         
-        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) && target_radius > 10){
+        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) && target_radius > 10 && !state_seen_ball){
             ball_colors.add(ball_color);
+            state_seen_ball = true;
         }
 //        if (state.state == ControlState.COLLECT && prev_state != ControlState.COLLECT){
 //            ball_colors.add(ball_color);
