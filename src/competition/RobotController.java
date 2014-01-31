@@ -631,6 +631,7 @@ public class RobotController {
     }
     
     private void print(){
+        System.out.println("target_radius: " + target_radius);
 //        System.out.println("distanceD: " + sonarD.getDistance());
 //        System.out.println("distanceE: " + sonarE.getDistance());
 //        System.out.println("distanceA: " + sonarA.getDistance());
