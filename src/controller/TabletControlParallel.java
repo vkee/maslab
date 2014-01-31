@@ -19,8 +19,8 @@ import devices.sensors.Ultrasonic;
 public class TabletControlParallel {
     public static void main(String[] args){   
         final Vision vision = new Vision(1, 320, 240, true);
-        final double[] vision_vals = new double[8];
-        for (int i = 0; i < 6; i++){
+        final double[] vision_vals = new double[10];
+        for (int i = 0; i < 10; i++){
         	vision_vals[i] = 0;
         }
         Thread run_thread = new Thread(new Runnable(){
@@ -45,13 +45,14 @@ public class TabletControlParallel {
                 vision_vals[6] = vision.getNextReactorX();
                 vision_vals[7] = vision.getNextReactorDistance();
                 vision_vals[8] = vision.getRightmostWallDistance();
+                vision_vals[9] = vision.getLeftWallDistance();
             }
             end_time = System.currentTimeMillis();
             try {
                 if (60 + start_time - end_time > 0){
                     Thread.sleep(60 + start_time - end_time);
                 } else {
-                    System.out.println("TIME OVERFLOW: " + (end_time - start_time));
+                    //System.out.println("TIME OVERFLOW: " + (end_time - start_time));
                 }
             } catch (Exception exc){
                 System.out.println("TIME OVERFLOW: " + (end_time - start_time));
@@ -78,7 +79,7 @@ public class TabletControlParallel {
     
     // STATE VALUES
     double distanceD, distanceE, distanceA, distanceB, distanceC;
-    double cam_dist, left_dist, right_dist;
+    double cam_dist, left_dist, right_dist, left_dist_close;
     long start_time, end_time;
     int target_x, target_y;
     double target_radius;
@@ -186,6 +187,7 @@ public class TabletControlParallel {
         cam_dist = 0;
         left_dist = 0;
         right_dist = 0;
+        left_dist_close = 0;
         orient_time = 1500 + 1000*Math.random();
         intake_time = 0;
         reset_time = System.currentTimeMillis();
@@ -276,6 +278,7 @@ public class TabletControlParallel {
             reactor_x = (int) vision_vals[6];
             reactor_dist = vision_vals[7];
             right_dist = vision_vals[8];
+            left_dist_close = vision_vals[9];
         }
         
         // UPDATE DISTANCES
@@ -291,7 +294,7 @@ public class TabletControlParallel {
             exc.printStackTrace();
         }
         
-        ball_sort_thread.start();
+        //ball_sort_thread.start();
         
         //while (botclient.gameStarted()){
         while (true){
@@ -315,6 +318,7 @@ public class TabletControlParallel {
                 reactor_x = (int) vision_vals[6];
                 reactor_dist = vision_vals[7];
                 right_dist = vision_vals[8];
+                left_dist_close = vision_vals[9];
             }
             
             // UPDATE DISTANCES
@@ -335,9 +339,9 @@ public class TabletControlParallel {
             updateMotors();
             
             // UPDATE HOPPER
-            updateHopper();
+            //updateHopper();
             
-            //print();
+            print();
             synchronized (comm){
                 comm.transmit();
             }
@@ -503,7 +507,7 @@ public class TabletControlParallel {
     }
     
     private double getTurnStateEstimate(){
-    	double dist = Math.min(cam_dist, left_dist);
+    	double dist = Math.min(cam_dist, Math.min(left_dist, left_dist_close/1.1));
     	if (validC){
     		dist = Math.min(dist, distanceC);
     	}
@@ -591,6 +595,7 @@ public class TabletControlParallel {
         System.out.println("distanceB: " + sonarB.getDistance());
         System.out.println("distanceC: " + sonarC.getDistance());
         System.out.println("Camera: " + cam_dist);
+        System.out.println("Left: " + left_dist);
         //System.out.println("SIDE: " + Math.min(distanceA, distanceB));
         //System.out.println("FRONT: " + Math.min(distanceD, distanceE));
         //System.out.println("forward: " + forward);
