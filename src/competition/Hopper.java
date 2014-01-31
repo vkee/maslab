@@ -1,5 +1,6 @@
 package competition;
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -44,6 +45,7 @@ public class Hopper {
 	public void runHopper(){
 		long ball_start_time, ball_end_time;
         while (true){
+        	double hopperTime = System.currentTimeMillis();
         	comm.updateSensorData();
         	ball_start_time = System.currentTimeMillis();
         	
@@ -83,6 +85,7 @@ public class Hopper {
             } catch (Exception exc){
                 exc.printStackTrace();
             }
+            System.out.println("Hopper Time: " + (System.currentTimeMillis()-hopperTime));
         }
 	}
 	
