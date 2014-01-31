@@ -7,6 +7,7 @@ import java.util.List;
 import BotClient.BotClient;
 import Core.Engine;
 import vision.Vision;
+import vision.VisionDump;
 import comm.MapleComm;
 import comm.MapleIO;
 import competition.Hopper;
@@ -18,16 +19,16 @@ import devices.sensors.DigitalInput;
 import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
-public class ReactorBall {
+public class ReactorBallDump {
 	public static void main(String[] args){   
-		final Vision vision = new Vision(1, 320, 240, true);
-		final double[] vision_vals = new double[13];
+		final VisionDump vision = new VisionDump(1, 320, 240, true);
+		final double[] vision_vals = new double[16];
 		for (int i = 0; i < 13; i++){
 			vision_vals[i] = 0;
 		}
 		Thread run_thread = new Thread(new Runnable(){
 			public void run(){
-				ReactorBall robot = new ReactorBall(vision_vals);
+				ReactorBallDump robot = new ReactorBallDump(vision_vals);
 				robot.loop();
 			}
 		});
@@ -51,6 +52,9 @@ public class ReactorBall {
 				vision_vals[10] = vision.getNextGreenX();
 				vision_vals[11] = vision.getNextGreenY();
 				vision_vals[12] = vision.getNextGreenRadius();
+				vision_vals[13] = vision.getNextYellowX();
+				vision_vals[14] = vision.getNextYellowY();
+				vision_vals[15] = vision.getNextYellowDistance();
 			}
 			end_time = System.currentTimeMillis();
 			try {
@@ -145,7 +149,7 @@ public class ReactorBall {
 	private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, LEFT_FAR, FORWARD, RANDOM_ORIENT, APPROACH,
 		COLLECT, REACTOR_FAR_LEFT, REACTOR_FAR_RIGHT, REACTOR_APPROACH, REACTOR_IMMEDIATE, REACTOR_ALIGNED };
 
-		public ReactorBall(double[] vision_vals){
+		public ReactorBallDump(double[] vision_vals){
 			//botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
 			comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
 
@@ -329,8 +333,8 @@ public class ReactorBall {
 
 			comm.updateSensorData();
 
-			int red_x, red_y, green_x, green_y;
-			double  red_r, green_r;
+			int red_x, red_y, green_x, green_y, yellow_x, yellow_y;
+			double  red_r, green_r, yellow_dist;
 			
 			// UPDATE VISION
 			synchronized (vision_vals){
@@ -347,6 +351,9 @@ public class ReactorBall {
 				green_x = (int) vision_vals[10];
 				green_y = (int) vision_vals[11];
 				green_r = vision_vals[12];
+				yellow_x = (int) vision_vals[13];
+				yellow_y = (int) vision_vals[14];
+				yellow_dist = vision_vals[15];
 			}
 			
 			if (collect_red){
@@ -357,6 +364,11 @@ public class ReactorBall {
 				target_x = green_x;
 				target_y = green_y;
 				target_radius = green_r;
+			}
+			
+			if (!reactor_on){
+				reactor_x = yellow_x;
+				reactor_dist = yellow_dist;
 			}
 			
 			updateCamBuffs();
@@ -407,6 +419,9 @@ public class ReactorBall {
 					green_x = (int) vision_vals[10];
 					green_y = (int) vision_vals[11];
 					green_r = vision_vals[12];
+					yellow_x = (int) vision_vals[13];
+					yellow_y = (int) vision_vals[14];
+					yellow_dist = vision_vals[15];
 				}
 				
 				if (collect_red){
@@ -417,6 +432,11 @@ public class ReactorBall {
 					target_x = green_x;
 					target_y = green_y;
 					target_radius = green_r;
+				}
+				
+				if (!reactor_on){
+					reactor_x = yellow_x;
+					reactor_dist = yellow_dist;
 				}
 
 				// UPDATE DISTANCES
@@ -538,58 +558,112 @@ public class ReactorBall {
 				//            double align = pid_reactor_align.update(reactor_x, false)/WIDTH;
 				//            turn = Math.min(0.2, Math.max(-0.2, -align));
 				//            forward = 0;
-				if (state.getTime() < 500){
-					turn = 0;
-					forward = 0.2;
-				} else if (state.getTime() < 1000){
-					turn = 0;
-					forward = 0;
-				} else if (state.getTime() < 3000){
-					turn = 0;
-					forward = 0;
-					hopper.sorterGreen();
-					comm.transmit();
-					try {
-						Thread.sleep(2000);
-					} catch (Exception exc) {
-						exc.printStackTrace();
+				
+				if (reactor_on){
+					if (state.getTime() < 500){
+						turn = 0;
+						forward = 0.2;
+					} else if (state.getTime() < 1000){
+						turn = 0;
+						forward = 0;
+					} else if (state.getTime() < 3000){
+						turn = 0;
+						forward = 0;
+						hopper.sorterGreen();
+						comm.transmit();
+						try {
+							Thread.sleep(2000);
+						} catch (Exception exc) {
+							exc.printStackTrace();
+						}
+					} else if (state.getTime() < 5000){
+						hopper.rampHigh();
+						comm.transmit();
+						hopper.pacmanOpen();
+						comm.transmit();
+
+						try {
+							Thread.sleep(2000);
+						} catch (Exception exc) {
+							exc.printStackTrace();
+						}
+					} else if (state.getTime() < 7000){
+						motorL.setSpeed(0.15);
+						motorR.setSpeed(-0.15);
+						comm.transmit();
+						try {
+							Thread.sleep(2000);
+						} catch (Exception exc) {
+							exc.printStackTrace();
+						}
+					} else if (state.getTime() < 9000){
+						hopper.rampLow();
+						motorL.setSpeed(0);
+						motorR.setSpeed(0);
+						hopper.pacmanClose();
+						hopper.pacmanOpen();
+						comm.transmit();
+						try {
+							Thread.sleep(2000);
+						} catch (Exception exc) {
+							exc.printStackTrace();
+						}
+						hopper.pacmanClose();
+						hopper.sorterGreen();
+						hopper.rampClose();
+						comm.transmit();
 					}
-				} else if (state.getTime() < 5000){
-					hopper.rampHigh();
-					comm.transmit();
-					hopper.pacmanOpen();
-					comm.transmit();
-					
-					try {
-						Thread.sleep(2000);
-					} catch (Exception exc) {
-						exc.printStackTrace();
+				} else {
+					if (state.getTime() < 500){
+						turn = 0;
+						forward = 0.2;
+					} else if (state.getTime() < 1000){
+						turn = 0;
+						forward = 0;
+					} else if (state.getTime() < 9000){
+						hopper.pacmanOpen();
+						comm.transmit();
+						try {
+							Thread.sleep(2000);
+						} catch (Exception exc) {
+							exc.printStackTrace();
+						}
+						hopper.pacmanClose();
+						comm.transmit();
+						try {
+							Thread.sleep(500);
+						} catch (Exception exc) {
+							exc.printStackTrace();
+						}
+						hopper.pacmanOpen();
+						comm.transmit();
+						try {
+							Thread.sleep(2000);
+						} catch (Exception exc) {
+							exc.printStackTrace();
+						}
+						hopper.pacmanClose();
+						comm.transmit();
+						try {
+							Thread.sleep(500);
+						} catch (Exception exc) {
+							exc.printStackTrace();
+						}
+						hopper.pacmanOpen();
+						comm.transmit();
+						try {
+							Thread.sleep(2000);
+						} catch (Exception exc) {
+							exc.printStackTrace();
+						}
+						hopper.pacmanClose();
+						comm.transmit();
+						try {
+							Thread.sleep(500);
+						} catch (Exception exc) {
+							exc.printStackTrace();
+						}
 					}
-				} else if (state.getTime() < 7000){
-					motorL.setSpeed(0.15);
-					motorR.setSpeed(-0.15);
-					comm.transmit();
-					try {
-						Thread.sleep(2000);
-					} catch (Exception exc) {
-						exc.printStackTrace();
-					}
-				} else if (state.getTime() < 9000){
-					hopper.rampLow();
-					motorL.setSpeed(0);
-					motorR.setSpeed(0);
-					hopper.pacmanClose();
-					hopper.pacmanOpen();
-					comm.transmit();
-					try {
-						Thread.sleep(2000);
-					} catch (Exception exc) {
-						exc.printStackTrace();
-					}
-					hopper.pacmanClose();
-					hopper.sorterGreen();
-					hopper.rampClose();
-					comm.transmit();
 				}
 			} else if (state.state == ControlState.APPROACH){
 				System.out.println("BALL_COLLECT: APPROACH");
