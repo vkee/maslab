@@ -245,6 +245,11 @@ public class RobotControllerAngel {
             buffB.add(Math.random()*distanceB);
             buffC.add(Math.random()*distanceC);
             buff_encoder.add(Math.random()*2*Math.PI);
+            buffD.add(distanceD);
+            buffE.add(distanceE);
+            buffA.add(distanceA);
+            buffB.add(distanceB);
+            buffC.add(distanceC);
         }    
         
         encoder_flag = false;
