@@ -211,8 +211,8 @@ public class TabletControlParallel {
         pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
         pid_dist.update(Math.min(distanceA, distanceB), true);
         
-        pid_speedwf = new PID(10, 0.2, -0.08, 0.01);
-        pid_speedwf.update(10, true);
+        pid_speedwf = new PID(11, 0.2, -0.08, 0.01);
+        pid_speedwf.update(11, true);
         
         pid_target = new PID(WIDTH/2, 0.2, 2, 0); // PID for ball targeting turn on displacement from center
         pid_target.update(WIDTH/2, true);
@@ -412,13 +412,13 @@ public class TabletControlParallel {
 //                temp_forward = 0.1;
             }
 
-            //double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
-            //K_encoder = Math.max(pid_speedwf.update(abs_speed, false), 0.5);
+            double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
+            K_encoder = Math.max(pid_speedwf.update(abs_speed, false), 0.5);
             
-            //turn = K_encoder*temp_turn;
-            //forward = K_encoder*temp_forward;
-            turn = 1.6*temp_turn;
-            forward = 1.8*temp_forward;
+            turn = K_encoder*temp_turn;
+            forward = K_encoder*temp_forward;
+            //turn = 1.6*temp_turn;
+            //forward = 1.8*temp_forward;
         }
         
         motorL.setSpeed(-(forward + turn));
@@ -453,10 +453,10 @@ public class TabletControlParallel {
                 		|| getAlignStateEstimate() < 0.1)){
             if (getTurnStateEstimate() < 0.25){
                 temp_state = ControlState.WALL_AHEAD;
-//            } else if (Math.min(distanceA, distanceB) > 0.5){
-//                temp_state = ControlState.LEFT_FAR;
             } else if (getAlignStateEstimate() < 0.5){
                 temp_state = ControlState.FOLLOW;
+//            } else if (Math.min(left_dist, left_dist_close) > 0.5){
+//            	temp_state = ControlState.LEFT_FAR;
             } else {
                 temp_state = ControlState.DEFAULT;
             }
