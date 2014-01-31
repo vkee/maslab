@@ -316,7 +316,6 @@ public class NoHopper {
         
         //while (botclient.gameStarted()){
         while (true){
-        	System.out.println("updating");
             comm.updateSensorData();
             
             start_time = System.currentTimeMillis();
@@ -353,9 +352,6 @@ public class NoHopper {
             
             // UPDATE MOTORS
             updateMotors();
-            
-            // UPDATE HOPPER
-            //updateHopper();
             
             print();
             comm.transmit();
@@ -572,7 +568,7 @@ public class NoHopper {
             ball_intake.setSpeed(0);
         }
         
-        if (System.currentTimeMillis() > 30000 + begin_time && reactor_x != 0){
+        if (System.currentTimeMillis() > 5000 + begin_time && reactor_x != 0){
             if (left_dist < right_dist && left_far){
                 state.changeState(ControlState.REACTOR_FAR_LEFT);
             } else if (right_dist < left_dist && right_far){
