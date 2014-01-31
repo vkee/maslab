@@ -777,6 +777,18 @@ public class ReactorBallDump {
 				ball_intake.setSpeed(0);
 			}
 
+			if (reactor_x != 0 && !reactor_on){
+				motorL.setSpeed(-0.4);
+				motorR.setSpeed(0.4);
+				comm.transmit();
+				try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				state.changeState(ControlState.REACTOR_ALIGNED);
+			}
+			
 			while (true){
 				// SPECIAL CASES
 				if ((encoder_flag || state.getTime() > 8000) &&
