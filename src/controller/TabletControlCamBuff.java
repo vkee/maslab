@@ -1,22 +1,25 @@
-package competition;
+package controller;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import BotClient.BotClient;
+import Core.Engine;
 import vision.Vision;
 import comm.MapleComm;
 import comm.MapleIO;
-import controller.PID;
-import controller.TabletControlParallel;
+import competition.Hopper;
+import controller.ReactorAlignControl.ReactorState;
 import devices.actuators.Cytron;
 import devices.actuators.DigitalOutput;
+import devices.actuators.PWMOutput;
+import devices.sensors.DigitalInput;
 import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
-public class RobotControllerAngel {
-	public static void main(String[] args){   
+public class TabletControlCamBuff {
+    public static void main(String[] args){   
         final Vision vision = new Vision(1, 320, 240, true);
         final double[] vision_vals = new double[10];
         for (int i = 0; i < 10; i++){
@@ -24,7 +27,7 @@ public class RobotControllerAngel {
         }
         Thread run_thread = new Thread(new Runnable(){
             public void run(){
-                RobotControllerAngel robot = new RobotControllerAngel(vision_vals);
+                TabletControlCamBuff robot = new TabletControlCamBuff(vision_vals);
                 robot.loop();
             }
         });
@@ -33,9 +36,7 @@ public class RobotControllerAngel {
         
         while (true){
             start_time = System.currentTimeMillis();
-            //double visionTime = System.currentTimeMillis(); 
             vision.update();
-            //System.out.println("vision time: " + (visionTime-System.currentTimeMillis()));
             synchronized (vision_vals){
             	vision_vals[0] = vision.getNextBallX();
                 vision_vals[1] = vision.getNextBallY();
@@ -73,8 +74,8 @@ public class RobotControllerAngel {
     // CONSTANTS
     private final int WIDTH = 320;
     private final int HEIGHT = 240;
-    private final int BUFF_LENGTH = 15;
     private final int BUFF_LENGTH_CAM = 10;
+    private final int BUFF_LENGTH = 15;
     private final int CAMERA_NUM = 1;
     private final int CHANGE_THRES = 2;
     private final boolean DISPLAY_ON = true;
@@ -99,7 +100,6 @@ public class RobotControllerAngel {
     int num_green_balls;
     int reactor_x;
     double reactor_dist;
-    boolean state_seen_ball;
     
     final List<Integer> ball_colors;
     Thread ball_sort_thread;
@@ -130,9 +130,9 @@ public class RobotControllerAngel {
     private State state;
     
     private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, LEFT_FAR, FORWARD, RANDOM_ORIENT, APPROACH,
-        COLLECT, REACTOR_FAR_LEFT, REACTOR_FAR_RIGHT, REACTOR_APPROACH, REACTOR_IMMEDIATE, REACTOR_ALIGNED, PULL_FORWARD };
+        COLLECT, REACTOR_FAR_LEFT, REACTOR_FAR_RIGHT, REACTOR_APPROACH, REACTOR_IMMEDIATE, REACTOR_ALIGNED };
     
-    public RobotControllerAngel(double[] vision_vals){
+    public TabletControlCamBuff(double[] vision_vals){
 		//botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         
@@ -174,7 +174,7 @@ public class RobotControllerAngel {
         
         comm.registerDevice(power_sonars);
         
-        ball_colors = Collections.synchronizedList(new ArrayList<Integer>());
+        ball_colors = new LinkedList<Integer>();
         hopper = new Hopper(comm, 24, 27, 28, 14, ball_colors);
         
         System.out.println("Initializing...");
@@ -212,8 +212,6 @@ public class RobotControllerAngel {
         reactor_x = 0;
         reactor_dist = 0;
         
-        state_seen_ball = false;
-        
         // PIDS
         pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
         pid_dist.update(Math.min(distanceA, distanceB), true);
@@ -234,16 +232,6 @@ public class RobotControllerAngel {
         buffB = new LinkedList<Double>();
         buffC = new LinkedList<Double>();
         buff_encoder = new LinkedList<Double>();
-        leftDist = new LinkedList<Double>();
-        leftmostDist = new LinkedList<Double>();
-        rightDist = new LinkedList<Double>();
-        reactorDist = new LinkedList<Double>();
-        wallDist = new LinkedList<Double>();
-        leftDistSort = new LinkedList<Double>();
-        leftmostDistSort = new LinkedList<Double>();
-        rightDistSort = new LinkedList<Double>();
-        reactorDistSort = new LinkedList<Double>();
-        wallDistSort = new LinkedList<Double>();
         
         for (int i = 0; i < BUFF_LENGTH; i++){
             buffD.add(Math.random()*distanceD);
@@ -281,6 +269,7 @@ public class RobotControllerAngel {
 //		while( !botclient.gameStarted() ) {}
 //    	
 		state.changeState(ControlState.FOLLOW);
+		
 		reset_time = System.currentTimeMillis();
 		
         System.out.println("Beginning to follow wall...");
@@ -290,7 +279,7 @@ public class RobotControllerAngel {
         comm.transmit();
         
         comm.updateSensorData();
-
+        
         // UPDATE VISION
         synchronized (vision_vals){
             target_x = (int) vision_vals[0];
@@ -318,18 +307,15 @@ public class RobotControllerAngel {
             exc.printStackTrace();
         }
         
-        ball_sort_thread.start();
+        //ball_sort_thread.start();
         
         //while (botclient.gameStarted()){
         while (true){
+        	System.out.println("updating");
         	synchronized (comm){
                 comm.updateSensorData();
         	}
-
-    		//double loopTime = System.currentTimeMillis();
-        	//System.out.println("encoderL: " + encoderL.getAngularSpeed());
-            //System.out.println("encoderR: " + encoderR.getAngularSpeed());
-            System.out.println("ballColors: " + ball_colors);
+            
             start_time = System.currentTimeMillis();
             
             prev_ball_color = ball_color;
@@ -384,8 +370,6 @@ public class RobotControllerAngel {
             } catch (Exception exc){
                 exc.printStackTrace();
             }
-            //System.out.println("Loop Time" + (System.currentTimeMillis()-loopTime));
-
         }
         
        // botclient.close();
@@ -423,10 +407,6 @@ public class RobotControllerAngel {
                 System.out.println("WALL_FOLLOW: PULL_AWAY");
                 temp_turn = 0;
                 temp_forward = -0.15;
-            } else if (state.state == ControlState.PULL_FORWARD){
-                System.out.println("WALL_FOLLOW: PULL_FORWARD");
-                temp_turn = 0;
-                temp_forward = 0.15;
             } else if (state.state == ControlState.RANDOM_ORIENT){
                 System.out.println("WALL_FOLLOW: RANDOM_ORIENT");
                 temp_turn = -0.15;
@@ -435,14 +415,14 @@ public class RobotControllerAngel {
                 System.out.println("WALL_FOLLOW: DEFAULT");
                 temp_turn = -0.05;
                 temp_forward = 0.1;
-            } else if (state.state == ControlState.LEFT_FAR){
-                System.out.println("WALL_FOLLOW: LEFT_FAR");
-                temp_turn = -0.15;
-                temp_forward = 0;
-            } else if (state.state == ControlState.FORWARD){
-                System.out.println("WALL_FOLLOW: FORWARD");
-                temp_turn = 0;
-                temp_forward = 0.1;
+//            } else if (state.state == ControlState.LEFT_FAR){
+//                System.out.println("WALL_FOLLOW: LEFT_FAR");
+//                temp_turn = -0.15;
+//                temp_forward = 0;
+//            } else if (state.state == ControlState.FORWARD){
+//                System.out.println("WALL_FOLLOW: FORWARD");
+//                temp_turn = 0;
+//                temp_forward = 0.1;
             }
 
             double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
@@ -468,33 +448,9 @@ public class RobotControllerAngel {
         	ball_absent_time = 0;
         }
         
-        if (intake_time > 0 && ball_colors.size() == 0/*System.currentTimeMillis() > intake_time + 12000*/){
+        if (intake_time > 0 && System.currentTimeMillis() > intake_time + 12000){
             intake_time = 0;
             ball_intake.setSpeed(0);
-        }
-        
-        if (intake_time > 0 && System.currentTimeMillis() > intake_time + 20000){
-            intake_time = 0;
-            ball_colors.remove(0);
-        }
-        
-        
-        if (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY){
-        	if (encoder_flag) {
-        		state.changeState(ControlState.PULL_FORWARD);
-        	} else {
-        		state.changeState(ControlState.RANDOM_ORIENT);
-        		orient_time = 1500 + 1000*Math.random();
-        	}
-        }
-        
-        if (state.getTime() > 1000 && state.state == ControlState.PULL_FORWARD){
-        	state.changeState(ControlState.RANDOM_ORIENT);
-    		orient_time = 1500 + 1000*Math.random();
-        }
-        
-        if (state.getTime() > orient_time && state.state == ControlState.RANDOM_ORIENT){
-            state.changeState(temp_state);
         }
         
         if (state.state == ControlState.APPROACH && !(getTurnStateEstimate() < 0.1
@@ -523,10 +479,17 @@ public class RobotControllerAngel {
             }
         }
         
+        if (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY){
+            state.changeState(ControlState.RANDOM_ORIENT);
+            orient_time = 1500 + 1000*Math.random();
+        }
         
+        if (state.getTime() > orient_time && state.state == ControlState.RANDOM_ORIENT){
+            state.changeState(temp_state);
+        }
         
         // MAKE EXCEPTIONS FOR SCORING STATES
-        if (false && encoder_flag || state.getTime() > 8000){
+        if (encoder_flag || state.getTime() > 8000){
             state.changeState(ControlState.PULL_AWAY);
         } else if (state.getTime() > 100 && state.state != ControlState.PULL_AWAY
                 && state.state != ControlState.RANDOM_ORIENT && state.state != ControlState.LEFT_FAR
@@ -536,29 +499,16 @@ public class RobotControllerAngel {
             state.changeState(temp_state);
         }
         
-        if (state.state == ControlState.APPROACH && prev_state != ControlState.APPROACH && prev_state != ControlState.COLLECT){
+        if (state.state == ControlState.APPROACH && prev_state != ControlState.APPROACH){
             intake_time = System.currentTimeMillis();
             ball_intake.setSpeed(-0.25);
-            //ball_colors.add(ball_color);
+            ball_colors.add(ball_color);
         }
         
         if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) &&
                 (prev_ball_color != ball_color)){
             ball_colors.add(ball_color);
         }
-        
-        if (state.state != ControlState.APPROACH && state.state != ControlState.COLLECT
-                && (prev_state == ControlState.APPROACH || prev_state == ControlState.COLLECT)){
-            state_seen_ball = false;
-        }
-        
-        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) && target_radius > 10 && !state_seen_ball){
-            ball_colors.add(ball_color);
-            state_seen_ball = true;
-        }
-//        if (state.state == ControlState.COLLECT && prev_state != ControlState.COLLECT){
-//            ball_colors.add(ball_color);
-//        }
         
 //        if (state.getTime() > 500 && state.state == ControlState.LEFT_FAR){
 //            state.changeState(ControlState.FORWARD);
@@ -615,7 +565,7 @@ public class RobotControllerAngel {
         if (is_const){
             if (encoder_flag_time == 0){
                 encoder_flag_time = System.currentTimeMillis();
-            } else if (System.currentTimeMillis() > encoder_flag_time + 3000){
+            } else if (System.currentTimeMillis() > encoder_flag_time + 5000){
                 encoder_flag = true;
             }
         } else {
@@ -626,7 +576,7 @@ public class RobotControllerAngel {
     }
     
     private void updateHopper(){
-        //System.out.println("BALL LIST LENGTH: " + ball_colors.size());
+        System.out.println("BALL LIST LENGTH: " + ball_colors.size());
         if (ball_colors.size() != 0){
             if (ball_colors.get(0) == 0){
                 System.out.println("GREEN BALL READY");
@@ -657,8 +607,8 @@ public class RobotControllerAngel {
         System.out.println("distanceA: " + sonarA.getDistance());
         System.out.println("distanceB: " + sonarB.getDistance());
         System.out.println("distanceC: " + sonarC.getDistance());
-//        System.out.println("Camera: " + cam_dist);
-//        System.out.println("Left: " + left_dist);
+        System.out.println("Camera: " + cam_dist);
+        System.out.println("Left: " + left_dist);
         //System.out.println("SIDE: " + Math.min(distanceA, distanceB));
         //System.out.println("FRONT: " + Math.min(distanceD, distanceE));
         //System.out.println("forward: " + forward);
@@ -737,6 +687,7 @@ public class RobotControllerAngel {
         buffB.add(distanceB);
         buffC.remove(0);
         buffC.add(distanceC);
+        
         leftDist.remove(0);
         leftDist.add(left_dist);
         for (double val:leftDist) {
