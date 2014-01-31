@@ -353,13 +353,6 @@ public class TabletControlParallel {
             } catch (Exception exc){
                 exc.printStackTrace();
             }
-            
-            try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
         }
         
        // botclient.close();
