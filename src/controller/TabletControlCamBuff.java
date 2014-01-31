@@ -193,6 +193,7 @@ public class TabletControlCamBuff {
         left_dist = 0;
         right_dist = 0;
         left_dist_close = 0;
+        reactor_dist = 0;
         orient_time = 1500 + 1000*Math.random();
         intake_time = 0;
         reset_time = System.currentTimeMillis();
