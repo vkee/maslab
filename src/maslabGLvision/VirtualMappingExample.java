@@ -22,8 +22,8 @@ public class VirtualMappingExample {
 		FilterOp wallFilter = new FilterOp("wallFilter");
 		FilterOp wallFilterRefine = new FilterOp("wallFilterRefine");
 		
-		BufferedImage original = TestBed.loadImage( new File("images\\reactor1.jpg") );
-		//BufferedImage original = TestBed.loadImage( new File("images\\tealband.png") );
+		//BufferedImage original = TestBed.loadImage( new File("images\\reactor1.jpg") );
+		BufferedImage original = TestBed.loadImage( new File("images\\yellowband.png") );
 		tester.setImage(original);
 		
 		int frames = 0;

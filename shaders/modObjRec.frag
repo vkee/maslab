@@ -98,7 +98,7 @@ void main() {
 			yLower = yLower + dy;
 			colLower = texture(txtr,vec2(x,yLower),0.0);
 		}
-		
+		gl_FragColor = vec4((yLower - yUpper),0,0,1);
 		if ( yUpper+yLower==2*y || yUpper+yLower==2*y+dy || yUpper+yLower==2*y-dy) {
 			while (true) {
 				if ( colLeft2.z==1 && colLeft2.y==1 && colLeft2.x==0 && yLeft2 < 1 && yLeft2 > 0 && xLeft > 0) {
