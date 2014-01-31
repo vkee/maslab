@@ -1,4 +1,4 @@
-package controller;
+package competition;
 
 import java.util.LinkedList;
 import java.util.List;

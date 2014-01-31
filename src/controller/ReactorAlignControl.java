@@ -6,6 +6,7 @@ import java.util.List;
 import vision.Vision;
 import comm.MapleComm;
 import comm.MapleIO;
+import competition.Hopper;
 import controller.ReactorAlignControl.ReactorState;
 import devices.actuators.Cytron;
 import devices.actuators.DigitalOutput;

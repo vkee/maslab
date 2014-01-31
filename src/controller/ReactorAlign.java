@@ -3,6 +3,7 @@ package controller;
 import vision.Vision;
 import comm.MapleComm;
 import comm.MapleIO;
+import competition.Hopper;
 import devices.actuators.Cytron;
 import devices.actuators.DigitalOutput;
 import devices.sensors.Encoder;

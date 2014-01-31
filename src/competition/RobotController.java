@@ -4,11 +4,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import vision.Vision;
-
 import comm.MapleComm;
 import comm.MapleIO;
-
-import controller.Hopper;
 import controller.PID;
 import controller.TabletControlParallel;
 import devices.actuators.Cytron;
@@ -266,7 +263,9 @@ public class RobotController {
         comm.transmit();
         
         comm.updateSensorData();
-        
+        System.out.println("encoderL: " + encoderL.getAngularSpeed());
+        System.out.println("encoderR: " + encoderR.getAngularSpeed());
+
         // UPDATE VISION
         synchronized (vision_vals){
             target_x = (int) vision_vals[0];
@@ -435,9 +434,14 @@ public class RobotController {
         	ball_absent_time = 0;
         }
         
-        if (intake_time > 0 && System.currentTimeMillis() > intake_time + 12000){
+        if (intake_time > 0 && ball_colors.size() == 0/*System.currentTimeMillis() > intake_time + 12000*/){
             intake_time = 0;
             ball_intake.setSpeed(0);
+        }
+        
+        if (intake_time > 0 && System.currentTimeMillis() > intake_time + 20000){
+            intake_time = 0;
+            ball_colors.remove(0);
         }
         
         if (state.state == ControlState.APPROACH && !(getTurnStateEstimate() < 0.1

@@ -14,8 +14,9 @@ import org.opencv.core.Mat;
 import org.opencv.highgui.Highgui;
 import org.opencv.highgui.VideoCapture;
 
+import competition.Hopper;
+
 import Core.FilterOp;
-import controller.Hopper;
 
 public class CameraTest {
 
