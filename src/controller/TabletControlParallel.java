@@ -158,6 +158,9 @@ public class TabletControlParallel {
         
         comm.registerDevice(power_sonars);
         
+        ball_colors = new LinkedList<Integer>();
+        hopper = new Hopper(comm, 24, 27, 28, 14, ball_colors);
+        
         System.out.println("Initializing...");
         comm.initialize();
         
@@ -185,8 +188,6 @@ public class TabletControlParallel {
         ball_absent_time = 0;
         prev_ball_color = 0;
         ball_color = 0;
-        
-        ball_colors = new LinkedList<Integer>();
         
         // PIDS
         pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
@@ -226,7 +227,6 @@ public class TabletControlParallel {
         // STATE INITIALIZATION
         state = new State(ControlState.DEFAULT);
         
-        hopper = new Hopper(comm, 24, 27, 28, 14, ball_colors);
         Thread ball_sort_thread = new Thread(new Runnable(){
             public void run(){
             	hopper.runHopper();

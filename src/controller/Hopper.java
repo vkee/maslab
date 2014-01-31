@@ -211,27 +211,15 @@ public class Hopper {
 		final MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
 		final List<Integer> ball_colors = new LinkedList<Integer>();
 		final Hopper hopper = new Hopper(comm, 24, 27, 28, 14, ball_colors);
+		comm.initialize();
 		Thread ball_thread = new Thread(new Runnable(){
 			public void run(){
 				hopper.runHopper();
 			}
 		});
 		ball_thread.start();
-		while (true){
-			System.out.println("GOT HERE");
-			 
-			comm.updateSensorData();
-			
-			ball_colors.add((int) Math.random()*2);
-			
-			comm.transmit();
-			
-			try {
-				Thread.sleep(60);
-			} catch (Exception exc){
-				exc.printStackTrace();
-			}
-		}
+		
+		ball_colors.add(1);
 	}
 	
 //	public static void main(String[] args) {
