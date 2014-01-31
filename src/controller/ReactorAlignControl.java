@@ -22,7 +22,8 @@ public class ReactorAlignControl {
 
     private void loop(){
         MapleComm comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
-        Hopper hopper = new Hopper(comm,24,27,28, 14);
+        List<Integer> ball_colors = new LinkedList<Integer>();
+        Hopper hopper = new Hopper(comm,24,27,28, 14, ball_colors);
         Cytron motorL = new Cytron(4, 0);
         Cytron motorR = new Cytron(3, 1);
         Ultrasonic sonarA = new Ultrasonic(26, 25);
