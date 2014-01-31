@@ -619,11 +619,11 @@ public class RobotController {
     }
     
     private void print(){
-//        System.out.println("distanceD: " + sonarD.getDistance());
-//        System.out.println("distanceE: " + sonarE.getDistance());
-//        System.out.println("distanceA: " + sonarA.getDistance());
-//        System.out.println("distanceB: " + sonarB.getDistance());
-//        System.out.println("distanceC: " + sonarC.getDistance());
+        System.out.println("distanceD: " + sonarD.getDistance());
+        System.out.println("distanceE: " + sonarE.getDistance());
+        System.out.println("distanceA: " + sonarA.getDistance());
+        System.out.println("distanceB: " + sonarB.getDistance());
+        System.out.println("distanceC: " + sonarC.getDistance());
 //        System.out.println("Camera: " + cam_dist);
 //        System.out.println("Left: " + left_dist);
         //System.out.println("SIDE: " + Math.min(distanceA, distanceB));
