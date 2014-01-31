@@ -215,8 +215,8 @@ public class RobotController {
         pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
         pid_dist.update(Math.min(distanceA, distanceB), true);
         
-        pid_speedwf = new PID(11, 0.2, -0.08, 0.01);
-        pid_speedwf.update(11, true);
+        pid_speedwf = new PID(10, 0.2, -0.08, 0.01);
+        pid_speedwf.update(10, true);
         
         pid_target = new PID(WIDTH/2, 0.2, 2, 0); // PID for ball targeting turn on displacement from center
         pid_target.update(WIDTH/2, true);
@@ -297,7 +297,7 @@ public class RobotController {
             exc.printStackTrace();
         }
         
-        ball_sort_thread.start();
+        //ball_sort_thread.start();
         
         //while (botclient.gameStarted()){
         while (true){
@@ -521,20 +521,20 @@ public class RobotController {
             //ball_colors.add(ball_color);
         }
         
-        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) &&
-                (prev_ball_color != ball_color)){
-            ball_colors.add(ball_color);
-        }
+//        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) &&
+//                (prev_ball_color != ball_color)){
+//            ball_colors.add(ball_color);
+//        }
         
-        if (state.state != ControlState.APPROACH && state.state != ControlState.COLLECT
-                && (prev_state == ControlState.APPROACH || prev_state == ControlState.COLLECT)){
-            state_seen_ball = false;
-        }
-        
-        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) && target_radius > 10 && !state_seen_ball){
-            ball_colors.add(ball_color);
-            state_seen_ball = true;
-        }
+//        if (state.state != ControlState.APPROACH && state.state != ControlState.COLLECT
+//                && (prev_state == ControlState.APPROACH || prev_state == ControlState.COLLECT)){
+//            state_seen_ball = false;
+//        }
+//        
+//        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) && target_radius > 10 && !state_seen_ball){
+//            ball_colors.add(ball_color);
+//            state_seen_ball = true;
+//        }
 //        if (state.state == ControlState.COLLECT && prev_state != ControlState.COLLECT){
 //            ball_colors.add(ball_color);
 //        }
