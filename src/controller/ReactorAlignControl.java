@@ -187,14 +187,6 @@ public class ReactorAlignControl {
                 System.out.println("REACTOR NOT IN SIGHT");
             }
             
-            if (state.state == ReactorState.REACTOR_FAR_LEFT && state.getTime() > 4500){
-                state.changeState(ReactorState.REACTOR_APPROACH);
-            }
-            
-            if (state.state == ReactorState.REACTOR_FAR_RIGHT && state.getTime() > 4500){
-                state.changeState(ReactorState.REACTOR_APPROACH);
-            }
-            
             if (state.state == ReactorState.REACTOR_FAR_LEFT){
                 System.out.println("REACTOR_FAR_LEFT");
                 if (state.getTime() < 2000){
