@@ -18,7 +18,7 @@ import devices.sensors.DigitalInput;
 import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
-public class NoHopper {
+public class ReactorBall {
 	public static void main(String[] args){   
 		final Vision vision = new Vision(1, 320, 240, true);
 		final double[] vision_vals = new double[13];
@@ -27,7 +27,7 @@ public class NoHopper {
 		}
 		Thread run_thread = new Thread(new Runnable(){
 			public void run(){
-				NoHopper robot = new NoHopper(vision_vals);
+				ReactorBall robot = new ReactorBall(vision_vals);
 				robot.loop();
 			}
 		});
@@ -145,7 +145,7 @@ public class NoHopper {
 	private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, LEFT_FAR, FORWARD, RANDOM_ORIENT, APPROACH,
 		COLLECT, REACTOR_FAR_LEFT, REACTOR_FAR_RIGHT, REACTOR_APPROACH, REACTOR_IMMEDIATE, REACTOR_ALIGNED };
 
-		public NoHopper(double[] vision_vals){
+		public ReactorBall(double[] vision_vals){
 			//botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
 			comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
 

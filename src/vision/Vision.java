@@ -279,6 +279,30 @@ public class Vision {
         }
     }
     
+    public int getNextRedX(){
+    	return red_target.x;
+    }
+    
+    public int getNextRedY(){
+    	return red_target.y;
+    }
+    
+    public int getNextGreenX(){
+    	return green_target.x;
+    }
+    
+    public int getNextGreenY(){
+    	return green_target.y;
+    }
+    
+    public double getNextRedRadius(){
+    	return red_target.radius;
+    }
+    
+    public double getNextGreenRadius(){
+    	return green_target.radius;
+    }
+    
     public int getNextBallX(){
         if (green_target.radius >= red_target.radius){
             return green_target.x;

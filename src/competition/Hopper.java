@@ -29,8 +29,8 @@ public class Hopper {
 		ramp = new Servo6001HB(rampPin);
 		irSensor = new DigitalInput(10);
 
-		pacmanAngle = 120;
-		gateAngle = 70;
+		pacmanAngle = 0;
+		gateAngle = 0;
 		
 		this.ball_colors = ball_colors;
 
@@ -99,7 +99,7 @@ public class Hopper {
 	}
 	
 	public void sorterRed() {
-		sorter.setAngle(50);
+		sorter.setAngle(40);
 	}
 
 	public void fastRedSort(){
@@ -125,7 +125,7 @@ public class Hopper {
 	}
 
 	public void sorterGreen() {
-		sorter.setAngle(150);
+		sorter.setAngle(160);
 	}
 
 	public void fastGreenSort(){
@@ -239,22 +239,24 @@ public class Hopper {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		hopper.sorterRed();
+		comm.transmit();
 //		hopper.fastGreenSort();
-		Thread ball_thread = new Thread(new Runnable(){
-			public void run(){
-				hopper.runHopper();
-			}
-		});
-		ball_thread.start();
-		
-		ball_colors.add(1);
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		ball_colors.add(0);
+//		Thread ball_thread = new Thread(new Runnable(){
+//			public void run(){
+//				hopper.runHopper();
+//			}
+//		});
+//		ball_thread.start();
+//		
+//		ball_colors.add(1);
+//		try {
+//			Thread.sleep(2000);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		ball_colors.add(0);
 		
 	}
 	

@@ -18,16 +18,16 @@ import devices.sensors.DigitalInput;
 import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
-public class NoHopper {
+public class NoHopperCopy {
 	public static void main(String[] args){   
 		final Vision vision = new Vision(1, 320, 240, true);
-		final double[] vision_vals = new double[13];
-		for (int i = 0; i < 13; i++){
+		final double[] vision_vals = new double[10];
+		for (int i = 0; i < 10; i++){
 			vision_vals[i] = 0;
 		}
 		Thread run_thread = new Thread(new Runnable(){
 			public void run(){
-				NoHopper robot = new NoHopper(vision_vals);
+				NoHopperCopy robot = new NoHopperCopy(vision_vals);
 				robot.loop();
 			}
 		});
@@ -38,9 +38,9 @@ public class NoHopper {
 			start_time = System.currentTimeMillis();
 			vision.update();
 			synchronized (vision_vals){
-				vision_vals[0] = vision.getNextRedX();
-				vision_vals[1] = vision.getNextRedY();
-				vision_vals[2] = vision.getNextRedRadius();
+				vision_vals[0] = vision.getNextBallX();
+				vision_vals[1] = vision.getNextBallY();
+				vision_vals[2] = vision.getNextBallRadius();
 				vision_vals[3] = vision.getWallDistance();
 				vision_vals[4] = vision.getLeftmostWallDistance();
 				vision_vals[5] = vision.getNextBallColor();
@@ -48,9 +48,6 @@ public class NoHopper {
 				vision_vals[7] = vision.getNextReactorDistance();
 				vision_vals[8] = vision.getRightmostWallDistance();
 				vision_vals[9] = vision.getLeftWallDistance();
-				vision_vals[10] = vision.getNextGreenX();
-				vision_vals[11] = vision.getNextGreenY();
-				vision_vals[12] = vision.getNextGreenRadius();
 			}
 			end_time = System.currentTimeMillis();
 			try {
@@ -104,10 +101,6 @@ public class NoHopper {
 	int reactor_x;
 	double reactor_dist;
 	int num_balls;
-	
-	long game_start_time;
-	boolean reactor_on;
-	boolean collect_red;
 
 	final List<Integer> ball_colors;
 	Thread ball_sort_thread;
@@ -145,7 +138,7 @@ public class NoHopper {
 	private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, LEFT_FAR, FORWARD, RANDOM_ORIENT, APPROACH,
 		COLLECT, REACTOR_FAR_LEFT, REACTOR_FAR_RIGHT, REACTOR_APPROACH, REACTOR_IMMEDIATE, REACTOR_ALIGNED };
 
-		public NoHopper(double[] vision_vals){
+		public NoHopperCopy(double[] vision_vals){
 			//botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
 			comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
 
@@ -195,12 +188,6 @@ public class NoHopper {
 
 			comm.updateSensorData();
 
-			hopper.sorterGreen();
-	        hopper.pacmanClose();
-	        hopper.gateClose();
-	        hopper.rampClose();
-	        comm.transmit();
-			
 			// VALUES
 			distanceD = sonarD.getDistance();
 			distanceE = sonarE.getDistance();
@@ -242,10 +229,6 @@ public class NoHopper {
 			}
 
 			begin_time = 0;
-			
-			reactor_on = false;
-			collect_red = false;
-			game_start_time = 0;
 
 			// PIDS
 			pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
@@ -329,14 +312,11 @@ public class NoHopper {
 
 			comm.updateSensorData();
 
-			int red_x, red_y, green_x, green_y;
-			double  red_r, green_r;
-			
 			// UPDATE VISION
 			synchronized (vision_vals){
-				red_x = (int) vision_vals[0];
-				red_y = (int) vision_vals[1];
-				red_r = vision_vals[2];
+				target_x = (int) vision_vals[0];
+				target_y = (int) vision_vals[1];
+				target_radius = vision_vals[2];
 				cam_dist = vision_vals[3];
 				left_dist = vision_vals[4];
 				ball_color = (int) vision_vals[5];
@@ -344,21 +324,7 @@ public class NoHopper {
 				reactor_dist = vision_vals[7];
 				right_dist = vision_vals[8];
 				left_dist_close = vision_vals[9];
-				green_x = (int) vision_vals[10];
-				green_y = (int) vision_vals[11];
-				green_r = vision_vals[12];
 			}
-			
-			if (collect_red){
-				target_x = red_x;
-				target_y = red_y;
-				target_radius = red_r;
-			} else {
-				target_x = green_x;
-				target_y = green_y;
-				target_radius = green_r;
-			}
-			
 			updateCamBuffs();
 			// UPDATE DISTANCES
 			distanceD = sonarD.getDistance();
@@ -374,30 +340,21 @@ public class NoHopper {
 			}
 
 			begin_time = System.currentTimeMillis();
-			game_start_time = System.currentTimeMillis();
 
 			//while (botclient.gameStarted()){
 			while (true){
 				System.out.println("updating");
 				comm.updateSensorData();
 
-				if (System.currentTimeMillis() - game_start_time > 120000){
-					collect_red = true;
-					reactor_on = false;
-				} else {
-					collect_red = false;
-					reactor_on = true;
-				}
-				
 				start_time = System.currentTimeMillis();
 
 				prev_ball_color = ball_color;
 
 				// UPDATE VISION
 				synchronized (vision_vals){
-					red_x = (int) vision_vals[0];
-					red_y = (int) vision_vals[1];
-					red_r = vision_vals[2];
+					target_x = (int) vision_vals[0];
+					target_y = (int) vision_vals[1];
+					target_radius = vision_vals[2];
 					cam_dist = vision_vals[3];
 					left_dist = vision_vals[4];
 					ball_color = (int) vision_vals[5];
@@ -405,19 +362,6 @@ public class NoHopper {
 					reactor_dist = vision_vals[7];
 					right_dist = vision_vals[8];
 					left_dist_close = vision_vals[9];
-					green_x = (int) vision_vals[10];
-					green_y = (int) vision_vals[11];
-					green_r = vision_vals[12];
-				}
-				
-				if (collect_red){
-					target_x = red_x;
-					target_y = red_y;
-					target_radius = red_r;
-				} else {
-					target_x = green_x;
-					target_y = green_y;
-					target_radius = green_r;
 				}
 
 				// UPDATE DISTANCES
@@ -440,7 +384,7 @@ public class NoHopper {
 				// UPDATE HOPPER
 				//updateHopper();
 
-				//print();
+				print();
 				comm.transmit();
 
 				end_time = System.currentTimeMillis();
@@ -537,6 +481,12 @@ public class NoHopper {
 				double align = pid_reactor_align.update(reactor_x, false)/WIDTH;
 				turn = Math.min(0.2, Math.max(-0.2, -align));
 				forward = 0.13;
+			} else if (state.state == ControlState.REACTOR_IMMEDIATE){
+				System.out.println("REACTOR_IMMEDIATE");
+				//double align = pid_align.update(vision.getNextReactorX(), false)/width;
+				//turn = Math.min(0.2, Math.max(-0.2, -align));
+				turn = 0;
+				forward = getTurnStateEstimate()*1.5;
 			} else if (state.state == ControlState.REACTOR_ALIGNED){
 				//            System.out.println("REACTOR_ALIGNED");
 				//            double align = pid_reactor_align.update(reactor_x, false)/WIDTH;
@@ -552,7 +502,6 @@ public class NoHopper {
 					turn = 0;
 					forward = 0;
 					hopper.sorterGreen();
-					comm.transmit();
 					try {
 						Thread.sleep(2000);
 					} catch (Exception exc) {
@@ -562,8 +511,6 @@ public class NoHopper {
 					hopper.rampHigh();
 					comm.transmit();
 					hopper.pacmanOpen();
-					comm.transmit();
-					
 					try {
 						Thread.sleep(2000);
 					} catch (Exception exc) {
@@ -582,18 +529,17 @@ public class NoHopper {
 					hopper.rampLow();
 					motorL.setSpeed(0);
 					motorR.setSpeed(0);
-					hopper.pacmanClose();
-					hopper.pacmanOpen();
 					comm.transmit();
+					hopper.pacmanClose();
+
+					hopper.pacmanOpen();
 					try {
 						Thread.sleep(2000);
 					} catch (Exception exc) {
 						exc.printStackTrace();
 					}
 					hopper.pacmanClose();
-					hopper.sorterGreen();
-					hopper.rampClose();
-					comm.transmit();
+					hopper.sorterBlocking();
 				}
 			} else if (state.state == ControlState.APPROACH){
 				System.out.println("BALL_COLLECT: APPROACH");
@@ -630,16 +576,14 @@ public class NoHopper {
 					System.out.println("WALL_FOLLOW: DEFAULT");
 					temp_turn = -0.05;
 					temp_forward = 0.1;
-				// HERE
-				} else if (state.state == ControlState.LEFT_FAR){
-					System.out.println("WALL_FOLLOW: LEFT_FAR");
-					temp_turn = -0.15;
-					temp_forward = 0;
-				} else if (state.state == ControlState.FORWARD){
-					System.out.println("WALL_FOLLOW: FORWARD");
-					temp_turn = 0;
-					temp_forward = 0.1;
-				// END HERE
+					//            } else if (state.state == ControlState.LEFT_FAR){
+					//                System.out.println("WALL_FOLLOW: LEFT_FAR");
+					//                temp_turn = -0.15;
+					//                temp_forward = 0;
+					//            } else if (state.state == ControlState.FORWARD){
+					//                System.out.println("WALL_FOLLOW: FORWARD");
+					//                temp_turn = 0;
+					//                temp_forward = 0.1;
 				}
 
 				double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
@@ -701,25 +645,20 @@ public class NoHopper {
 
 			while (true){
 				// SPECIAL CASES
-				if ((encoder_flag || state.getTime() > 8000) && state.state != ControlState.REACTOR_ALIGNED){
+				if (encoder_flag || state.getTime() > 8000){
 					state.changeState(ControlState.PULL_AWAY);
 					break;
 				}
 				
-				if (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY){
+				if (state.getTime() > 1500 && state.state == ControlState.PULL_AWAY){
 					state.changeState(ControlState.RANDOM_ORIENT);
 					orient_time = 1500 + 1000*Math.random();
 					break;
-				} else if (state.state == ControlState.PULL_AWAY){
-					state.changeState(ControlState.PULL_AWAY);
-					break;
 				}
 
-				if (state.getTime() > orient_time && prev_state == ControlState.RANDOM_ORIENT){					
-					state.changeState(ControlState.FOLLOW);
+				if (state.getTime() > orient_time && state.state == ControlState.RANDOM_ORIENT){
+					state.changeState(temp_state);
 					break;
-				} else if (state.state == ControlState.RANDOM_ORIENT){
-					state.changeState(ControlState.RANDOM_ORIENT);
 				}
 
 				if (state.state == ControlState.REACTOR_FAR_LEFT && state.getTime() > 4500){
@@ -761,22 +700,23 @@ public class NoHopper {
 					state.changeState(ControlState.FORWARD);
 				}
 
-				// HERE
-				if (state.getTime() > 1800 && state.state == ControlState.FORWARD){
-					state.changeState(temp_state);
-				}
-				// END HERE
-				
+//				if (state.getTime() > 1800 && state.state == ControlState.FORWARD){
+//					state.changeState(temp_state);
+//				}
+
 				// REACTOR ALIGNING AND STATE DECISION
-				if (reactor_on && System.currentTimeMillis() > 20000 + begin_time && reactor_x != 0){
+				if (System.currentTimeMillis() > 60000 + begin_time && reactor_x != 0){
 					if (left_dist < right_dist && left_far){
 						state.changeState(ControlState.REACTOR_FAR_LEFT);
 						break;
 					} else if (right_dist < left_dist && right_far){
 						state.changeState(ControlState.REACTOR_FAR_RIGHT);
 						break;
-					} else if (reactor_x != 0 && (reactor_dist < 0.15)){ // MAY PUT BACK encoder_flag and/or getTurnStateEstimate()
+					} else if (reactor_x != 0 && (getTurnStateEstimate() < 0.05 || reactor_dist < 0.1 || encoder_flag)){
 						state.changeState(ControlState.REACTOR_ALIGNED);
+						break;
+					} else if (reactor_x != 0 && (getTurnStateEstimate() < 0.1 || reactor_dist < 0.1)){
+						state.changeState(ControlState.REACTOR_IMMEDIATE);
 						break;
 					} else if (reactor_x != 0) {
 						state.changeState(ControlState.REACTOR_APPROACH);
@@ -797,10 +737,8 @@ public class NoHopper {
 						temp_state = ControlState.WALL_AHEAD;
 					} else if (getAlignStateEstimate() < 0.5){
 						temp_state = ControlState.FOLLOW;
-					// HERE
-					} else if (Math.min(left_dist, left_dist_close) > 0.5){
-						temp_state = ControlState.LEFT_FAR;
-					// END HERE
+						//                } else if (Math.min(left_dist, left_dist_close) > 0.5){
+						//                	temp_state = ControlState.LEFT_FAR;
 					} else {
 						temp_state = ControlState.DEFAULT;
 					}
@@ -833,15 +771,6 @@ public class NoHopper {
 				intake_time = System.currentTimeMillis();
 				ball_intake.setSpeed(-0.25);
 				//            ball_colors.add(ball_color);
-			}
-			
-			if ((prev_state == ControlState.REACTOR_ALIGNED || prev_state == ControlState.REACTOR_APPROACH
-					|| prev_state == ControlState.REACTOR_FAR_LEFT || prev_state == ControlState.REACTOR_FAR_RIGHT
-					|| prev_state == ControlState.REACTOR_IMMEDIATE)
-					&& !(state.state == ControlState.REACTOR_ALIGNED || state.state == ControlState.REACTOR_APPROACH
-							|| state.state == ControlState.REACTOR_FAR_LEFT || state.state == ControlState.REACTOR_FAR_RIGHT
-							|| state.state == ControlState.REACTOR_IMMEDIATE)){
-				begin_time = System.currentTimeMillis();
 			}
 		}
 
