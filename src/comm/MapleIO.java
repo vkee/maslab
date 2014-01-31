@@ -103,7 +103,7 @@ public class MapleIO {
 			// are made in immediate succession, so we pack the entire message
 			// into a single call.
 			byte[] packet = buildPacket(INIT_SIGNAL, message.toByteArray(), END_SIGNAL);
-			//System.out.println("INI: " + Arrays.toString(packet));
+//			System.out.println("INI: " + SimulatedPort.formatBytes(packet));
 			serialPort.writeBytes(packet);
 		} catch (SerialPortException e) {
 			System.err.println("Init message failed to send. [" + e + "]");
@@ -114,7 +114,7 @@ public class MapleIO {
 		try {
 			// see comment in sendInitMessage()
 			byte[] packet = buildPacket(SET_SIGNAL, message.toByteArray(), END_SIGNAL);
-			//System.out.println("SET: " + Arrays.toString(packet));
+//			System.out.println("SET: " + SimulatedPort.formatBytes(packet));
 			serialPort.writeBytes(packet);
 		} catch (SerialPortException e) {
 			System.err.println("Command message failed to send. [" + e + "]");
@@ -125,7 +125,7 @@ public class MapleIO {
 		try {
 			// see comment in sendInitMessage()
 			byte[] packet = new byte[] {GET_SIGNAL};
-			//System.out.println("GET: " + Arrays.toString(packet));
+//			System.out.println("GET: " + SimulatedPort.formatBytes(packet));
 			serialPort.writeBytes(packet);
 		} catch (SerialPortException e) {
 			System.err.println("Sensor data request failed to send. [" + e + "]");
@@ -144,8 +144,23 @@ public class MapleIO {
 				}
 				data = serialPort.readBytes(expectedInboundMessageSize - 2);
 				byte lastByte = serialPort.readBytes(1)[0];
+				
+//				byte message[] = new byte[expectedInboundMessageSize];
+//				message[0] = firstByte;
+//				for (int i = 0; i < data.length; i++) {
+//					message[i+1] = data[i];
+//				}
+//				message[expectedInboundMessageSize - 1] = lastByte;
+//				System.out.println("IN: " + SimulatedPort.formatBytes(message));
+				
 				if (lastByte != END_SIGNAL) {
 					System.err.println("Received packet not terminated with END symbol");
+//					byte extra = serialPort.readBytes(1)[0];
+//					while (extra != END_SIGNAL) {
+//						System.out.println(SimulatedPort.formatByte(extra));
+//						extra = serialPort.readBytes(1)[0];
+//					}
+//					System.out.println(SimulatedPort.formatByte(extra));
 					System.exit(1);
 				}
 			} catch (SerialPortException e) {

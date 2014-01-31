@@ -30,6 +30,7 @@ public class TabletControlParallel {
         });
         run_thread.start();
         long start_time, end_time;
+        
         while (true){
             start_time = System.currentTimeMillis();
             vision.update();
@@ -46,7 +47,7 @@ public class TabletControlParallel {
                 if (60 + start_time - end_time > 0){
                     Thread.sleep(60 + start_time - end_time);
                 } else {
-                    
+                    System.out.println("TIME OVERFLOW: " + (end_time - start_time));
                 }
             } catch (Exception exc){
                 System.out.println("TIME OVERFLOW: " + (end_time - start_time));
@@ -55,7 +56,7 @@ public class TabletControlParallel {
     }
     
     // BOT CLIENT
-    BotClient botclient;
+    //BotClient botclient;
     
     // VISION
     double[] vision_vals;
@@ -117,7 +118,7 @@ public class TabletControlParallel {
     private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, LEFT_FAR, FORWARD, RANDOM_ORIENT, APPROACH, COLLECT };
     
     public TabletControlParallel(double[] vision_vals){
-		botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
+		//botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         
         // VISION
@@ -227,7 +228,7 @@ public class TabletControlParallel {
         // STATE INITIALIZATION
         state = new State(ControlState.DEFAULT);
         
-        Thread ball_sort_thread = new Thread(new Runnable(){
+        ball_sort_thread = new Thread(new Runnable(){
             public void run(){
             	hopper.runHopper();
             }
@@ -236,7 +237,7 @@ public class TabletControlParallel {
     
     private void loop(){
 //		while( !botclient.gameStarted() ) {}
-    	
+//    	
 		state.changeState(ControlState.FOLLOW);
 		
 		reset_time = System.currentTimeMillis();
@@ -276,6 +277,7 @@ public class TabletControlParallel {
         
         //while (botclient.gameStarted()){
         while (true){
+        	System.out.println("updating");
         	synchronized (comm){
                 comm.updateSensorData();
         	}
@@ -327,6 +329,13 @@ public class TabletControlParallel {
             } catch (Exception exc){
                 exc.printStackTrace();
             }
+            
+            try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }
         
        // botclient.close();
@@ -668,5 +677,5 @@ public class TabletControlParallel {
         public long getTime(){
             return System.currentTimeMillis() - start_time;
         }
-    }
+    } 
 }
