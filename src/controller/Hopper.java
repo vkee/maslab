@@ -44,6 +44,7 @@ public class Hopper {
 	public void runHopper(){
 		long ball_start_time, ball_end_time;
         while (true){
+        	comm.updateSensorData();
         	ball_start_time = System.currentTimeMillis();
         	
         	System.out.println("BALL LIST LENGTH: " + ball_colors.size());
@@ -56,19 +57,23 @@ public class Hopper {
         	}
         	
             if (ballQueued()){
+            	System.out.println("BALL QUEUED");
             	if (ball_colors.size() != 0){
                     if (ball_colors.get(0) == 0){
                         fastGreenSort();
+                        //comm.transmit();
                         ball_colors.remove(0);
                     } else {
+                    	System.out.println("SORTING RED");
                         fastRedSort();
+                        //comm.transmit();
                         ball_colors.remove(0);
                     }
             	}
             }
             
             ball_end_time = System.currentTimeMillis();
-            
+//            comm.transmit();
             try {
                 if (40 - ball_end_time + ball_start_time >= 0){
                     Thread.sleep(40 - ball_end_time + ball_start_time);
@@ -82,6 +87,7 @@ public class Hopper {
 	}
 	
 	public boolean ballQueued(){
+		//System.out.println(irSensor.getValue());
 	    return irSensor.getValue();
 	}
 	
@@ -92,7 +98,7 @@ public class Hopper {
 	public void fastRedSort(){
 		System.out.println("Start");
 		sorter.setAngle(50);
-
+		comm.transmit();
 		try {
 			Thread.sleep(450);
 		} catch (InterruptedException e) {
@@ -100,6 +106,7 @@ public class Hopper {
 		}
 
 		sorter.setAngle(90);
+		comm.transmit();
 		System.out.println("Finish");
 
 		try {
@@ -117,15 +124,18 @@ public class Hopper {
 	public void fastGreenSort(){
 
 		System.out.println("Start");
+		//this.sorterGreen();
 		sorter.setAngle(150);
-
+		comm.transmit();
 		try {
 			Thread.sleep(450);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 
+		//this.sorterBlocking();
 		sorter.setAngle(90);
+		comm.transmit();
 		System.out.println("Finish");
 
 		try {
@@ -212,6 +222,13 @@ public class Hopper {
 		final List<Integer> ball_colors = new LinkedList<Integer>();
 		final Hopper hopper = new Hopper(comm, 24, 27, 28, 14, ball_colors);
 		comm.initialize();
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+//		hopper.fastGreenSort();
 		Thread ball_thread = new Thread(new Runnable(){
 			public void run(){
 				hopper.runHopper();
@@ -220,6 +237,14 @@ public class Hopper {
 		ball_thread.start();
 		
 		ball_colors.add(1);
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		ball_colors.add(0);
+		
 	}
 	
 //	public static void main(String[] args) {
