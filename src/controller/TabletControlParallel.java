@@ -8,6 +8,7 @@ import Core.Engine;
 import vision.Vision;
 import comm.MapleComm;
 import comm.MapleIO;
+import controller.ReactorAlignControl.ReactorState;
 import devices.actuators.Cytron;
 import devices.actuators.DigitalOutput;
 import devices.actuators.PWMOutput;
@@ -18,7 +19,7 @@ import devices.sensors.Ultrasonic;
 public class TabletControlParallel {
     public static void main(String[] args){   
         final Vision vision = new Vision(1, 320, 240, true);
-        final double[] vision_vals = new double[6];
+        final double[] vision_vals = new double[8];
         for (int i = 0; i < 6; i++){
         	vision_vals[i] = 0;
         }
@@ -41,6 +42,9 @@ public class TabletControlParallel {
                 vision_vals[3] = vision.getWallDistance();
                 vision_vals[4] = vision.getLeftmostWallDistance();
                 vision_vals[5] = vision.getNextBallColor();
+                vision_vals[6] = vision.getNextReactorX();
+                vision_vals[7] = vision.getNextReactorDistance();
+                vision_vals[8] = vision.getRightmostWallDistance();
             }
             end_time = System.currentTimeMillis();
             try {
@@ -74,7 +78,7 @@ public class TabletControlParallel {
     
     // STATE VALUES
     double distanceD, distanceE, distanceA, distanceB, distanceC;
-    double cam_dist, left_dist;
+    double cam_dist, left_dist, right_dist;
     long start_time, end_time;
     int target_x, target_y;
     double target_radius;
@@ -88,6 +92,10 @@ public class TabletControlParallel {
     long ball_absent_time;
     int prev_ball_color;
     int ball_color;
+    int num_red_balls;
+    int num_green_balls;
+    int reactor_x;
+    double reactor_dist;
     
     final List<Integer> ball_colors;
     Thread ball_sort_thread;
@@ -115,7 +123,8 @@ public class TabletControlParallel {
     // STATES
     private State state;
     
-    private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, LEFT_FAR, FORWARD, RANDOM_ORIENT, APPROACH, COLLECT };
+    private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, LEFT_FAR, FORWARD, RANDOM_ORIENT, APPROACH,
+        COLLECT, REACTOR_FAR_LEFT, REACTOR_FAR_RIGHT, REACTOR_APPROACH, REACTOR_IMMEDIATE, REACTOR_ALIGNED };
     
     public TabletControlParallel(double[] vision_vals){
 		//botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
@@ -176,6 +185,7 @@ public class TabletControlParallel {
         
         cam_dist = 0;
         left_dist = 0;
+        right_dist = 0;
         orient_time = 1500 + 1000*Math.random();
         intake_time = 0;
         reset_time = System.currentTimeMillis();
@@ -189,6 +199,11 @@ public class TabletControlParallel {
         ball_absent_time = 0;
         prev_ball_color = 0;
         ball_color = 0;
+        
+        num_red_balls = 0;
+        num_green_balls = 0;
+        reactor_x = 0;
+        reactor_dist = 0;
         
         // PIDS
         pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
@@ -258,6 +273,9 @@ public class TabletControlParallel {
             cam_dist = vision_vals[3];
             left_dist = vision_vals[4];
             ball_color = (int) vision_vals[5];
+            reactor_x = (int) vision_vals[6];
+            reactor_dist = vision_vals[7];
+            right_dist = vision_vals[8];
         }
         
         // UPDATE DISTANCES
@@ -294,6 +312,9 @@ public class TabletControlParallel {
                 cam_dist = vision_vals[3];
                 left_dist = vision_vals[4];
                 ball_color = (int) vision_vals[5];
+                reactor_x = (int) vision_vals[6];
+                reactor_dist = vision_vals[7];
+                right_dist = vision_vals[8];
             }
             
             // UPDATE DISTANCES
@@ -312,6 +333,9 @@ public class TabletControlParallel {
             
             // UPDATE MOTORS
             updateMotors();
+            
+            // UPDATE HOPPER
+            updateHopper();
             
             //print();
             synchronized (comm){
@@ -539,6 +563,32 @@ public class TabletControlParallel {
             encoder_flag_time = 0;
         }
         
+    }
+    
+    private void updateHopper(){
+        System.out.println("BALL LIST LENGTH: " + ball_colors.size());
+        if (ball_colors.size() != 0){
+            if (ball_colors.get(0) == 0){
+                System.out.println("GREEN BALL READY");
+            } else {
+                System.out.println("RED BALL READY");
+            }
+        }
+        
+        if (hopper.ballQueued()){
+            motorL.setSpeed(0);
+            motorR.setSpeed(0);
+            comm.transmit();
+            if (ball_colors.size() != 0){
+                if (ball_colors.get(0) == 0){
+                    hopper.fastGreenSort();
+                    ball_colors.remove(0);
+                } else {
+                    hopper.fastRedSort();
+                    ball_colors.remove(0);
+                }
+            }
+        }
     }
     
     private void print(){
