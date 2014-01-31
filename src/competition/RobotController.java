@@ -293,7 +293,7 @@ public class RobotController {
             exc.printStackTrace();
         }
         
-        //ball_sort_thread.start();
+        ball_sort_thread.start();
         
         //while (botclient.gameStarted()){
         while (true){
@@ -444,6 +444,15 @@ public class RobotController {
             ball_colors.remove(0);
         }
         
+        if (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY){
+            state.changeState(ControlState.RANDOM_ORIENT);
+            orient_time = 1500 + 1000*Math.random();
+        }
+        
+        if (state.getTime() > orient_time && state.state == ControlState.RANDOM_ORIENT){
+            state.changeState(temp_state);
+        }
+        
         if (state.state == ControlState.APPROACH && !(getTurnStateEstimate() < 0.1
         		|| getAlignStateEstimate() < 0.1) && !(ball_absent_time > 0
         				&& System.currentTimeMillis() - ball_absent_time > 300)){
@@ -470,14 +479,7 @@ public class RobotController {
             }
         }
         
-        if (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY){
-            state.changeState(ControlState.RANDOM_ORIENT);
-            orient_time = 1500 + 1000*Math.random();
-        }
         
-        if (state.getTime() > orient_time && state.state == ControlState.RANDOM_ORIENT){
-            state.changeState(temp_state);
-        }
         
         // MAKE EXCEPTIONS FOR SCORING STATES
         if (encoder_flag || state.getTime() > 8000){
