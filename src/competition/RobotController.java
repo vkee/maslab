@@ -33,9 +33,9 @@ public class RobotController {
         
         while (true){
             start_time = System.currentTimeMillis();
-            double visionTime = System.currentTimeMillis(); 
+            //double visionTime = System.currentTimeMillis(); 
             vision.update();
-            System.out.println("vision time: " + (visionTime-System.currentTimeMillis()));
+            //System.out.println("vision time: " + (visionTime-System.currentTimeMillis()));
             synchronized (vision_vals){
             	vision_vals[0] = vision.getNextBallX();
                 vision_vals[1] = vision.getNextBallY();
@@ -161,8 +161,8 @@ public class RobotController {
         comm.registerDevice(sonarB);
         comm.registerDevice(sonarC);
         
-        comm.registerDevice(motorL);
-        comm.registerDevice(motorR);
+//        comm.registerDevice(motorL);
+//        comm.registerDevice(motorR);
         comm.registerDevice(ball_intake);
         
         comm.registerDevice(encoderL);
@@ -302,9 +302,10 @@ public class RobotController {
                 comm.updateSensorData();
         	}
 
-    		double loopTime = System.currentTimeMillis();
-        	System.out.println("encoderL: " + encoderL.getAngularSpeed());
-            System.out.println("encoderR: " + encoderR.getAngularSpeed());
+    		//double loopTime = System.currentTimeMillis();
+        	//System.out.println("encoderL: " + encoderL.getAngularSpeed());
+            //System.out.println("encoderR: " + encoderR.getAngularSpeed());
+            System.out.println("ballColors: " + ball_colors);
             start_time = System.currentTimeMillis();
             
             prev_ball_color = ball_color;
@@ -359,7 +360,7 @@ public class RobotController {
             } catch (Exception exc){
                 exc.printStackTrace();
             }
-            System.out.println("Loop Time" + (System.currentTimeMillis()-loopTime));
+            //System.out.println("Loop Time" + (System.currentTimeMillis()-loopTime));
 
         }
         
@@ -514,11 +515,15 @@ public class RobotController {
         if (state.state == ControlState.APPROACH && prev_state != ControlState.APPROACH){
             intake_time = System.currentTimeMillis();
             ball_intake.setSpeed(-0.25);
-            ball_colors.add(ball_color);
+            //ball_colors.add(ball_color);
         }
         
-        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) &&
-                (prev_ball_color != ball_color)){
+//        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) &&
+//                (prev_ball_color != ball_color)){
+//            ball_colors.add(ball_color);
+//        }
+        
+        if (state.state == ControlState.COLLECT && prev_state != ControlState.COLLECT){
             ball_colors.add(ball_color);
         }
         
@@ -588,7 +593,7 @@ public class RobotController {
     }
     
     private void updateHopper(){
-        System.out.println("BALL LIST LENGTH: " + ball_colors.size());
+        //System.out.println("BALL LIST LENGTH: " + ball_colors.size());
         if (ball_colors.size() != 0){
             if (ball_colors.get(0) == 0){
                 System.out.println("GREEN BALL READY");

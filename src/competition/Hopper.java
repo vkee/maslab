@@ -44,8 +44,12 @@ public class Hopper {
 
 	public void runHopper(){
 		long ball_start_time, ball_end_time;
+		this.pacmanClose();
+		this.gateClose();
+		this.sorterBlocking();
+		this.rampClose();
         while (true){
-        	double hopperTime = System.currentTimeMillis();
+        	//double hopperTime = System.currentTimeMillis();
         	comm.updateSensorData();
         	ball_start_time = System.currentTimeMillis();
         	
@@ -85,7 +89,7 @@ public class Hopper {
             } catch (Exception exc){
                 exc.printStackTrace();
             }
-            System.out.println("Hopper Time: " + (System.currentTimeMillis()-hopperTime));
+            //System.out.println("Hopper Time: " + (System.currentTimeMillis()-hopperTime));
         }
 	}
 	
