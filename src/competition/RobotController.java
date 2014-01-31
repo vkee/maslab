@@ -512,10 +512,10 @@ public class RobotController {
             state.changeState(temp_state);
         }
         
-        if (state.state == ControlState.APPROACH && prev_state != ControlState.APPROACH){
+        if (state.state == ControlState.APPROACH && prev_state != ControlState.APPROACH && prev_state != ControlState.COLLECT){
             intake_time = System.currentTimeMillis();
             ball_intake.setSpeed(-0.25);
-            //ball_colors.add(ball_color);
+            ball_colors.add(ball_color);
         }
         
         if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) &&
