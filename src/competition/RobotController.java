@@ -161,8 +161,8 @@ public class RobotController {
         comm.registerDevice(sonarB);
         comm.registerDevice(sonarC);
         
-//        comm.registerDevice(motorL);
-//        comm.registerDevice(motorR);
+        comm.registerDevice(motorL);
+        comm.registerDevice(motorR);
         comm.registerDevice(ball_intake);
         
         comm.registerDevice(encoderL);
@@ -502,7 +502,7 @@ public class RobotController {
         
         
         // MAKE EXCEPTIONS FOR SCORING STATES
-        if (encoder_flag || state.getTime() > 8000){
+        if (false && encoder_flag || state.getTime() > 8000){
             state.changeState(ControlState.PULL_AWAY);
         } else if (state.getTime() > 100 && state.state != ControlState.PULL_AWAY
                 && state.state != ControlState.RANDOM_ORIENT && state.state != ControlState.LEFT_FAR
@@ -518,14 +518,14 @@ public class RobotController {
             //ball_colors.add(ball_color);
         }
         
-//        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) &&
-//                (prev_ball_color != ball_color)){
-//            ball_colors.add(ball_color);
-//        }
-        
-        if (state.state == ControlState.COLLECT && prev_state != ControlState.COLLECT){
+        if ((state.state == ControlState.APPROACH || state.state == ControlState.COLLECT) &&
+                (prev_ball_color != ball_color)){
             ball_colors.add(ball_color);
         }
+        
+//        if (state.state == ControlState.COLLECT && prev_state != ControlState.COLLECT){
+//            ball_colors.add(ball_color);
+//        }
         
 //        if (state.getTime() > 500 && state.state == ControlState.LEFT_FAR){
 //            state.changeState(ControlState.FORWARD);
@@ -619,13 +619,13 @@ public class RobotController {
     }
     
     private void print(){
-        System.out.println("distanceD: " + sonarD.getDistance());
-        System.out.println("distanceE: " + sonarE.getDistance());
-        System.out.println("distanceA: " + sonarA.getDistance());
-        System.out.println("distanceB: " + sonarB.getDistance());
-        System.out.println("distanceC: " + sonarC.getDistance());
-        System.out.println("Camera: " + cam_dist);
-        System.out.println("Left: " + left_dist);
+//        System.out.println("distanceD: " + sonarD.getDistance());
+//        System.out.println("distanceE: " + sonarE.getDistance());
+//        System.out.println("distanceA: " + sonarA.getDistance());
+//        System.out.println("distanceB: " + sonarB.getDistance());
+//        System.out.println("distanceC: " + sonarC.getDistance());
+//        System.out.println("Camera: " + cam_dist);
+//        System.out.println("Left: " + left_dist);
         //System.out.println("SIDE: " + Math.min(distanceA, distanceB));
         //System.out.println("FRONT: " + Math.min(distanceD, distanceE));
         //System.out.println("forward: " + forward);

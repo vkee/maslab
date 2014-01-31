@@ -159,6 +159,7 @@ public class Hopper {
 	public void pacmanOpen() {
 		while (pacmanAngle > 40) {
 			pacman.setAngle(pacmanAngle);
+			comm.transmit();
 			pacmanAngle -= 5;
 			try {
 				Thread.sleep(30);
@@ -168,11 +169,13 @@ public class Hopper {
 		}
 		pacman.setAngle(40);
 		pacmanAngle = 40;
+		comm.transmit();
 	}
 
 	public void pacmanClose() {
 		while (pacmanAngle < 120) {
 			pacman.setAngle(pacmanAngle);
+			comm.transmit();
 			pacmanAngle += 5;
 			try {
 				Thread.sleep(30);
@@ -181,6 +184,7 @@ public class Hopper {
 			}
 		}
 		pacman.setAngle(120);
+		comm.transmit();
 		pacmanAngle = 120;
 	}
 

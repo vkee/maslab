@@ -235,7 +235,7 @@ public class ReactorAlignControl {
                 double align = pid_align.update(vision.getNextReactorX(), false)/width;
                 turn = Math.min(0.2, Math.max(-0.2, -align));
                 forward = 0;
-                if (turn < 0.05) {
+                if (turn < 0.05 || true) {
                     motorL.setSpeed(0);
                     motorR.setSpeed(0);
                     comm.transmit();
@@ -275,6 +275,7 @@ public class ReactorAlignControl {
             exc.printStackTrace();
         }
         hopper.rampHigh();
+        comm.transmit();
         hopper.pacmanOpen();
         try {
             Thread.sleep(2000);
