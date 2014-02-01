@@ -1,9 +1,7 @@
 package BotClient;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
 
 import BotClient.BotClient.WritebackHandler;
@@ -44,6 +42,7 @@ public class Receiver extends Thread {
 	}
 	
 	public void process( String msg ) {
+		//System.out.println(msg);
 		if ( msg.equals("connected") ) {
 			writeback.connected();
 		} else if ( msg.equals("pong") ) {

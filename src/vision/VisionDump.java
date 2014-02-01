@@ -26,9 +26,9 @@ import com.google.zxing.qrcode.detector.Detector;
 import Core.Engine;
 import Core.FilterOp;
 
-public class Vision {
+public class VisionDump {
     public static void main(String[] args){
-        final Vision vision = new Vision(1, 320, 240, false);
+        final VisionDump vision = new VisionDump(1, 320, 240, false);
         JLabel camera_pane = createWindow("Camera output", vision.WIDTH, vision.HEIGHT);
         JLabel colorize_pane = createWindow("Filtered output", vision.WIDTH, vision.HEIGHT);
         int ball_target_x, ball_target_y, reactor_target_x, reactor_target_y;
@@ -84,12 +84,13 @@ public class Vision {
     private Ball red_target, green_target;
     private int red_count, green_count;
     private Reactor reactor_target, reactor_left, reactor_right;
+    private Reactor yellow_wall;
     private JLabel camera_pane, colorize_pane;
     
     // FILTERS
     private final FilterOp blur, colorize, eliminateTop, eliminateBottom, objRec;
     
-    public Vision(int camera_number, int width, int height, boolean display_on){
+    public VisionDump(int camera_number, int width, int height, boolean display_on){
         this.WIDTH = width;
         this.HEIGHT = height;
         this.DISPLAY_ON = display_on;
@@ -120,6 +121,7 @@ public class Vision {
         reactor_target = new Reactor(false);
         reactor_left = new Reactor(false);
         reactor_right = new Reactor(false);
+        yellow_wall = new Reactor(false);
         
         red_count = 0;
         green_count = 0;
@@ -239,6 +241,11 @@ public class Vision {
                             && (reactor_right.x <= x || reactor_right.x == 0)){
                         reactor_right = new Reactor(x, y, 1);
                     }
+                    
+                    if (blue == 0 && red > 0 && green > 0){
+                    	height = HEIGHT*green/256.0;
+                    	yellow_wall = new Reactor(x, y, height);
+                    }
                 }
             }
         }
@@ -277,6 +284,18 @@ public class Vision {
         } catch (NotFoundException | ChecksumException | FormatException e1) {
             throw new RuntimeException("QR code not found");
         }
+    }
+    
+    public int getNextYellowX(){
+    	return yellow_wall.x;
+    }
+    
+    public int getNextYellowY(){
+    	return yellow_wall.y;
+    }
+    
+    public double getNextYellowDistance(){
+    	return (340.0/yellow_wall.height)*2.54/100;
     }
     
     public int getNextRedX(){

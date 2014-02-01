@@ -18,7 +18,7 @@ import devices.sensors.DigitalInput;
 import devices.sensors.Encoder;
 import devices.sensors.Ultrasonic;
 
-public class NoHopper {
+public class ReactorBall {
 	public static void main(String[] args){   
 		final Vision vision = new Vision(1, 320, 240, true);
 		final double[] vision_vals = new double[13];
@@ -27,7 +27,7 @@ public class NoHopper {
 		}
 		Thread run_thread = new Thread(new Runnable(){
 			public void run(){
-				NoHopper robot = new NoHopper(vision_vals);
+				ReactorBall robot = new ReactorBall(vision_vals);
 				robot.loop();
 			}
 		});
@@ -145,7 +145,7 @@ public class NoHopper {
 	private enum ControlState { DEFAULT, WALL_AHEAD, FOLLOW, PULL_AWAY, LEFT_FAR, FORWARD, RANDOM_ORIENT, APPROACH,
 		COLLECT, REACTOR_FAR_LEFT, REACTOR_FAR_RIGHT, REACTOR_APPROACH, REACTOR_IMMEDIATE, REACTOR_ALIGNED };
 
-		public NoHopper(double[] vision_vals){
+		public ReactorBall(double[] vision_vals){
 			//botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
 			comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
 
@@ -212,7 +212,7 @@ public class NoHopper {
 			left_dist = 0;
 			right_dist = 0;
 			left_dist_close = 0;
-			orient_time = 1500 + 1000*Math.random();
+			orient_time = 1500 + 2000*Math.random();
 			intake_time = 0;
 			reset_time = System.currentTimeMillis();
 
@@ -378,7 +378,6 @@ public class NoHopper {
 
 			//while (botclient.gameStarted()){
 			while (true){
-				System.out.println("updating");
 				comm.updateSensorData();
 
 				if (System.currentTimeMillis() - game_start_time > 120000){
@@ -436,9 +435,6 @@ public class NoHopper {
 
 				// UPDATE MOTORS
 				updateMotors();
-
-				// UPDATE HOPPER
-				//updateHopper();
 
 				//print();
 				comm.transmit();
@@ -620,8 +616,16 @@ public class NoHopper {
 					temp_turn = pid_dist.update(getAlignStateEstimate(), false);
 				} else if (state.state == ControlState.PULL_AWAY){
 					System.out.println("WALL_FOLLOW: PULL_AWAY");
-					temp_turn = 0;
-					temp_forward = -0.15;
+					if (state.getTime() < 500){
+						temp_turn = 0;
+						temp_forward = 0.15;
+					} else if (state.getTime() < 1500){
+						temp_turn = -0.15;
+						temp_forward = 0;
+					} else {
+						temp_turn = 0;
+						temp_forward = -0.15;
+					}
 				} else if (state.state == ControlState.RANDOM_ORIENT){
 					System.out.println("WALL_FOLLOW: RANDOM_ORIENT");
 					temp_turn = -0.15;
@@ -701,14 +705,15 @@ public class NoHopper {
 
 			while (true){
 				// SPECIAL CASES
-				if ((encoder_flag || state.getTime() > 8000) && state.state != ControlState.REACTOR_ALIGNED){
+				if ((encoder_flag || state.getTime() > 8000) &&
+						state.state != ControlState.REACTOR_ALIGNED && state.state != ControlState.PULL_AWAY){
 					state.changeState(ControlState.PULL_AWAY);
 					break;
 				}
 				
-				if (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY){
+				if (state.getTime() > 2500 && state.state == ControlState.PULL_AWAY){
 					state.changeState(ControlState.RANDOM_ORIENT);
-					orient_time = 1500 + 1000*Math.random();
+					orient_time = 1500 + 2000*Math.random();
 					break;
 				} else if (state.state == ControlState.PULL_AWAY){
 					state.changeState(ControlState.PULL_AWAY);
@@ -1067,4 +1072,3 @@ public class NoHopper {
 			}
 		} 
 }
->>>>>>> 0d05cc860db41a2e47e5a3e0ab0f8ca1e0eb4a09

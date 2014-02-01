@@ -3,7 +3,7 @@ package BotClient;
 public class PingTest {
 	public static void main( String[] args ) {
 		
-		BotClient botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
+		BotClient botclient = new BotClient("18.150.7.174:6667","1221",false);
 		
 		double latency = 0;
 		int cnt = 0;
