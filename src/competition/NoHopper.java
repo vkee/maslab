@@ -645,6 +645,7 @@ public class NoHopper {
         if (state.state == ControlState.REACTOR_ALIGNED && state.getTime() > 10000){
             state.changeState(ControlState.RANDOM_ORIENT);
             orient_time = 1500 + 1000*Math.random();
+            
         } else if (state.state == ControlState.REACTOR_ALIGNED){
             state.changeState(ControlState.REACTOR_ALIGNED);
         }
