@@ -63,7 +63,7 @@ public class Ball {
     }
     
     // BOT CLIENT
-    //BotClient botclient;
+//    BotClient botclient;
     
     // VISION
     double[] vision_vals;
@@ -133,7 +133,7 @@ public class Ball {
         COLLECT, REACTOR_FAR_LEFT, REACTOR_FAR_RIGHT, REACTOR_APPROACH, REACTOR_IMMEDIATE, REACTOR_ALIGNED };
     
     public Ball(double[] vision_vals){
-		//botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
+//		botclient = new BotClient("18.150.7.174:6667","b3MpHHs4J1",false);
         comm = new MapleComm(MapleIO.SerialPortType.WINDOWS);
         
         // VISION
@@ -219,8 +219,8 @@ public class Ball {
         pid_dist = new PID(0.2, 0.3, 100, 0); // PID for wall following turn on distance  
         pid_dist.update(Math.min(distanceA, distanceB), true);
         
-        pid_speedwf = new PID(11, 0.2, -0.08, 0.01);
-        pid_speedwf.update(11, true);
+        pid_speedwf = new PID(13, 0.2, -0.08, 0.01);
+        pid_speedwf.update(13, true);
         
         pid_target = new PID(WIDTH/2, 0.2, 2, 0); // PID for ball targeting turn on displacement from center
         pid_target.update(WIDTH/2, true);
@@ -285,7 +285,7 @@ public class Ball {
     
     private void loop(){
 //		while( !botclient.gameStarted() ) {}
-//    	
+    	
 		state.changeState(ControlState.FOLLOW);
 		
 		reset_time = System.currentTimeMillis();
@@ -328,7 +328,7 @@ public class Ball {
         
         //ball_sort_thread.start();
         
-        //while (botclient.gameStarted()){
+//        while (botclient.gameStarted()){
         while (true){
         	System.out.println("updating");
             comm.updateSensorData();
@@ -389,6 +389,10 @@ public class Ball {
             }
         }
         
+//        motorL.setSpeed(0);
+//        motorR.setSpeed(0);
+//        comm.transmit();
+        
        // botclient.close();
     }
     
@@ -445,8 +449,8 @@ public class Ball {
             double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
             K_encoder = Math.min(1.6, Math.max(pid_speedwf.update(abs_speed, false), 0.5));
             
-            turn = K_encoder*temp_turn;
-            forward = K_encoder*temp_forward;
+            turn = 1.3*K_encoder*temp_turn;
+            forward = 1.3*K_encoder*temp_forward;
             //turn = 1.6*temp_turn;
             //forward = 1.8*temp_forward;
         }

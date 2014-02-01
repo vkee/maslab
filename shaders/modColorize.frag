@@ -74,7 +74,7 @@ void main() {
 	}
 	
 	//YELLOW BAND
-	if ( col.y>2*col.x && col.z>2*col.x && col.z<col.y*1.1 && col.y<col.z*1.1 && y < horizon) {
+	if ( col.y>1.3*col.x && col.z>1.3*col.x && col.z<col.y*1.3 && col.y<col.z*1.3 && y < horizon) {
 		gl_FragColor = vec4(0,1,1,1);
 	}
 	
