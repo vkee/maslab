@@ -1067,3 +1067,4 @@ public class NoHopper {
 			}
 		} 
 }
+>>>>>>> 0d05cc860db41a2e47e5a3e0ab0f8ca1e0eb4a09
