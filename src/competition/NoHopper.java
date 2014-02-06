@@ -104,7 +104,7 @@ public class NoHopper {
 	int reactor_x;
 	double reactor_dist;
 	int num_balls;
-	
+
 	long game_start_time;
 	boolean reactor_on;
 	boolean collect_red;
@@ -196,11 +196,11 @@ public class NoHopper {
 			comm.updateSensorData();
 
 			hopper.sorterGreen();
-	        hopper.pacmanClose();
-	        hopper.gateClose();
-	        hopper.rampClose();
-	        comm.transmit();
-			
+			hopper.pacmanClose();
+			hopper.gateClose();
+			hopper.rampClose();
+			comm.transmit();
+
 			// VALUES
 			distanceD = sonarD.getDistance();
 			distanceE = sonarE.getDistance();
@@ -242,7 +242,7 @@ public class NoHopper {
 			}
 
 			begin_time = 0;
-			
+
 			reactor_on = false;
 			collect_red = false;
 			game_start_time = 0;
@@ -331,7 +331,7 @@ public class NoHopper {
 
 			int red_x, red_y, green_x, green_y;
 			double  red_r, green_r;
-			
+
 			// UPDATE VISION
 			synchronized (vision_vals){
 				red_x = (int) vision_vals[0];
@@ -348,7 +348,7 @@ public class NoHopper {
 				green_y = (int) vision_vals[11];
 				green_r = vision_vals[12];
 			}
-			
+
 			if (collect_red){
 				target_x = red_x;
 				target_y = red_y;
@@ -358,7 +358,7 @@ public class NoHopper {
 				target_y = green_y;
 				target_radius = green_r;
 			}
-			
+
 			updateCamBuffs();
 			// UPDATE DISTANCES
 			distanceD = sonarD.getDistance();
@@ -388,7 +388,7 @@ public class NoHopper {
 					collect_red = false;
 					reactor_on = true;
 				}
-				
+
 				start_time = System.currentTimeMillis();
 
 				prev_ball_color = ball_color;
@@ -409,7 +409,7 @@ public class NoHopper {
 					green_y = (int) vision_vals[11];
 					green_r = vision_vals[12];
 				}
-				
+
 				if (collect_red){
 					target_x = red_x;
 					target_y = red_y;
@@ -563,7 +563,7 @@ public class NoHopper {
 					comm.transmit();
 					hopper.pacmanOpen();
 					comm.transmit();
-					
+
 					try {
 						Thread.sleep(2000);
 					} catch (Exception exc) {
@@ -630,7 +630,7 @@ public class NoHopper {
 					System.out.println("WALL_FOLLOW: DEFAULT");
 					temp_turn = -0.05;
 					temp_forward = 0.1;
-				// HERE
+					// HERE
 				} else if (state.state == ControlState.LEFT_FAR){
 					System.out.println("WALL_FOLLOW: LEFT_FAR");
 					temp_turn = -0.15;
@@ -639,7 +639,7 @@ public class NoHopper {
 					System.out.println("WALL_FOLLOW: FORWARD");
 					temp_turn = 0;
 					temp_forward = 0.1;
-				// END HERE
+					// END HERE
 				}
 
 				double abs_speed = Math.abs(encoderL.getAngularSpeed()) + Math.abs(encoderR.getAngularSpeed()); 
@@ -705,7 +705,7 @@ public class NoHopper {
 					state.changeState(ControlState.PULL_AWAY);
 					break;
 				}
-				
+
 				if (state.getTime() > 1000 && state.state == ControlState.PULL_AWAY){
 					state.changeState(ControlState.RANDOM_ORIENT);
 					orient_time = 1500 + 1000*Math.random();
@@ -766,7 +766,7 @@ public class NoHopper {
 					state.changeState(temp_state);
 				}
 				// END HERE
-				
+
 				// REACTOR ALIGNING AND STATE DECISION
 				if (reactor_on && System.currentTimeMillis() > 20000 + begin_time && reactor_x != 0){
 					if (left_dist < right_dist && left_far){
@@ -797,10 +797,10 @@ public class NoHopper {
 						temp_state = ControlState.WALL_AHEAD;
 					} else if (getAlignStateEstimate() < 0.5){
 						temp_state = ControlState.FOLLOW;
-					// HERE
+						// HERE
 					} else if (Math.min(left_dist, left_dist_close) > 0.5){
 						temp_state = ControlState.LEFT_FAR;
-					// END HERE
+						// END HERE
 					} else {
 						temp_state = ControlState.DEFAULT;
 					}
@@ -834,13 +834,13 @@ public class NoHopper {
 				ball_intake.setSpeed(-0.25);
 				//            ball_colors.add(ball_color);
 			}
-			
+
 			if ((prev_state == ControlState.REACTOR_ALIGNED || prev_state == ControlState.REACTOR_APPROACH
 					|| prev_state == ControlState.REACTOR_FAR_LEFT || prev_state == ControlState.REACTOR_FAR_RIGHT
 					|| prev_state == ControlState.REACTOR_IMMEDIATE)
 					&& !(state.state == ControlState.REACTOR_ALIGNED || state.state == ControlState.REACTOR_APPROACH
-							|| state.state == ControlState.REACTOR_FAR_LEFT || state.state == ControlState.REACTOR_FAR_RIGHT
-							|| state.state == ControlState.REACTOR_IMMEDIATE)){
+					|| state.state == ControlState.REACTOR_FAR_LEFT || state.state == ControlState.REACTOR_FAR_RIGHT
+					|| state.state == ControlState.REACTOR_IMMEDIATE)){
 				begin_time = System.currentTimeMillis();
 			}
 		}
@@ -1067,4 +1067,3 @@ public class NoHopper {
 			}
 		} 
 }
->>>>>>> 0d05cc860db41a2e47e5a3e0ab0f8ca1e0eb4a09
